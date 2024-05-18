@@ -1,8 +1,17 @@
 import re
 from bs4 import BeautifulSoup
 import logging
+from urllib.parse import urlparse, urlunparse
 
 logger = logging.getLogger('feed_logger')
+
+def clean_url(url):
+    parsed_url = urlparse(url)
+    # 重建 URL，不包括片段和查询字符串
+    clean_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path.rstrip('/'), '', '', ''))
+    # 转换为小写
+    clean_url = clean_url.lower()
+    return clean_url
 
 def clean_html(html_content):
     """

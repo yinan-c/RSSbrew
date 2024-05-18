@@ -7,7 +7,7 @@ import re
 import os
 from openai import OpenAI
 from django.conf import settings
-from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_html
+from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_html, clean_url
 import logging
 import tiktoken
 from django.db import transaction
@@ -48,23 +48,22 @@ class Command(BaseCommand):
     def process_entry(self, entry, feed, original_feed):
         # 先检查 filter 再检查数据库
         if passes_filters(entry, feed, 'feed_filter'):
-            if not Article.objects.filter(url=entry.link).exists():
+            existing_article = Article.objects.filter(url=clean_url(entry.link)).first()
+            if not existing_article:
+                # 如果不存在，则创建新文章
                 article = Article(
                     original_feed=original_feed,
                     title=entry.title,
-                    url=entry.link,
+                    url= clean_url(entry.link),
                     published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else datetime.now(pytz.UTC),
                     content=entry.content[0].value if 'content' in entry else entry.description
                 )
-                article.save()
                 logger.info(f'  Added new article: {article.title}')
-
-                if self.current_n_processed < feed.max_articles_to_process_per_interval:
-                    article = Article.objects.get(url=entry.link)
-                    if passes_filters(entry, feed, 'summary_filter') and (not article.summarized):
-                        self.generate_summary(article, feed.model, feed.summary_language)
-                        logger.info(f'Summary generated for article: {article.title}')
-                        self.current_n_processed += 1
+                if self.current_n_processed < feed.max_articles_to_process_per_interval and passes_filters(entry, feed, 'summary_filter'):
+                    self.generate_summary(article, feed.model, feed.summary_language)
+                    logger.info(f'  Summary generated for article: {article.title}')
+                    self.current_n_processed += 1
+                article.save()
 
     def clean_txt_and_truncate(self, article, model):
         cleaned_article = clean_html(article.content)
