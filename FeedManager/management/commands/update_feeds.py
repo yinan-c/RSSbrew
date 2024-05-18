@@ -41,7 +41,7 @@ class Command(BaseCommand):
             except Exception as e:
                 logger.error(f'Failed to parse feed {original_feed.url}: {str(e)}')
                 continue
-
+        entries = sorted(entries, key=lambda x: x[0].published_parsed, reverse=True)
         for entry, original_feed in entries:
             self.process_entry(entry, feed, original_feed)
 
