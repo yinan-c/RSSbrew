@@ -10,29 +10,27 @@ from django.conf import settings
 from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_html
 import logging
 import tiktoken
+from django.db import transaction
 
 logger = logging.getLogger('feed_logger')
 
-current_n_processed = 0
 OPENAI_PROXY = os.environ.get('OPENAI_PROXY')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v1'
 
 class Command(BaseCommand):
     help = 'Updates and processes RSS feeds based on defined schedules and filters.'
+    current_n_processed = 0
 
     def handle(self, *args, **options):
-        # 获取所有ProcessedFeed实例
         processed_feeds = ProcessedFeed.objects.all()
         for feed in processed_feeds:
             self.stdout.write(f'Processing feed: {feed.name}')
             self.update_feed(feed)
 
     def update_feed(self, feed):
-        global current_n_processed
-        current_n_processed = 0
+        self.current_n_processed = 0
         entries = []
-        logger.info(f'Processing feed: {feed.name} at {datetime.now()}')
         for original_feed in feed.feeds.all():
             parsed_feed = feedparser.parse(original_feed.url)
             entries.extend((entry, original_feed) for entry in parsed_feed.entries[:original_feed.max_articles_to_keep])
@@ -45,10 +43,8 @@ class Command(BaseCommand):
             self.process_entry(entry, feed, original_feed)
 
     def process_entry(self, entry, feed, original_feed):
-        global current_n_processed
         # 先检查 filter 再检查数据库
         if passes_filters(entry, feed, 'feed_filter'):
-            logger.info(f'  {entry.title} passes filter at {datetime.now()}')
             if not Article.objects.filter(url=entry.link).exists():
                 article = Article(
                     original_feed=original_feed,
@@ -60,12 +56,12 @@ class Command(BaseCommand):
                 article.save()
                 logger.info(f'  Added new article: {article.title}')
 
-                if current_n_processed < feed.max_articles_to_process_per_interval:
+                if self.current_n_processed < feed.max_articles_to_process_per_interval:
                     article = Article.objects.get(url=entry.link)
                     if passes_filters(entry, feed, 'summary_filter') and (not article.summarized):
                         self.generate_summary(article, feed.model, feed.summary_language)
                         logger.info(f'Summary generated for article: {article.title}')
-                        current_n_processed += 1
+                        self.current_n_processed += 1
 
     def clean_txt_and_truncate(self, article, model):
         cleaned_article = clean_html(article.content)
@@ -88,31 +84,28 @@ class Command(BaseCommand):
 
     def generate_summary(self, article, model, language):
         if not model or not OPENAI_API_KEY:
-            return
-        truncated_query = self.clean_txt_and_truncate(article, model)
-        messages = [
-            {"role": "user", "content": f"{truncated_query}"},
-            # !hard-code 150 keywords for now, user setting later
-            {"role": "assistant", "content": f"Please summarize this article, first extract 5 keywords, output in the same line, then line break, write a summary containing all the points in 150 words in {language}, output in order by points, and output in the following format '<br><br>Summary:' , <br> is the line break of HTML, 2 must be retained when output, and must be before the word 'Summary:, finally, output result in {language}."}
+            return   
+        try:
+            client_params = {
+                "api_key": OPENAI_API_KEY,
+                "base_url": OPENAI_BASE_URL
+            }
+            if OPENAI_PROXY:
+                client_params["http_client"] = httpx.Client(proxy=OPENAI_PROXY)
+    
+            client = OpenAI(**client_params)
+            truncated_query = self.clean_txt_and_truncate(article, model)
+            messages = [
+                {"role": "user", "content": f"{truncated_query}"},
+                {"role": "assistant", "content": f"Please summarize this article, first extract 5 keywords, output in the same line, then line break, write a summary containing all the points in 150 words in {language}, output in order by points, and output in the following format '<br><br>Summary:', <br> is the line break of HTML, 2 must be retained when output, and must be before the word 'Summary:', finally, output result in {language}."}
             ]
-        if not OPENAI_PROXY:
-            client = OpenAI(
-                api_key=OPENAI_API_KEY,
-                base_url=OPENAI_BASE_URL,
+    
+            completion = client.chat.completions.create(
+                model=model,
+                messages=messages,
             )
-        else:
-            client = OpenAI(
-                api_key=OPENAI_API_KEY,
-                # Or use the `OPENAI_BASE_URL` env var
-                base_url=OPENAI_BASE_URL,
-                # example: "http://my.test.server.example.com:8083",
-                http_client=httpx.Client(proxy=OPENAI_PROXY),
-                # example:"http://my.test.proxy.example.com",
-            )
-        completion = client.chat.completions.create(
-            model=model,
-            messages=messages,
-        )
-        article.summary = completion.choices[0].message.content
-        article.summarized = True
-        article.save()
+            article.summary = completion.choices[0].message.content
+            article.summarized = True
+            article.save()
+        except Exception as e:
+            logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')

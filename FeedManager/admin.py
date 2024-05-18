@@ -27,7 +27,7 @@ class ProcessedFeedAdmin(admin.ModelAdmin):
     list_display = ('name', 'max_articles_to_process_per_interval', 'subscription_link')
     filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
-    list_filter = ('max_articles_to_process_per_interval')
+    list_filter = ('max_articles_to_process_per_interval', 'summary_language', 'model')
 
     def subscription_link(self, obj):
         url = reverse('processed_feed_by_name', args=[obj.name])
