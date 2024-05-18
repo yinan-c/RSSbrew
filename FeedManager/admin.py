@@ -24,10 +24,20 @@ class ArticleInline(admin.TabularInline):
 
 class ProcessedFeedAdmin(admin.ModelAdmin):
     inlines = [FilterInline]
-    list_display = ('name', 'update_frequency', 'max_articles_to_process_per_interval')
+    list_display = ('name', 'update_frequency', 'max_articles_to_process_per_interval', 'subscription_link')
     filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
     list_filter = ('update_frequency', 'max_articles_to_process_per_interval')
+
+    def subscription_link(self, obj):
+        url = reverse('processed_feed_by_name', args=[obj.name])
+        auth_code = AppSetting.get_auth_code()  # Get the universal auth code
+        if not auth_code:
+            return format_html('<a href="{}">Subscribe</a>', url)
+        return format_html('<a href="{}?key={}">Subscribe</a>', url, auth_code)
+    
+    subscription_link.short_description = "Subscribe Link"  # 设置列的标题
+
 
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
