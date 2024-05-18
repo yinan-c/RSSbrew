@@ -32,12 +32,15 @@ class Command(BaseCommand):
         self.current_n_processed = 0
         entries = []
         for original_feed in feed.feeds.all():
-            parsed_feed = feedparser.parse(original_feed.url)
-            entries.extend((entry, original_feed) for entry in parsed_feed.entries[:original_feed.max_articles_to_keep])
-        #    print(entries)
-        # first sort by published date, then only process the most recent max_articles_to_keep articles 
-        if 'published_parsed' in entries:
-            entries.sort(key=lambda x: x.published_parsed, reverse=True)
+            try:
+                parsed_feed = feedparser.parse(original_feed.url)
+                # first sort by published date, then only process the most recent max_articles_to_keep articles 
+                if parsed_feed.entries and 'published_parsed' in parsed_feed.entries:
+                    parsed_feed.entries.sort(key=lambda x: x.published_parsed, reverse=True)
+                entries.extend((entry, original_feed) for entry in parsed_feed.entries[:original_feed.max_articles_to_keep])
+            except Exception as e:
+                logger.error(f'Failed to parse feed {original_feed.url}: {str(e)}')
+                continue
 
         for entry, original_feed in entries:
             self.process_entry(entry, feed, original_feed)
