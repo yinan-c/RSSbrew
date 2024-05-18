@@ -34,7 +34,6 @@ class OriginalFeed(models.Model):
 class ProcessedFeed(models.Model):
     name = models.CharField(max_length=255)
     feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds')
-    update_frequency = models.PositiveIntegerField(default=30)
     max_articles_to_process_per_interval = models.PositiveIntegerField(default=5)
     summary_language = models.CharField(max_length=50, choices=LANGUAGE_CHOICES, default='English')
     additional_prompt = models.TextField(blank=True)

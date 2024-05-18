@@ -2,7 +2,7 @@ import re
 from bs4 import BeautifulSoup
 import logging
 
-logger = logging.getLogger('feed_manager')
+logger = logging.getLogger('feed_logger')
 
 def clean_html(html_content):
     """

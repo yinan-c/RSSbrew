@@ -11,7 +11,7 @@ from FeedManager.utils import passes_filters, match_content, generate_untitled, 
 import logging
 import tiktoken
 
-logger = logging.getLogger('feed_manager')
+logger = logging.getLogger('feed_logger')
 
 current_n_processed = 0
 OPENAI_PROXY = os.environ.get('OPENAI_PROXY')
@@ -36,10 +36,10 @@ class Command(BaseCommand):
         for original_feed in feed.feeds.all():
             parsed_feed = feedparser.parse(original_feed.url)
             entries.extend((entry, original_feed) for entry in parsed_feed.entries[:original_feed.max_articles_to_keep])
-            print(entries)
+        #    print(entries)
         # first sort by published date, then only process the most recent max_articles_to_keep articles 
-        #if 'published_parsed' in entries:
-        #    entries.sort(key=lambda x: x.published_parsed, reverse=True)
+        if 'published_parsed' in entries:
+            entries.sort(key=lambda x: x.published_parsed, reverse=True)
 
         for entry, original_feed in entries:
             self.process_entry(entry, feed, original_feed)
@@ -48,7 +48,7 @@ class Command(BaseCommand):
         global current_n_processed
         # 先检查 filter 再检查数据库
         if passes_filters(entry, feed, 'feed_filter'):
-#            logger.info(f'  {entry.title} passes filter at {datetime.now()}')
+            logger.info(f'  {entry.title} passes filter at {datetime.now()}')
             if not Article.objects.filter(url=entry.link).exists():
                 article = Article(
                     original_feed=original_feed,
