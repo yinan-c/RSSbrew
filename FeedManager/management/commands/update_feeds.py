@@ -20,13 +20,24 @@ OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v
 
 class Command(BaseCommand):
     help = 'Updates and processes RSS feeds based on defined schedules and filters.'
-    current_n_processed = 0
+
+    def add_arguments(self, parser):
+        parser.add_argument('-f', '--feed', type=int, help='ID of the ProcessedFeed to update')
 
     def handle(self, *args, **options):
-        processed_feeds = ProcessedFeed.objects.all()
-        for feed in processed_feeds:
-            self.stdout.write(f'Processing feed: {feed.name}')
-            self.update_feed(feed)
+        feed_id = options.get('feed')
+        if feed_id:
+            try:
+                feed = ProcessedFeed.objects.get(id=feed_id)
+                self.stdout.write(f'Processing single feed: {feed.name}')
+                self.update_feed(feed)
+            except ProcessedFeed.DoesNotExist:
+                raise CommandError('ProcessedFeed "%s" does not exist' % feed_id)
+        else:
+            processed_feeds = ProcessedFeed.objects.all()
+            for feed in processed_feeds:
+                self.stdout.write(f'Processing feed: {feed.name}')
+                self.update_feed(feed)
 
     def update_feed(self, feed):
         self.current_n_processed = 0
