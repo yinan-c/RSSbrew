@@ -27,8 +27,28 @@ SECRET_KEY = get_random_secret_key()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG') == '1'
 
-ALLOWED_HOSTS = []
+allowed_hosts = os.environ.get('DEPLOYMENT_URL').split(',')
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+allowed_hosts.append("localhost")
+allowed_hosts += INTERNAL_IPS
 
+ALLOWED_HOSTS = allowed_hosts
+CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in allowed_hosts if not host.startswith('https')]
+CSRF_TRUSTED_ORIGINS += [f"https://{host}" for host in allowed_hosts if not host.startswith('http')]
+
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_DOMAIN = None
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 # Application definition
 
@@ -44,6 +64,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

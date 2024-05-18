@@ -1,1 +1,3 @@
 django
+django-debug-toolbar
+whitenoise
