@@ -27,7 +27,7 @@ SECRET_KEY = get_random_secret_key()
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG') == '1'
 
-allowed_hosts = os.environ.get('DEPLOYMENT_URL').split(',')
+allowed_hosts = os.environ.get('DEPLOYMENT_URL', '').split(',')
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
