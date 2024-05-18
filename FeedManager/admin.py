@@ -4,6 +4,15 @@ from django.utils.html import format_html
 from django.urls import reverse
 from .forms import FilterForm, ReadOnlyArticleForm
 from django.contrib.auth.models import User, Group
+from django.core.management import call_command
+
+def update_feeds(modeladmin, request, queryset):
+    call_command('update_feeds')
+    modeladmin.message_user(request, "Feeds have been updated.")
+
+def clean_old_articles(modeladmin, request, queryset):
+    call_command('clean_old_articles')
+    modeladmin.message_user(request, "Old articles have been cleaned up.")
 
 class FilterInline(admin.TabularInline):
     model = Filter
@@ -28,6 +37,7 @@ class ProcessedFeedAdmin(admin.ModelAdmin):
     filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
     list_filter = ('max_articles_to_process_per_interval', 'summary_language', 'model')
+    actions = [update_feeds]
 
     def subscription_link(self, obj):
         url = reverse('processed_feed_by_name', args=[obj.name])
@@ -42,6 +52,8 @@ class ProcessedFeedAdmin(admin.ModelAdmin):
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
     search_fields = ('title', 'url')
+    actions = [clean_old_articles]
+
     
 admin.site.register(ProcessedFeed, ProcessedFeedAdmin)
 admin.site.register(OriginalFeed, OriginalFeedAdmin)
