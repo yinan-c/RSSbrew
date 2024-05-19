@@ -4,6 +4,8 @@ set -e
 
 echo "$CRON /app/scripts/update_feeds.sh >> /var/log/cron.log 2>&1" | crontab -
 
+printenv | grep -v "no_proxy" >> /etc/environment
+
 cron
 
 python3 manage.py init_server

@@ -76,7 +76,6 @@ class Command(BaseCommand):
                 logger.info(f'  Added new article: {article.title}')
                 if self.current_n_processed < feed.max_articles_to_process_per_interval and passes_filters(entry, feed, 'summary_filter'):
                     self.generate_summary(article, feed.model, feed.summary_language)
-                    logger.info(f'  Summary generated for article: {article.title}')
                     self.current_n_processed += 1
                 article.save()
 
@@ -101,7 +100,8 @@ class Command(BaseCommand):
 
     def generate_summary(self, article, model, language):
         if not model or not OPENAI_API_KEY:
-            return   
+            logger.info('  OpenAI API key or model not set, skipping summary generation')
+            return 
         try:
             client_params = {
                 "api_key": OPENAI_API_KEY,
@@ -123,6 +123,7 @@ class Command(BaseCommand):
             )
             article.summary = completion.choices[0].message.content
             article.summarized = True
+            logger.info(f'  Summary generated for article: {article.title}')
             article.save()
         except Exception as e:
             logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')
