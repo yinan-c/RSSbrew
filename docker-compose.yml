@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=${SECRET_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CRON=*/5 * * * *
+      - DEPLOYMENT_URL
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    restart: always

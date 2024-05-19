@@ -1,0 +1,16 @@
+**/__pycache__
+**/.DS_Store
+**/.env
+**/.git
+**/.gitignore
+**/.github
+**/.dockerignore
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.log
+**/*.swp
+.vscode
+.idea
+data/

@@ -15,6 +15,7 @@ __pycache__/
 
 # Django
 *.log
+logs/
 db.sqlite3
 db.sqlite3-journal
 media/
@@ -24,7 +25,7 @@ media/
 .idea/
 *.swp
 
-# OS files
+# OS and other files
 .DS_Store
 Thumbs.db
-
+temp/
