@@ -2,5 +2,5 @@
 
 cd /app
 
-python manage.py update_feeds
-python manage.py clean_old_articles
+/usr/local/bin/python3 manage.py update_feeds
+/usr/local/bin/python3 manage.py clean_old_articles

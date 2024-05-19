@@ -2,14 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 
-LANGUAGE_CHOICES = (
-    ('en', 'English'),
-    ('zh', 'Chinese'),
-    ('es', 'Spanish'),
-    ('fr', 'French'),
-    ('de', 'German'),
-)
-
 class AppSetting(models.Model):
     auth_code = models.CharField(max_length=64, blank=True, null=True)
 
@@ -35,7 +27,7 @@ class ProcessedFeed(models.Model):
     name = models.CharField(max_length=255)
     feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds')
     max_articles_to_process_per_interval = models.PositiveIntegerField(default=5)
-    summary_language = models.CharField(max_length=50, choices=LANGUAGE_CHOICES, default='English')
+    summary_language = models.CharField(max_length=20, default='English')
     additional_prompt = models.TextField(blank=True)
     choices = [
         ('gpt-3.5-turbo', 'GPT-3.5 Turbo'),

@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_random_secret_key()
+SECRET_KEY = os.environ.get('SECRET_KEY', get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG') == '1'
@@ -34,7 +34,8 @@ INTERNAL_IPS = [
 allowed_hosts.append("localhost")
 allowed_hosts += INTERNAL_IPS
 
-ALLOWED_HOSTS = allowed_hosts
+#ALLOWED_HOSTS = allowed_hosts
+ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in allowed_hosts if not host.startswith('https')]
 CSRF_TRUSTED_ORIGINS += [f"https://{host}" for host in allowed_hosts if not host.startswith('http')]
 
