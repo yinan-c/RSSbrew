@@ -3,12 +3,12 @@ version: '3.8'
 services:
   web:
     build: .
+    # Setup DEPLOYMENT_URL (optional if deploy locally), OPENAI_API_KEY(optional), SECRET_KEY in .env
+    env_file:
+      - .env
     environment:
-      - DEBUG=1
-      - SECRET_KEY=${SECRET_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - CRON=*/5 * * * *
-      - DEPLOYMENT_URL
+      - DEBUG=0
+      - CRON=*/5 * * * * # cron job for updating feeds
     volumes:
       - ./data:/app/data
     ports:
