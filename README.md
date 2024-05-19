@@ -1,10 +1,13 @@
-# RSSBrew
+<div align="center">
+  <img src="https://github.com/yinan-c/RSSbrew/assets/95043151/15876fda-28aa-468f-b012-f1bbc4c03a84" alt="RSSbrew Icon" width="180"/>
+  <h1>RSSBrew</h1>
+</div>
 
 Self-hosted, easy-to-deploy RSS tool that allows you to aggregate multiple RSS feeds, apply custom filters, and generate AI-driven summaries.
 
 ## Disclaimer
 
-This project is still under development. The current version is may contain bugs or incomplete features. Please use it with caution and report any issues you encounter.
+This project is still under development. The current version may contain bugs or incomplete features. Please use it with caution and report any issues you encounter.
 
 ## Features
 
@@ -36,19 +39,19 @@ You can set an auth code for the RSS feed, so that only users with the correct a
    git clone https://github.com/yinan-c/rssbrew.git
    cd rssbrew
    ```
+2. **Environment Variables**
+   
+   Set environment variables such as `OPENAI_API_KEY`, `SECRET_KEY`, `DEPLOYMENT_URL` in `.env`
 
-2. **Build and Run the Docker Container**
+3. **Build and Run the Docker Container**
    ```bash
    docker compose build
    docker compose up -d
    ```
 
-3. **Access the Application**
+4. **Access the Application**
+   
    Open your browser and go to `http://localhost:8000/admin` to access the management interface. Configure your RSS feeds, filters, and settings from there.
-
-## Configuration
-
-- **Environment Variables**: Set environment variables such as `OPENAI_API_KEY`, `SECRET_KEY`.
 
 ## LICENSE
 
