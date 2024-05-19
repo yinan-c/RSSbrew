@@ -55,7 +55,10 @@ class Command(BaseCommand):
                 continue
         entries.sort(key=lambda x: x[0].get('published_parsed', []), reverse=True)
         for entry, original_feed in entries:
-            self.process_entry(entry, feed, original_feed)
+            try:
+                self.process_entry(entry, feed, original_feed)
+            except Exception as e:
+                logger.error(f'Failed to process entry: {str(e)}')
 
     def process_entry(self, entry, feed, original_feed):
         # 先检查 filter 再检查数据库
