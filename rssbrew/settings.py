@@ -91,7 +91,7 @@ ROOT_URLCONF = 'rssbrew.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -144,8 +144,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 LANGUAGES = [
-    ('zh-hans', '简体中文'), 
     ('en', 'English'),
+    ('zh-hans', '简体中文'), 
 ]
 
 TIME_ZONE = 'UTC'

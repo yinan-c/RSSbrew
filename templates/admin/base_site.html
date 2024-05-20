@@ -5,24 +5,3 @@
 {% block branding %}
 <h1 id="site-name"><a href="{% url 'admin:index' %}">RSSBrew</a></h1>
 {% endblock %}
-
-{% block userlinks %}
-<ul id="user-tools">
-    <li>
-        <form action="{% url 'set_language' %}" method="post">{% csrf_token %}
-            <input name="next" type="hidden" value="{{ redirect_to }}" />
-            <select name="language">
-                {% get_current_language as LANGUAGE_CODE %}
-                {% for lang in LANGUAGES %}
-                    <option value="{{ lang.0 }}"{% if lang.0 == LANGUAGE_CODE %} selected{% endif %}>
-                        {{ lang.1 }}
-                    </option>
-                {% endfor %}
-            </select>
-            <input type="submit" value="{% trans 'Go' %}">
-        </form>
-    </li>
-    <li><a href="{% url 'admin:password_change' %}">{% trans 'Change password' %}</a></li>
-    <li><a href="{% url 'admin:logout' %}">{% trans 'Log out' %}</a></li>
-</ul>
-{% endblock %}

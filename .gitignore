@@ -8,7 +8,6 @@ env.bak/
 venv.bak/
 .python-version
 
-
 # Python
 *.pyc
 __pycache__/
