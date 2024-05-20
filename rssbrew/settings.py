@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
+from django.utils.translation import gettext_lazy as _
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -143,9 +144,28 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
+
 LANGUAGES = [
-    ('en', 'English'),
-    ('zh-hans', '简体中文'), 
+    ('en', _('English')),
+    ('zh-hans', _('Simplified Chinese')),
+    ('zh-hant', _('Traditional Chinese')),
+    ('ja', _('Japanese')),
+    ('ko', _('Korean')),
+    ('fr', _('French')),
+    ('de', _('German')),
+    ('es', _('Spanish')),
+    ('it', _('Italian')),
+    ('pt', _('Portuguese')),
+    ('ru', _('Russian')),
+    ('ar', _('Arabic')),
+    ('nl', _('Dutch')),
+    ('sv', _('Swedish')),
+    ('da', _('Danish')),
+    ('fi', _('Finnish')),
+    ('no', _('Norwegian')),
+    ('pl', _('Polish')),
+    ('cs', _('Czech')),
+    ('tr', _('Turkish')),
 ]
 
 TIME_ZONE = 'UTC'

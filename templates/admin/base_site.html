@@ -1,7 +1,64 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
 
 {% block title %}RSSBrew{% endblock %}
 
 {% block branding %}
 <h1 id="site-name"><a href="{% url 'admin:index' %}">RSSBrew</a></h1>
+{% endblock %}
+
+{% block usertools %}
+  {% if has_permission %}
+    <div id="user-tools">
+      {% block welcome-msg %}
+        {% translate 'Welcome,' %}
+        <strong>{% firstof user.get_short_name user.get_username %}</strong>.
+      {% endblock %}
+      {% block userlinks %}
+        {% if site_url %}
+          <a href="{{ site_url }}">{% translate 'View site' %}</a> /
+        {% endif %}
+        {% if user.is_active and user.is_staff %}
+          {% url 'django-admindocs-docroot' as docsroot %}
+          {% if docsroot %}
+            <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /
+          {% endif %}
+        {% endif %}
+        {% if user.has_usable_password %}
+          <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
+        {% endif %}
+        <form action="{% url 'admin:logout' %}" method="post" style="display:inline;">{% csrf_token %}
+            <button type="submit" class="logout-button">{% trans 'LOG OUT' %}</button>
+        </form>
+        <form action="{% url 'set_language' %}" method="post">{% csrf_token %}
+          <input name="next" type="hidden" value="{{ redirect_to }}">
+          <select name="language">
+            {% get_current_language as LANGUAGE_CODE %}
+            {% get_available_languages as LANGUAGES %}
+            {% get_language_info_list for LANGUAGES as languages %}
+            {% for language in languages %}
+              <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %}>
+                {{ language.name_local }} ({{ language.code }})
+              </option>
+            {% endfor %}
+          </select>
+          <input type="submit" value="{% translate 'Change Language' %}">
+        </form>
+      {% endblock %}
+    </div>
+  {% endif %}
+  <style>
+    .logout-button {
+        background: none;
+        border: none;
+        color: #ffffff;
+        cursor: pointer;
+        text-decoration: underline;
+        font-size: 1em;
+        font: inherit; 
+    }
+    .logout-button:hover {
+        text-decoration: none;
+    }
+  </style>
 {% endblock %}
