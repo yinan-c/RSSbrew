@@ -28,7 +28,7 @@
           <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
         {% endif %}
         <form action="{% url 'admin:logout' %}" method="post" style="display:inline;">{% csrf_token %}
-            <button type="submit" class="logout-button">{% trans 'LOG OUT' %}</button>
+            <button type="submit" class="logout-button">{% translate 'LOG OUT' %}</button>
         </form>
         <form action="{% url 'set_language' %}" method="post">{% csrf_token %}
           <input name="next" type="hidden" value="{{ redirect_to }}">

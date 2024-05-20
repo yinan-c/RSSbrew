@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  web:
+  rssbrew:
     build: .
     # Setup DEPLOYMENT_URL (optional if deploy locally), OPENAI_API_KEY(optional), SECRET_KEY in .env
     env_file:
