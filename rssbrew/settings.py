@@ -72,6 +72,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 ]
 
 DEBUG_PLUGINS = [
@@ -144,7 +145,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 LANGUAGES = [
     ('zh-hans', '简体中文'), 
-    ('en-us', 'English'),
+    ('en', 'English'),
 ]
 
 TIME_ZONE = 'UTC'

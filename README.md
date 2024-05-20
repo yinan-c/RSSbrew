@@ -15,14 +15,14 @@ This project is still under development. The current version may contain bugs or
 Apply custom filters to your feeds to control what content gets through or not. You can filter based on Link, Title and Description.
 Besides:
 - Various match types including contains, does not contain, matches regex or not.
-- Multiple filtered can be applied together with various relationship operators: AND, OR, NOT.
-- You can set filter scope to apply to filter out matched entries entirely or filter for summary generation only.
+- Multiple filters can be applied together with various relationship operators: AND, OR, NOT.
+- You can set the filter scope to apply to filter out matched entries entirely or filter for summary generation only.
   
 ### 2. Aggregate Multiple RSS Feeds
 Easily combine multiple RSS feeds into a single processed feed, even more powerful when used with custom filters.
 
 ### 3. AI Summarization
-Leverage AI power(currently support GPT-3.5, GPT-4 Turbo and GPT-4o) to generate and append
+Leverage AI power(currently using GPT-3.5 Turbo, GPT-4 Turbo or GPT-4o) to generate and append
 directly to the article.
 
 The summarization features include:
