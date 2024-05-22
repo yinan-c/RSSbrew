@@ -34,7 +34,17 @@ class ProcessedAtomFeed(Feed):
     def items(self, obj):
         articles = Article.objects.filter(original_feed__in=obj.feeds.all()).order_by('-published_date')
         filtered_articles = [article for article in articles if passes_filters(article, obj, 'feed_filter')]
-        return filtered_articles
+        # To ensure no duplicates, use a set to keep track of seen URLs
+        seen = set()
+        unique_articles = []
+        for article in filtered_articles:
+            # 由于是数据库中的已经 clean 过的 URL，所以不需要再次 clean
+            identifier = article.url
+            if identifier not in seen:
+                seen.add(identifier)
+                unique_articles.append(article)
+
+        return unique_articles
 
     def item_title(self, item):
         return item.title
