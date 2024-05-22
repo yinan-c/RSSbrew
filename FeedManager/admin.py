@@ -38,10 +38,10 @@ class ArticleInline(admin.TabularInline):
 
 class ProcessedFeedAdmin(admin.ModelAdmin):
     inlines = [FilterInline]
-    list_display = ('name', 'max_articles_to_process_per_interval', 'subscription_link')
+    list_display = ('name', 'articles_to_summarize_per_interval', 'subscription_link')
 #    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
-    list_filter = ('max_articles_to_process_per_interval', 'summary_language', 'model')
+    list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model')
     actions = [update_selected_feeds]
     autocomplete_fields = ['feeds']  
 

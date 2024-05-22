@@ -77,7 +77,7 @@ class Command(BaseCommand):
                 # 注意这里的缩进，如果已经存在 Database 中的文章（非新文章），那么就不需要浪费 token 总结了
 #            else:
 #                article = existing_article
-                if self.current_n_processed < feed.max_articles_to_process_per_interval and passes_filters(entry, feed, 'summary_filter'): # and not article.summarized:
+                if self.current_n_processed < feed.articles_to_summarize_per_interval and passes_filters(entry, feed, 'summary_filter'): # and not article.summarized:
                     self.generate_summary(article, feed.model, feed.summary_language)
                     self.current_n_processed += 1
                 article.save()

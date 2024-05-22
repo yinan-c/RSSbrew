@@ -26,7 +26,7 @@ class OriginalFeed(models.Model):
 class ProcessedFeed(models.Model):
     name = models.CharField(max_length=255, unique=True) # Ensure subscription name is unique
     feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds')
-    max_articles_to_process_per_interval = models.PositiveIntegerField(default=5)
+    articles_to_summarize_per_interval = models.PositiveIntegerField(default=0)
     summary_language = models.CharField(max_length=20, default='English')
     additional_prompt = models.TextField(blank=True)
     choices = [
