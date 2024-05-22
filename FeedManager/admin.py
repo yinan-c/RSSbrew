@@ -39,10 +39,11 @@ class ArticleInline(admin.TabularInline):
 class ProcessedFeedAdmin(admin.ModelAdmin):
     inlines = [FilterInline]
     list_display = ('name', 'max_articles_to_process_per_interval', 'subscription_link')
-    filter_horizontal = ('feeds',)
+#    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
     list_filter = ('max_articles_to_process_per_interval', 'summary_language', 'model')
     actions = [update_selected_feeds]
+    autocomplete_fields = ['feeds']  
 
     def subscription_link(self, obj):
         url = reverse('processed_feed_by_name', args=[obj.name])
