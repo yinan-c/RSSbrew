@@ -63,7 +63,7 @@ class Command(BaseCommand):
     def process_entry(self, entry, feed, original_feed):
         # 先检查 filter 再检查数据库
         if passes_filters(entry, feed, 'feed_filter'):
-            existing_article = Article.objects.filter(url=clean_url(entry.link)).first()
+            existing_article = Article.objects.filter(url=clean_url(entry.link), original_feed=original_feed).first()
             if not existing_article:
                 # 如果不存在，则创建新文章
                 article = Article(
