@@ -13,53 +13,12 @@ from FeedManager.utils import passes_filters, match_content, generate_untitled, 
 import logging
 import tiktoken
 from django.db import transaction
-from email.utils import parsedate_tz
-import time
 
 logger = logging.getLogger('feed_logger')
 
 OPENAI_PROXY = os.environ.get('OPENAI_PROXY')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v1'
-
-class Entry:
-    ''' This class is used to convert a dictionary parsed by xml.etree.ElementTree to an object that can be processed by process_entry '''
-    def __init__(self, entry_dict):
-        self.title = entry_dict.get('title')
-        self.link = entry_dict.get('link')
-        self.id = entry_dict.get('id', self.link)
-        self.author = entry_dict.get('author', 'Unknown')
-        self.published = entry_dict.get('published')
-        self.published_parsed = self.parse_published_date(entry_dict.get('published'))
-        self.content = [{'type': 'text/html', 'value': entry_dict.get('content', '')}]
-        self.description = entry_dict.get('description', '')
-
-    def parse_published_date(self, date_str):
-        # Convert string date to struct_time, expecting the date_str to be in a standard format
-        time_tuple = parsedate_tz(date_str)
-        if time_tuple:
-            return datetime(*time_tuple[:6], tzinfo=pytz.UTC).timetuple()
-        return datetime.now(pytz.UTC).timetuple()
-
-    def get(self, attr, default=None):
-        return getattr(self, attr, default)
-
-def parse_xml_entry(item):
-    '''
-    #! This part is for xml feeds cannot be parsed by feedparser
-    #! The goal is to convert the xml feed to a list of Entry objects that can be processed by process_entry
-    #! I don't have much examples of this, so hard-coded for now based on https://hostloc.com/forum.php?mod=rss&fid=45&auth=0
-    '''
-    entry_dict = {
-        'title': item.find('title').text,
-        'link': item.find('link').text,
-        'id': item.find('guid').text if item.find('guid') is not None else item.find('link').text,
-        'published': item.find('pubDate').text,
-        'author': item.find('author').text if item.find('author') is not None else "Unknown",
-        'content': item.find('description').text,
-        'description': item.find('description').text,
-    }
-    return Entry(entry_dict)
 
 class Command(BaseCommand):
     help = 'Updates and processes RSS feeds based on defined schedules and filters.'
@@ -99,9 +58,17 @@ class Command(BaseCommand):
                     if response.status_code == 200:
                         root = ET.fromstring(response.content)
                         for item in root.findall('.//item'):
-                            # Manually create an entry dict and then convert to an Entry object
-                            entry_object = parse_xml_entry(item)
-                            entries.append((entry_object, original_feed))
+                            # Manually create an entry dict
+                            entry = {
+                                'title': item.find('title').text,
+                                'link': item.find('link').text,
+                                'description': item.find('description').text,
+                                'author': item.find('author').text if item.find('author') is not None else "No author listed",
+                                'published_parsed': datetime.strptime(item.find('pubDate').text, '%a, %d %b %Y %H:%M:%S %z').timetuple()
+                            }
+                            print(entry)
+                            # Append to entries, using the publication date for sorting
+                            entries.append((entry, original_feed))
                     else:
                         raise Exception(f"HTTP error {response.status_code} while fetching {original_feed.url}")
             except Exception as e:
@@ -111,11 +78,10 @@ class Command(BaseCommand):
         # Sort all fetched and fallback entries by published date
         entries.sort(key=lambda x: x[0].get('published_parsed', []), reverse=True)
         for entry, original_feed in entries:
-#            logger.debug(f"Processing entry: {entry.title}, Feed: {original_feed}")
             try:
                 self.process_entry(entry, feed, original_feed)
             except Exception as e:
-                logger.error(f'Failed to process entry {entry.title}: {str(e)}')
+                logger.error(f'Failed to process entry: {str(e)}')
 
     def process_entry(self, entry, feed, original_feed):
         # 先检查 filter 再检查数据库
@@ -127,9 +93,8 @@ class Command(BaseCommand):
                     original_feed=original_feed,
                     title=entry.title,
                     url= clean_url(entry.link),
-                    published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if entry.published_parsed else datetime.now(pytz.UTC),
-                    # ! This fixes the bug showing "Failed to process entry: argument of type 'Entry' is not iterable"
-                    content=entry.content[0]['value'] if entry.content else entry.description,
+                    published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else datetime.now(pytz.UTC),
+                    content=entry.content[0].value if 'content' in entry else entry.description
                 )
                 logger.info(f'  Added new article: {article.title}')
                 # 注意这里的缩进，如果已经存在 Database 中的文章（非新文章），那么就不需要浪费 token 总结了
