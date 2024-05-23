@@ -1,8 +1,6 @@
 from django.core.management.base import BaseCommand
 from FeedManager.models import ProcessedFeed, OriginalFeed, Article
 import feedparser
-import requests
-import xml.etree.ElementTree as ET
 from datetime import datetime
 import pytz
 import re
@@ -52,30 +50,9 @@ class Command(BaseCommand):
                     parsed_feed.entries.sort(key=lambda x: x.get('published_parsed', []), reverse=True)
 #                    self.stdout.write(f'  Found {len(parsed_feed.entries)} entries in feed {original_feed.url}')
                     entries.extend((entry, original_feed) for entry in parsed_feed.entries[:original_feed.max_articles_to_keep])
-                else:
-                    # Fallback to requests and ElementTree
-                    response = requests.get(original_feed.url)
-                    if response.status_code == 200:
-                        root = ET.fromstring(response.content)
-                        for item in root.findall('.//item'):
-                            # Manually create an entry dict
-                            entry = {
-                                'title': item.find('title').text,
-                                'link': item.find('link').text,
-                                'description': item.find('description').text,
-                                'author': item.find('author').text if item.find('author') is not None else "No author listed",
-                                'published_parsed': datetime.strptime(item.find('pubDate').text, '%a, %d %b %Y %H:%M:%S %z').timetuple()
-                            }
-                            print(entry)
-                            # Append to entries, using the publication date for sorting
-                            entries.append((entry, original_feed))
-                    else:
-                        raise Exception(f"HTTP error {response.status_code} while fetching {original_feed.url}")
             except Exception as e:
                 logger.error(f'Failed to parse feed {original_feed.url}: {str(e)}')
                 continue
-            
-        # Sort all fetched and fallback entries by published date
         entries.sort(key=lambda x: x[0].get('published_parsed', []), reverse=True)
         for entry, original_feed in entries:
             try:
