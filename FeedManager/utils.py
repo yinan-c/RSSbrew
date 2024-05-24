@@ -67,8 +67,10 @@ def passes_filters(entry, feed, filter_type):
             try:
                 content = entry.content[0].value
             except:
-                try: content = entry.description
-                except: content = generate_untitled(entry)
+                content = entry.description
+            finally:
+                content = entry.content if hasattr(entry, 'content') else ''
+
         elif filter.field == 'link':
             content = entry.url
         if match_content(content, filter):
