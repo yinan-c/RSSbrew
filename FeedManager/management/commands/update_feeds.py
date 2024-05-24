@@ -11,12 +11,43 @@ from FeedManager.utils import passes_filters, match_content, generate_untitled, 
 import logging
 import tiktoken
 from django.db import transaction
+import requests
+from fake_useragent import UserAgent
+import httpx
+import time
 
 logger = logging.getLogger('feed_logger')
 
 OPENAI_PROXY = os.environ.get('OPENAI_PROXY')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v1'
+
+def fetch_feed(url: str, last_modified: datetime):
+    update = False
+    feed = None
+    response = None
+    headers = {}
+    ua = UserAgent()
+    if last_modified:
+        headers['If-Modified-Since'] = last_modified.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    headers['User-Agent'] = ua.random.strip()
+    try:
+        #print(time.time())
+        response = requests.get(url, headers=headers, timeout=30)
+        #print(time.time())
+        if response.status_code == 200:
+            feed = feedparser.parse(response.text)
+            return {'feed': feed, 'status': 'updated', 'last_modified': response.headers.get('Last-Modified')}
+        elif response.status_code == 304:
+            # ! Why is it taking so long to show not_modified? 8 seconds
+            #print(time.time())
+            return {'feed': None, 'status': 'not_modified'}
+        else:
+            response.raise_for_status()
+
+    except Exception as e:
+        logger.error(f'Failed to fetch feed {url}: {str(e)}')
+        return {'feed': None, 'status': 'failed'}
 
 class Command(BaseCommand):
     help = 'Updates and processes RSS feeds based on defined schedules and filters.'
@@ -29,30 +60,47 @@ class Command(BaseCommand):
         if feed_id:
             try:
                 feed = ProcessedFeed.objects.get(id=feed_id)
-                self.stdout.write(f'Processing single feed: {feed.name}')
+                logger.info(f'Processing single feed: {feed.name} at {datetime.now()}')
                 self.update_feed(feed)
             except ProcessedFeed.DoesNotExist:
                 raise CommandError('ProcessedFeed "%s" does not exist' % feed_id)
         else:
             processed_feeds = ProcessedFeed.objects.all()
             for feed in processed_feeds:
-                self.stdout.write(f'Processing feed: {feed.name}')
+                logger.info(f'Processing feed: {feed.name} at {datetime.now()}')
                 self.update_feed(feed)
 
     def update_feed(self, feed):
         self.current_n_processed = 0
         entries = []
+        current_modified = feed.last_modified
+        min_new_modified = None
+        logger.info(f'  Current last modified: {current_modified} for feed {feed.name}')
         for original_feed in feed.feeds.all():
-            try:
-                parsed_feed = feedparser.parse(original_feed.url)
+            feed_data = fetch_feed(original_feed.url, current_modified)
+            # update feed.last_modified based on earliest last_modified of all original_feeds
+            if feed_data['status'] == 'updated':
+                logger.info(f'  Feed {original_feed.url} updated, the new modified time is {feed_data["last_modified"]}')
+                new_modified = datetime.strptime(feed_data['last_modified'], '%a, %d %b %Y %H:%M:%S GMT').replace(tzinfo=pytz.UTC) if feed_data['last_modified'] else None
+                if new_modified and (not min_new_modified or new_modified < min_new_modified):
+                    min_new_modified = new_modified
+                
+                parsed_feed = feed_data['feed']
                 # first sort by published date, then only process the most recent max_articles_to_keep articles 
                 if parsed_feed.entries: 
                     parsed_feed.entries.sort(key=lambda x: x.get('published_parsed', []), reverse=True)
 #                    self.stdout.write(f'  Found {len(parsed_feed.entries)} entries in feed {original_feed.url}')
                     entries.extend((entry, original_feed) for entry in parsed_feed.entries[:original_feed.max_articles_to_keep])
-            except Exception as e:
-                logger.error(f'Failed to parse feed {original_feed.url}: {str(e)}')
+            elif feed_data['status'] == 'not_modified':
+                logger.info(f'  Feed {original_feed.url} not modified')
                 continue
+            elif feed_data['status'] == 'failed':
+                logger.error(f' Failed to fetch feed {original_feed.url}')
+                continue
+        if min_new_modified:
+            feed.last_modified = min_new_modified
+            feed.save()
+
         entries.sort(key=lambda x: x[0].get('published_parsed', []), reverse=True)
         for entry, original_feed in entries:
             try:
@@ -64,6 +112,7 @@ class Command(BaseCommand):
         # 先检查 filter 再检查数据库
         if passes_filters(entry, feed, 'feed_filter'):
             existing_article = Article.objects.filter(url=clean_url(entry.link), original_feed=original_feed).first()
+            logger.info(f'  Already in db: {entry.title}' if existing_article else f'  Processing new article: {entry.title}')
             if not existing_article:
                 # 如果不存在，则创建新文章
                 article = Article(
@@ -73,7 +122,6 @@ class Command(BaseCommand):
                     published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else datetime.now(pytz.UTC),
                     content=entry.content[0].value if 'content' in entry else entry.description
                 )
-                logger.info(f'  Added new article: {article.title}')
                 # 注意这里的缩进，如果已经存在 Database 中的文章（非新文章），那么就不需要浪费 token 总结了
 #            else:
 #                article = existing_article

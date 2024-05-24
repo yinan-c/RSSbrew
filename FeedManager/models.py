@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 
 class AppSetting(models.Model):
     auth_code = models.CharField(max_length=64, blank=True, null=True)
@@ -25,6 +27,7 @@ class OriginalFeed(models.Model):
 
 class ProcessedFeed(models.Model):
     name = models.CharField(max_length=255, unique=True) # Ensure subscription name is unique
+    last_modified = models.DateTimeField(default=None, blank=True, null=True, editable=False)
     feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds')
     articles_to_summarize_per_interval = models.PositiveIntegerField(default=0)
     summary_language = models.CharField(max_length=20, default='English')
@@ -38,6 +41,11 @@ class ProcessedFeed(models.Model):
     filter_relational_operator = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')])
     def __str__(self):
         return self.name
+
+@receiver(m2m_changed, sender=ProcessedFeed.feeds.through)
+def reset_last_modified(sender, instance, action, **kwargs):
+    if action in ["post_add", "post_remove", "post_clear"]:
+        ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None)
         
 from django.core.exceptions import ValidationError
 import re
