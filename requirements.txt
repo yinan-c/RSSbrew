@@ -7,3 +7,4 @@ pytz
 BeautifulSoup4
 tiktoken
 gunicorn
+fake_useragent
