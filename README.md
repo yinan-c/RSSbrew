@@ -5,9 +5,7 @@
 
 Self-hosted, easy-to-deploy RSS tool that allows you to aggregate multiple RSS feeds, apply custom filters, and generate AI-driven summaries.
 
-## Disclaimer
-
-This project is still under development. The current version may contain bugs or incomplete features. Please use it with caution and report any issues you encounter.
+⚠️This project is still under development. The current version may contain bugs or incomplete features. Please use it with caution and report any issues you encounter.
 
 ## Features
 
