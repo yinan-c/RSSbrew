@@ -3,7 +3,7 @@
   <h1>RSSBrew</h1>
 </div>
 
-Self-hosted, easy-to-deploy RSS tool that allows you to aggregate multiple RSS feeds, apply custom filters, and generate AI-driven summaries.
+A self-hosted, easy-to-deploy RSS tool that allows you to aggregate multiple RSS feeds, apply custom filters, and generate AI summaries.
 
 ⚠️This project is still under development. The current version may contain bugs or incomplete features. Please use it with caution and report any issues you encounter.
 
@@ -20,36 +20,20 @@ Besides:
 Easily combine multiple RSS feeds into a single processed feed, even more powerful when used with custom filters.
 
 ### 3. AI Summarization
-Leverage AI power(currently using GPT-3.5 Turbo, GPT-4 Turbo or GPT-4o) to generate and append
-directly to the article.
+Leverage AI power (currently supports GPT-3.5 Turbo, GPT-4 Turbo or GPT-4o, more planned) to generate and append the following directly to the article.
 
-The summarization features include:
-- Keyword extraction
-- Summary generation in multiple languages
+- 5 keywords
+- Summary in custom language
+  
+## 4. Custom Prompt
+Optional custom prompt if you wish to use AI for other purposes.
 
 ### 4. Auth code for RSS feed
-You can set an auth code for the RSS feed, so that only users with the correct auth code can access the feed.
+You can set an auth code for the feeds, only users with the correct auth code can access the feed.
 
-## Getting Started
+## INSTALL
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/yinan-c/rssbrew.git
-   cd rssbrew
-   ```
-2. **Environment Variables**
-   
-   Set environment variables such as `OPENAI_API_KEY`, `SECRET_KEY`, `DEPLOYMENT_URL` in `.env`
-
-3. **Build and Run the Docker Container**
-   ```bash
-   docker compose build
-   docker compose up -d
-   ```
-
-4. **Access the Application**
-   
-   Open your browser and go to `http://localhost:8000/admin` to access the management interface. Configure your RSS feeds, filters, and settings from there.
+Please refer to [INSTALL.md](INSTALL.md).
 
 ## LICENSE
 
