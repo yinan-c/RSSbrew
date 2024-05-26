@@ -13,9 +13,9 @@ class AppSetting(models.Model):
         return instance.auth_code if instance else None
 
 class OriginalFeed(models.Model):
-    url = models.URLField(unique=True)
-    title = models.CharField(max_length=255, blank=True, default='')
-    max_articles_to_keep = models.PositiveIntegerField(default=1000)
+    url = models.URLField(unique=True, help_text="URL of the Atom or RSS feed")
+    title = models.CharField(max_length=255, blank=True, default='', help_text="Optional title for the original feed")
+    max_articles_to_keep = models.PositiveIntegerField(default=1000, help_text="Older articles will be removed when the limit is reached.")
 
     def save(self, *args, **kwargs):
         if not self.title:
@@ -28,17 +28,17 @@ class OriginalFeed(models.Model):
 class ProcessedFeed(models.Model):
     name = models.CharField(max_length=255, unique=True) # Ensure subscription name is unique
     last_modified = models.DateTimeField(default=None, blank=True, null=True, editable=False)
-    feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds')
-    articles_to_summarize_per_interval = models.PositiveIntegerField(default=0)
+    feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds', help_text="All selected original feeds will be aggregated into this feed.")
+    articles_to_summarize_per_interval = models.PositiveIntegerField(default=0, help_text="All articles will be included in the feed, but only the set number of articles will be summarized per update, set to 0 to disable summarization.", verbose_name="Articles to summarize per update")
     summary_language = models.CharField(max_length=20, default='English')
-    additional_prompt = models.TextField(blank=True)
-    choices = [
+    additional_prompt = models.TextField(blank=True, default='', verbose_name='Custom Prompt', help_text="This prompt will override the default prompt for summarization, you can use it for translation or other detailed instructions.")
+    choices = [ 
         ('gpt-3.5-turbo', 'GPT-3.5 Turbo'),
         ('gpt-4-turbo', 'GPT-4 Turbo'),
         ('gpt-4o', 'GPT-4o'),
     ]  
     model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices)
-    filter_relational_operator = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')])
+    filter_relational_operator = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters.")
     def __str__(self):
         return self.name
 
