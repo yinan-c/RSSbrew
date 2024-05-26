@@ -35,4 +35,8 @@ The same step 1 and 2 as above.
     ```
 ## Access the Application
    
-The application should be running at `http://localhost:8000/`. Configure your RSS feeds, filters, and settings from there.
+The application should be running at `http://localhost:8000/`.
+
+The default username is `admin` and the password is `changeme`.
+
+You can change the password after logging in. Configure your RSS feeds, filters, and settings from there.
