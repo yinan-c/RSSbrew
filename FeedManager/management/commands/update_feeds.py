@@ -126,7 +126,7 @@ class Command(BaseCommand):
 #            else:
 #                article = existing_article
                 if self.current_n_processed < feed.articles_to_summarize_per_interval and passes_filters(entry, feed, 'summary_filter'): # and not article.summarized:
-                    self.generate_summary(article, feed.model, feed.summary_language)
+                    self.generate_summary(article, feed.model, feed.summary_language, feed.additional_prompt)
                     self.current_n_processed += 1
                 article.save()
 
@@ -149,7 +149,7 @@ class Command(BaseCommand):
         else:
             return cleaned_article
 
-    def generate_summary(self, article, model, language):
+    def generate_summary(self, article, model, language, additional_prompt=None):
         if not model or not OPENAI_API_KEY:
             logger.info('  OpenAI API key or model not set, skipping summary generation')
             return 
@@ -163,9 +163,11 @@ class Command(BaseCommand):
     
             client = OpenAI(**client_params)
             truncated_query = self.clean_txt_and_truncate(article, model)
+            if not additional_prompt:
+                additional_prompt = f"Please summarize this article, first extract 5 keywords, output in the same line, then line break, write a summary containing all the points in 150 words in {language}, output in order by points, and output in the following format '<br><br>Summary:', <br> is the line break of HTML, 2 must be retained when output, and must be before the word 'Summary:', finally, output result in {language}."
             messages = [
                 {"role": "user", "content": f"{truncated_query}"},
-                {"role": "assistant", "content": f"Please summarize this article, first extract 5 keywords, output in the same line, then line break, write a summary containing all the points in 150 words in {language}, output in order by points, and output in the following format '<br><br>Summary:', <br> is the line break of HTML, 2 must be retained when output, and must be before the word 'Summary:', finally, output result in {language}."}
+                {"role": "assistant", "content": f"{additional_prompt}"},
             ]
     
             completion = client.chat.completions.create(
