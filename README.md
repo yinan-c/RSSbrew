@@ -33,7 +33,7 @@ You can set an auth code for the feeds, only users with the correct auth code ca
 
 ## INSTALL
 
-Please refer to [INSTALL.md](INSTALL.md).
+Docker deployment or regular installation supported, please refer to [INSTALL.md](INSTALL.md).
 
 ## LICENSE
 
