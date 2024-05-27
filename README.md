@@ -5,7 +5,7 @@
 
 A self-hosted, easy-to-deploy RSS tool that allows you to aggregate multiple RSS feeds, apply custom filters, and generate AI summaries.
 
-⚠️This project is still under development. The current version may contain bugs or incomplete features. Please use it with caution and report any issues you encounter.
+⚠️This project is still under development. The current version may contain bugs or incomplete features. Please use it with caution and report any issues you encounter. Suggestions and contributions are welcome.
 
 ## Features
 
@@ -25,10 +25,10 @@ Leverage AI power (currently supports GPT-3.5 Turbo, GPT-4 Turbo or GPT-4o, more
 - 5 keywords
 - Summary in custom language
   
-## 4. Custom Prompt
+### 4. Custom Prompt
 Optional custom prompt if you wish to use AI for other purposes.
 
-### 4. Auth code for RSS feed
+### 5. Auth code for RSS feed
 You can set an auth code for the feeds, only users with the correct auth code can access the feed.
 
 ## INSTALL
