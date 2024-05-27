@@ -13,7 +13,7 @@ class AppSetting(models.Model):
         return instance.auth_code if instance else None
 
 class OriginalFeed(models.Model):
-    url = models.URLField(unique=True, help_text="URL of the Atom or RSS feed")
+    url = models.URLField(unique=True, help_text="URL of the Atom or RSS feed", max_length=2048)
     title = models.CharField(max_length=255, blank=True, default='', help_text="Optional title for the original feed")
     max_articles_to_keep = models.PositiveIntegerField(default=1000, help_text="Older articles will be removed when the limit is reached.")
 
