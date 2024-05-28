@@ -186,24 +186,26 @@ STATIC_ROOT = BASE_DIR / "static"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', 'DEBUG')
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': LOGGING_LEVEL,
             'class': 'logging.StreamHandler',
         },
         'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': 'feed_processing.log',
+            'level': LOGGING_LEVEL,
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': DATA_FOLDER / 'feed_processing.log',
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
         },
     },
     'loggers': {
         'feed_logger': {
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'level': LOGGING_LEVEL,
             'propagate': True,
         },
     },
