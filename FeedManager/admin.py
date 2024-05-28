@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting
+from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest
 from django.utils.html import format_html
 from django.urls import reverse
 from .forms import FilterForm, ReadOnlyArticleForm, ProcessedFeedAdminForm
@@ -9,6 +9,7 @@ from django.core.management import call_command
 def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
         call_command('update_feeds', feed=feed.id)
+        call_command('generate_digest', feed=feed.id)
         modeladmin.message_user(request, f"Updated feed: {feed.name}")
 
 def clean_selected_feeds_articles(modeladmin, request, queryset):
@@ -54,7 +55,7 @@ class ProcessedFeedAdmin(admin.ModelAdmin):
             'fields': ('articles_to_summarize_per_interval', 'summary_language', 'model', 'filter_relational_operator_summary', 'additional_prompt'),
         }),
         ('Digest Options', {
-            'fields': ('toggle_entries', 'toggle_digest', 'digest_frequency', 'digest_time', 'additional_prompt_for_digest', 'send_full_article'),
+            'fields': ('toggle_entries', 'toggle_digest', 'digest_frequency', 'additional_prompt_for_digest', 'send_full_article', 'last_digest'),
         }),
     )
 
@@ -76,6 +77,10 @@ class OriginalFeedAdmin(admin.ModelAdmin):
     search_fields = ('title', 'url')
     actions = [clean_selected_feeds_articles]
 
+@admin.register(Digest)
+class DigestAdmin(admin.ModelAdmin):
+    list_display = ['processed_feed', 'created_at']
+    search_fields = ['processed_feed__name']
     
 admin.site.register(ProcessedFeed, ProcessedFeedAdmin)
 admin.site.register(OriginalFeed, OriginalFeedAdmin)

@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
+import re
 
 class AppSetting(models.Model):
     auth_code = models.CharField(max_length=64, blank=True, null=True)
@@ -48,7 +49,7 @@ class ProcessedFeed(models.Model):
             raise ValidationError("At least one of 'toggle digest' or 'toggle entries' must be enabled.")
 
     digest_frequency = models.CharField(max_length=20, default='daily', choices=[('daily', 'Daily'), ('weekly', 'Weekly')], help_text="Frequency of the digest.")
-    digest_time = models.TimeField(default='08:00', help_text="Time of day to send the digest.")
+    last_digest = models.DateTimeField(default=None, blank=True, null=True, editable=True, help_text="Last time the digest was generated, change if you want to reset the digest timer or force a new digest.")
     model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices)
     filter_relational_operator = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters.")
     filter_relational_operator_summary = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters for summarization.")
@@ -59,9 +60,6 @@ class ProcessedFeed(models.Model):
 def reset_last_modified(sender, instance, action, **kwargs):
     if action in ["post_add", "post_remove", "post_clear"]:
         ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None)
-        
-from django.core.exceptions import ValidationError
-import re
 
 class Filter(models.Model):
     FIELD_CHOICES = (
@@ -121,3 +119,11 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
+
+class Digest(models.Model):
+    processed_feed = models.ForeignKey(ProcessedFeed, on_delete=models.CASCADE, related_name='digests')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Digest for {self.processed_feed.name} from {self.created_at}"
