@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from django.core.exceptions import ValidationError
 
 class AppSetting(models.Model):
     auth_code = models.CharField(max_length=64, blank=True, null=True)
@@ -37,10 +38,20 @@ class ProcessedFeed(models.Model):
         ('gpt-4-turbo', 'GPT-4 Turbo'),
         ('gpt-4o', 'GPT-4o'),
     ]  
-#    daily_digest = models.BooleanField(default=False, help_text="Send a daily digest email with the latest articles.")
-#    digest_time = models.TimeField(default='08:00', help_text="Time of day to send the daily digest email.")
+    toggle_digest = models.BooleanField(default=False, help_text="Send a digest of the feed regularly.")
+    toggle_entries = models.BooleanField(default=True, help_text="Include entries in the feed, disable to only send digest regularly.") 
+    additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name='(Optional) Prompt for Digest', help_text="Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest.")
+    send_full_article = models.BooleanField(default=False, help_text="(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent.")
+    
+    def clean(self):
+        if not self.toggle_digest and not self.toggle_entries:
+            raise ValidationError("At least one of 'toggle digest' or 'toggle entries' must be enabled.")
+
+    digest_frequency = models.CharField(max_length=20, default='daily', choices=[('daily', 'Daily'), ('weekly', 'Weekly')], help_text="Frequency of the digest.")
+    digest_time = models.TimeField(default='08:00', help_text="Time of day to send the digest.")
     model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices)
     filter_relational_operator = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters.")
+    filter_relational_operator_summary = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters for summarization.")
     def __str__(self):
         return self.name
 

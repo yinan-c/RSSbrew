@@ -58,7 +58,10 @@ def passes_filters(entry, feed, filter_type):
     # if there are no filters, return True
     if not feed.filters.filter(usage=filter_type).exists():
         return True
-    filter_relational_operator = feed.filter_relational_operator
+    if filter_type == 'feed_filter':
+        filter_relational_operator = feed.filter_relational_operator
+    elif filter_type == 'summary_filter':
+        filter_relational_operator = feed.filter_relational_operator_summary
     results = []
     for filter in feed.filters.filter(usage=filter_type):
         if filter.field == 'title':

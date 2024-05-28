@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting
 from django.utils.html import format_html
 from django.urls import reverse
-from .forms import FilterForm, ReadOnlyArticleForm
+from .forms import FilterForm, ReadOnlyArticleForm, ProcessedFeedAdminForm
 from django.contrib.auth.models import User, Group
 from django.core.management import call_command
 
@@ -37,13 +37,26 @@ class ArticleInline(admin.TabularInline):
         return False
 
 class ProcessedFeedAdmin(admin.ModelAdmin):
+    form = ProcessedFeedAdminForm
     inlines = [FilterInline]
     list_display = ('name', 'articles_to_summarize_per_interval', 'subscription_link')
 #    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
     list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model')
     actions = [update_selected_feeds]
-    autocomplete_fields = ['feeds']  
+    autocomplete_fields = ['feeds']
+
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'feeds', 'filter_relational_operator'),
+        }),
+        ('Summarization Options', {
+            'fields': ('articles_to_summarize_per_interval', 'summary_language', 'model', 'filter_relational_operator_summary', 'additional_prompt'),
+        }),
+        ('Digest Options', {
+            'fields': ('toggle_entries', 'toggle_digest', 'digest_frequency', 'digest_time', 'additional_prompt_for_digest', 'send_full_article'),
+        }),
+    )
 
     def subscription_link(self, obj):
         url = reverse('processed_feed_by_name', args=[obj.name])
@@ -54,6 +67,9 @@ class ProcessedFeedAdmin(admin.ModelAdmin):
     
     subscription_link.short_description = "Subscribe Link"
 
+    # Including JavaScript for dynamic form behavior
+    class Media:
+        js = ('js/admin/toggle_digest_fields.js',)
 
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
