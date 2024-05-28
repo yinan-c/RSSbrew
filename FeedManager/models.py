@@ -30,7 +30,7 @@ class ProcessedFeed(models.Model):
     last_modified = models.DateTimeField(default=None, blank=True, null=True, editable=False)
     feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds', help_text="All selected original feeds will be aggregated into this feed.")
     articles_to_summarize_per_interval = models.PositiveIntegerField(default=0, help_text="All articles will be included in the feed, but only the set number of articles will be summarized per update, set to 0 to disable summarization.", verbose_name="Articles to summarize per update")
-    summary_language = models.CharField(max_length=20, default='English')
+    summary_language = models.CharField(max_length=20, default='English', help_text="Language for summarization, will be ignored if summarization is disabled or using custom prompt.")
     additional_prompt = models.TextField(blank=True, default='', verbose_name='Custom Prompt', help_text="This prompt will override the default prompt for summarization, you can use it for translation or other detailed instructions.")
     choices = [ 
         ('gpt-3.5-turbo', 'GPT-3.5 Turbo'),
@@ -100,7 +100,9 @@ class Article(models.Model):
     published_date = models.DateTimeField()
     content = models.TextField(blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
+    summary_one_line = models.TextField(blank=True, null=True)
     summarized = models.BooleanField(default=False)
+    custom_prompt = models.BooleanField(default=False)
     # URL should not be unique when different original feeds have the same article
     # The unique check should happen when adding articles to a ProcessedFeed
     class Meta:

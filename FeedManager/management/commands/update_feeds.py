@@ -16,6 +16,7 @@ import requests
 from fake_useragent import UserAgent
 import httpx
 import time
+import json
 
 logger = logging.getLogger('feed_logger')
 
@@ -126,9 +127,10 @@ class Command(BaseCommand):
                     self.current_n_processed += 1
                 article.save()
 
-    def clean_txt_and_truncate(self, article, model):
-        cleaned_article = clean_html(article.content)
-
+    def clean_txt_and_truncate(self, article, model, clean_bool=True):
+        if clean_bool:
+            cleaned_article = clean_html(article.content)
+        cleaned_article = article.content
         encoding = tiktoken.encoding_for_model(model)
         token_length = len(encoding.encode(cleaned_article))
 
@@ -154,25 +156,44 @@ class Command(BaseCommand):
                 "api_key": OPENAI_API_KEY,
                 "base_url": OPENAI_BASE_URL
             }
+            completion_params = {
+                "model": model,
+            }
             if OPENAI_PROXY:
                 client_params["http_client"] = httpx.Client(proxy=OPENAI_PROXY)
     
             client = OpenAI(**client_params)
-            truncated_query = self.clean_txt_and_truncate(article, model)
             if not additional_prompt:
-                additional_prompt = f"Please summarize this article, first extract 5 keywords, output in the same line, then line break, write a summary containing all the points in 150 words in {language}, output in order by points, and output in the following format '<br><br>Summary:', <br> is the line break of HTML, 2 must be retained when output, and must be before the word 'Summary:', finally, output result in {language}."
-            messages = [
-                {"role": "user", "content": f"{truncated_query}"},
-                {"role": "assistant", "content": f"{additional_prompt}"},
-            ]
-    
-            completion = client.chat.completions.create(
-                model=model,
-                messages=messages,
-            )
-            article.summary = completion.choices[0].message.content
-            article.summarized = True
-            logger.info(f'  Summary generated for article: {article.title}')
-            article.save()
+                truncated_query = self.clean_txt_and_truncate(article, model, clean_bool=True)
+                additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
+                messages = [
+                    {"role": "system", "content": "You are a helpful assistant for summarizing articles, designed to output JSON format."},
+                    {"role": "user", "content": f"{truncated_query}"},
+                    {"role": "assistant", "content": f"{additional_prompt}"},
+                ]
+                completion_params["response_format"] = { "type": "json_object" }
+                completion_params["messages"] = messages
+            else:
+                truncated_query = self.clean_txt_and_truncate(article, model, clean_bool=False)
+                messages = [
+                    {"role": "system", "content": "You are a helpful assistant for processing article content, designed to only output result in pure HTML, do not block the HTML code using ```, and do not output any other format."},
+                    {"role": "user", "content": f"{truncated_query}"},
+                    {"role": "assistant", "content": f"{additional_prompt}"},
+                ]
+                completion_params["messages"] = messages
+                article.custom_prompt = True
+            completion = client.chat.completions.create(**completion_params)
+            try:
+                json_result = json.loads(completion.choices[0].message.content)
+                article.summary = json_result['summary_long']
+                article.summary_one_line = json_result['summary_one_line']
+                article.summarized = True
+                logger.info(f'  Summary generated for article: {article.title}')
+                article.save()
+            except:
+                article.summary = completion.choices[0].message.content
+                article.summarized = True
+                logger.info(f'  Summary generated for article: {article.title}')
+                article.save()
         except Exception as e:
             logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')

@@ -57,7 +57,13 @@ class ProcessedAtomFeed(Feed):
         # otherwise use the summary and content together
         description = item.content
         if item.summary:
-            description = f"{item.summary} {description}"
+            if not item.custom_prompt:
+                formatted_summary = f"<blockquote style='font-size: smaller;'>{item.summary}</blockquote>"
+            else:
+                formatted_summary = item.summary
+            description = f"<br/>Summary:<br/>{formatted_summary}<br/>Original Content:<br/>{item.content}"
+        if item.summary_one_line:
+            description = f"{item.summary_one_line}<br/>{description}"
         return description
 
     def item_link(self, item):
