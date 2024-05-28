@@ -7,6 +7,7 @@ import re
 import os
 from openai import OpenAI
 from django.conf import settings
+from django.utils import timezone
 from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_html, clean_url
 import logging
 import tiktoken
@@ -23,9 +24,6 @@ OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v1'
 
 def fetch_feed(url: str, last_modified: datetime):
-    update = False
-    feed = None
-    response = None
     headers = {}
     ua = UserAgent()
     if last_modified:
@@ -42,8 +40,6 @@ def fetch_feed(url: str, last_modified: datetime):
             # ! Why is it taking so long to show not_modified? 8 seconds
             #print(time.time())
             return {'feed': None, 'status': 'not_modified'}
-        else:
-            response.raise_for_status()
 
     except Exception as e:
         logger.error(f'Failed to fetch feed {url}: {str(e)}')
@@ -60,14 +56,14 @@ class Command(BaseCommand):
         if feed_id:
             try:
                 feed = ProcessedFeed.objects.get(id=feed_id)
-                logger.info(f'Processing single feed: {feed.name} at {datetime.now()}')
+                logger.info(f'Processing single feed: {feed.name} at {timezone.now()}')
                 self.update_feed(feed)
             except ProcessedFeed.DoesNotExist:
                 raise CommandError('ProcessedFeed "%s" does not exist' % feed_id)
         else:
             processed_feeds = ProcessedFeed.objects.all()
             for feed in processed_feeds:
-                logger.info(f'Processing feed: {feed.name} at {datetime.now()}')
+                logger.info(f'Processing feed: {feed.name} at {timezone.now()}')
                 self.update_feed(feed)
 
     def update_feed(self, feed):
@@ -119,7 +115,7 @@ class Command(BaseCommand):
                     original_feed=original_feed,
                     title=entry.title,
                     url= clean_url(entry.link),
-                    published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else datetime.now(pytz.UTC),
+                    published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else timezone.now(pytz.UTC),
                     content=entry.content[0].value if 'content' in entry else entry.description
                 )
                 # 注意这里的缩进，如果已经存在 Database 中的文章（非新文章），那么就不需要浪费 token 总结了

@@ -37,6 +37,8 @@ class ProcessedFeed(models.Model):
         ('gpt-4-turbo', 'GPT-4 Turbo'),
         ('gpt-4o', 'GPT-4o'),
     ]  
+#    daily_digest = models.BooleanField(default=False, help_text="Send a daily digest email with the latest articles.")
+#    digest_time = models.TimeField(default='08:00', help_text="Time of day to send the daily digest email.")
     model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices)
     filter_relational_operator = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters.")
     def __str__(self):

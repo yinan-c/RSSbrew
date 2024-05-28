@@ -9,6 +9,7 @@ services:
     environment:
       - DEBUG=0
       - CRON=*/5 * * * * # cron job for updating feeds
+      - TIME_ZONE=Europe/London # Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
     volumes:
       - ./data:/app/data
     ports:
