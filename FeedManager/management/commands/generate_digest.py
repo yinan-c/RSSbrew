@@ -3,6 +3,7 @@ from django.utils import timezone
 from FeedManager.models import ProcessedFeed, Article, Digest
 from datetime import timedelta
 import logging
+from FeedManager.utils import generate_summary, clean_txt_and_truncate
 
 logger = logging.getLogger('feed_logger')
 
@@ -59,6 +60,39 @@ class Command(BaseCommand):
             logger.debug(f"  What to include: {what_to_include}")
             digest_content = self.format_digest(articles, what_to_include)
             digest = Digest(processed_feed=feed, content=digest_content, created_at=now, start_time=start_time)
+            digest.save()
+
+            if 'use_ai_digest' in what_to_include:
+                # Convert digest to article for AI processing
+                digest_article = Article(
+                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+                    url="", 
+                    published_date=digest.created_at,
+                    content=digest.content,
+                    summarized=True
+                )
+                prompt = "These are the recent articles from the feed, please summarize them in a paragragh, when you mention a point, please reference to the original article url in query, please output result in Chinese in HTML format." #{feed.summary_language} language."
+                # Build up query for AI digest, by default includes title, link, and summaries
+                query = ""
+                for article in articles:
+                    query += f"{article.title}{article.url}\n"
+                    if article.summary_one_line:
+                        query += f"{article.summary_one_line}\n"
+                    if article.summary:
+                        query += f"{article.summary}\n"
+                    if feed.send_full_article and article.content:
+                        query += f"{article.content}\n"
+                query = clean_txt_and_truncate(query,model= feed.digest_model, clean_bool=True)
+                #logger.debug(f"  Query for AI digest: {query}")
+                if feed.additional_prompt_for_digest:
+                    prompt = feed.additional_prompt_for_digest
+                logger.info(f"  Using AI model {feed.digest_model} to generate digest.")
+                digest_ai_result = generate_summary(digest_article, feed.digest_model, output_mode='HTML', prompt=prompt)
+                #logger.debug(f"  AI digest result: {digest_ai_result}")
+                # prepend the AI digest result to the digest content
+                if digest_ai_result:
+                    digest.content = '<h2>AI Digest</h2>' + digest_ai_result + digest.content
+
             digest.save()
             logger.info(f"  Digest for {feed.name} created.")
             feed.last_digest = now

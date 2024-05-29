@@ -54,17 +54,17 @@ def clean_html(html_content):
 
     return soup.get_text()
 
-def clean_txt_and_truncate(article, model, clean_bool=True):
+def clean_txt_and_truncate(query, model, clean_bool=True):
+    cleaned_article = query
     if clean_bool:
-        cleaned_article = clean_html(article.content)
-    cleaned_article = article.content
+        cleaned_article = clean_html(query)
     encoding = tiktoken.encoding_for_model(model)
     token_length = len(encoding.encode(cleaned_article))
 
     max_length_of_models = {
         'gpt-3.5-turbo': 16200,
-        'gpt-4': 127800,
-        'gpt-4-32k': 127800,
+        'gpt-4o': 127800,
+        'gpt-4-turbo': 127800,
     }
 
     # Truncate the text if it exceeds the model's token limit
@@ -158,7 +158,7 @@ def generate_summary(article, model, output_mode='HTML', prompt=None):
 
         client = OpenAI(**client_params)
         if output_mode == 'json':
-            truncated_query = clean_txt_and_truncate(article, model, clean_bool=True)
+            truncated_query = clean_txt_and_truncate(article.content, model, clean_bool=True)
             #additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
             messages = [
                 {"role": "system", "content": "You are a helpful assistant for summarizing articles, designed to output JSON format."},
@@ -168,7 +168,7 @@ def generate_summary(article, model, output_mode='HTML', prompt=None):
             completion_params["response_format"] = { "type": "json_object" }
             completion_params["messages"] = messages
         elif output_mode == 'HTML':
-            truncated_query = clean_txt_and_truncate(article, model, clean_bool=False)
+            truncated_query = clean_txt_and_truncate(article.content, model, clean_bool=False)
             messages = [
                 {"role": "system", "content": "You are a helpful assistant for processing article content, designed to only output result in pure HTML, do not block the HTML code using ```, and do not output any other format."},
                 {"role": "user", "content": f"{truncated_query}"},

@@ -7,7 +7,7 @@ import re
 import os
 from django.conf import settings
 from django.utils import timezone
-from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_html, clean_url, clean_txt_and_truncate, generate_summary
+from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_url, generate_summary
 import logging
 from django.db import transaction
 import requests
