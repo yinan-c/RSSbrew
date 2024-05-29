@@ -49,17 +49,17 @@ class Command(BaseCommand):
     help = 'Updates and processes RSS feeds based on defined schedules and filters.'
 
     def add_arguments(self, parser):
-        parser.add_argument('-f', '--feed', type=int, help='ID of the ProcessedFeed to update')
+        parser.add_argument('-n', '--name', type=str, help='Name of the ProcessedFeed to update')
 
     def handle(self, *args, **options):
-        feed_id = options.get('feed')
-        if feed_id:
+        feed_name = options.get('name')
+        if feed_name:
             try:
-                feed = ProcessedFeed.objects.get(id=feed_id)
+                feed = ProcessedFeed.objects.get(name=feed_name)
                 logger.info(f'Processing single feed: {feed.name} at {timezone.now()}')
                 self.update_feed(feed)
             except ProcessedFeed.DoesNotExist:
-                raise CommandError('ProcessedFeed "%s" does not exist' % feed_id)
+                raise CommandError('ProcessedFeed "%s" does not exist' % feed_name)
         else:
             processed_feeds = ProcessedFeed.objects.all()
             for feed in processed_feeds:
