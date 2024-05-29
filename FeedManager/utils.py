@@ -62,9 +62,9 @@ def clean_txt_and_truncate(article, model, clean_bool=True):
     token_length = len(encoding.encode(cleaned_article))
 
     max_length_of_models = {
-        'gpt-3.5-turbo': 16385,
-        'gpt-4': 128000,
-        'gpt-4-32k': 128000
+        'gpt-3.5-turbo': 16200,
+        'gpt-4': 127800,
+        'gpt-4-32k': 127800,
     }
 
     # Truncate the text if it exceeds the model's token limit

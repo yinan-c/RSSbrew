@@ -124,7 +124,7 @@ class Command(BaseCommand):
                 if self.current_n_processed < feed.articles_to_summarize_per_interval and passes_filters(entry, feed, 'summary_filter'): # and not article.summarized:
                     summary_results, custom_prompt = generate_summary(article, feed.model, feed.summary_language, feed.additional_prompt)
                     try:
-                        json_result = json.loads(completion.choices[0].message.content)
+                        json_result = json.loads(summary_results)
                         article.summary = json_result['summary_long']
                         article.summary_one_line = json_result['summary_one_line']
                         article.summarized = True
@@ -132,7 +132,7 @@ class Command(BaseCommand):
                         logger.info(f'  Summary generated for article: {article.title}')
                         article.save()
                     except:
-                        article.summary = completion.choices[0].message.content
+                        article.summary = summary_results
                         article.summarized = True
                         article.custom_prompt = custom_prompt
                         logger.info(f'  Summary generated for article: {article.title}')
