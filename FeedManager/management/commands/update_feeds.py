@@ -35,6 +35,9 @@ def fetch_feed(url: str, last_modified: datetime):
             # ! Why is it taking so long to show not_modified? 8 seconds
             #print(time.time())
             return {'feed': None, 'status': 'not_modified'}
+        else:
+            logger.error(f'Failed to fetch feed {url}: {response.status_code}')
+            return {'feed': None, 'status': 'failed'}
 
     except Exception as e:
         logger.error(f'Failed to fetch feed {url}: {str(e)}')
@@ -110,7 +113,7 @@ class Command(BaseCommand):
                     original_feed=original_feed,
                     title=entry.title,
                     url= clean_url(entry.link),
-                    published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else timezone.now(pytz.UTC),
+                    published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else timezone.now(),
                     content=entry.content[0].value if 'content' in entry else entry.description
                 )
                 article.save()
