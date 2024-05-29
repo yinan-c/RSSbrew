@@ -17,8 +17,8 @@ class Command(BaseCommand):
         if feed_id:
             try:
                 feed = ProcessedFeed.objects.get(id=feed_id)
-                self.gen_digest(feed)
                 logger.info(f'Generating digest for feed: {feed.name} at {timezone.now()}')
+                self.gen_digest(feed)
             except ProcessedFeed.DoesNotExist:
                 raise CommandError(f'ProcessedFeed with ID {feed_id} does not exist.')
         else:
@@ -30,10 +30,12 @@ class Command(BaseCommand):
     def gen_digest(self, feed):
         now = timezone.now()
         last_digest = feed.last_digest
+        # The cron job runs every 24 hours
+        # Incase skip a day, we set delta to 0.5 days
         delta = timedelta(days=0.5) if feed.digest_frequency == 'daily' else timedelta(days=6.5)
-        #logger.debug(f"Last digest: {last_digest})")
+        logger.debug(f"Last digest: {last_digest}")
         if not last_digest or now - last_digest > delta:
-            start_time = last_digest if last_digest else now - delta
+            start_time = last_digest if last_digest else now - delta - timedelta(days=0.5)
             articles = Article.objects.filter(
                 original_feed__processed_feeds=feed,
                 published_date__gte=start_time,
@@ -41,13 +43,13 @@ class Command(BaseCommand):
             ).order_by('original_feed', '-published_date')
         
             if not articles.exists():
-                logger.info(f"No new articles for feed {feed.name} since last digest.")
+                logger.info(f"  No new articles for feed {feed.name} since last digest.")
                 return
 
             digest_content = self.format_digest(articles)
             digest = Digest(processed_feed=feed, content=digest_content)
             digest.save()
-            logger.info(f"Digest for {feed.name} created.")
+            logger.info(f"  Digest for {feed.name} created.")
             feed.last_digest = now
             feed.save()
 
