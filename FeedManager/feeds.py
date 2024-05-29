@@ -3,6 +3,7 @@ from django.utils.feedgenerator import Rss201rev2Feed
 from django.shortcuts import get_object_or_404, Http404
 from django.http import HttpResponseForbidden
 from .models import ProcessedFeed, Article, Filter, AppSetting
+from django.utils import timezone
 import re
 from .utils import passes_filters, match_content, generate_untitled
 
@@ -31,20 +32,40 @@ class ProcessedAtomFeed(Feed):
         original_feeds = ', '.join([feed.url for feed in obj.feeds.all()])
         return f"Processed feed combining these original feeds: {original_feeds}, filtered by {', '.join([filter.field for filter in obj.filters.all()])}"
 
-    def items(self, obj):
-        articles = Article.objects.filter(original_feed__in=obj.feeds.all()).order_by('-published_date')
-        filtered_articles = [article for article in articles if passes_filters(article, obj, 'feed_filter')]
-        # To ensure no duplicates, use a set to keep track of seen URLs
-        seen = set()
-        unique_articles = []
-        for article in filtered_articles:
-            # 由于是数据库中的已经 clean 过的 URL，所以不需要再次 clean
-            identifier = article.url
-            if identifier not in seen:
-                seen.add(identifier)
-                unique_articles.append(article)
 
-        return unique_articles
+    def items(self, obj):
+        result_items = []
+        if obj.toggle_digest:
+            # Get the most recent digest
+            digest = obj.digests.order_by('-created_at').first()
+            if digest:
+                digest_article = Article(
+                    title=f"Digest for {obj.name}",
+                    url="", 
+                    published_date=digest.created_at,
+                    content=digest.content,
+                    summarized=True
+                )
+                result_items.append(digest_article)
+
+        if obj.toggle_entries:
+            articles = Article.objects.filter(
+                original_feed__in=obj.feeds.all()
+            ).order_by('-published_date')
+
+            filtered_articles = [article for article in articles if passes_filters(article, obj, 'feed_filter')]
+
+            seen = set()
+            unique_articles = []
+            for article in filtered_articles:
+                # 由于是数据库中的已经 clean 过的 URL，所以不需要再次 clean
+                identifier = article.url
+                if identifier not in seen:
+                    seen.add(identifier)
+                    unique_articles.append(article)
+            result_items.extend(unique_articles)
+
+        return result_items
 
     def item_title(self, item):
         return item.title

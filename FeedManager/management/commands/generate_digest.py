@@ -57,11 +57,14 @@ class Command(BaseCommand):
         for article in articles:
             if current_feed != article.original_feed:
                 if current_feed is not None:
-                    digest_builder.append("\n\n")  # Add separation between feeds
+                    digest_builder.append("</br>")
                 current_feed = article.original_feed
-                digest_builder.append(f"<h2>{current_feed.title}</h2>")
+                digest_builder.append(f"<h2><a href='{current_feed.url}'>{current_feed.title}</a></h2>")
             digest_builder.append(f"<li><a href='{article.url}'>{article.title}</a></li>")
             if article.summary_one_line:
                 digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
+            if article.summary:
+                digest_builder.append(f"<ul><blockquote>{article.summary}</blockquote></ul>")
+            digest_builder.append("</br>")
 
         return ''.join(digest_builder)
