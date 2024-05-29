@@ -38,11 +38,11 @@ class Command(BaseCommand):
         # Incase skip a day, we set delta to 0.5 days
         delta = timedelta(days=0.5) if feed.digest_frequency == 'daily' else timedelta(days=6.5)
         logger.debug(f"Last digest: {last_digest}")
-        if force or not last_digest or now - last_digest > delta:
-            if force:
+        if force or (not last_digest) or now - last_digest > delta:
+            if force or (not last_digest):
                 start_time = now - delta - timedelta(days=0.5)
             else:
-                start_time = last_digest if last_digest else now - delta - timedelta(days=0.5)
+                start_time = last_digest
             articles = Article.objects.filter(
                 original_feed__processed_feeds=feed,
                 published_date__gte=start_time,
