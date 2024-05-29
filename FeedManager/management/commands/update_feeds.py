@@ -122,19 +122,25 @@ class Command(BaseCommand):
 #            else:
 #                article = existing_article
                 if self.current_n_processed < feed.articles_to_summarize_per_interval and passes_filters(entry, feed, 'summary_filter'): # and not article.summarized:
-                    summary_results, custom_prompt = generate_summary(article, feed.model, feed.summary_language, feed.additional_prompt)
+                    prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {feed.summary_language} language."
+                    output_mode = 'json'
+                    if feed.additional_prompt:
+                        prompt = f"{feed.additional_prompt}"
+                        output_mode = 'HTML'
+                    summary_results = generate_summary(article, feed.model, output_mode, prompt)
+                    # TODO the JSON mode parse is hard-coded as is the default prompt, maybe support automatic json parsing in the future
                     try:
                         json_result = json.loads(summary_results)
                         article.summary = json_result['summary_long']
                         article.summary_one_line = json_result['summary_one_line']
                         article.summarized = True
-                        article.custom_prompt = custom_prompt
+                        article.custom_prompt = False
                         logger.info(f'  Summary generated for article: {article.title}')
                         article.save()
                     except:
                         article.summary = summary_results
                         article.summarized = True
-                        article.custom_prompt = custom_prompt
+                        article.custom_prompt = True
                         logger.info(f'  Summary generated for article: {article.title}')
                         article.save()
                     self.current_n_processed += 1

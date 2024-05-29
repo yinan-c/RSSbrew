@@ -141,7 +141,7 @@ def match_content(content, filter):
         return len(content) > int(filter.value)
 
 
-def generate_summary(article, model, language, additional_prompt=None):
+def generate_summary(article, model, output_mode='HTML', prompt=None):
     if not model or not OPENAI_API_KEY:
         logger.info('  OpenAI API key or model not set, skipping summary generation')
         return 
@@ -157,27 +157,25 @@ def generate_summary(article, model, language, additional_prompt=None):
             client_params["http_client"] = httpx.Client(proxy=OPENAI_PROXY)
 
         client = OpenAI(**client_params)
-        if not additional_prompt:
+        if output_mode == 'json':
             truncated_query = clean_txt_and_truncate(article, model, clean_bool=True)
-            additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
+            #additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
             messages = [
                 {"role": "system", "content": "You are a helpful assistant for summarizing articles, designed to output JSON format."},
                 {"role": "user", "content": f"{truncated_query}"},
-                {"role": "assistant", "content": f"{additional_prompt}"},
+                {"role": "assistant", "content": f"{prompt}"},
             ]
             completion_params["response_format"] = { "type": "json_object" }
             completion_params["messages"] = messages
-            custom_prompt = False
-        else:
+        elif output_mode == 'HTML':
             truncated_query = clean_txt_and_truncate(article, model, clean_bool=False)
             messages = [
                 {"role": "system", "content": "You are a helpful assistant for processing article content, designed to only output result in pure HTML, do not block the HTML code using ```, and do not output any other format."},
                 {"role": "user", "content": f"{truncated_query}"},
-                {"role": "assistant", "content": f"{additional_prompt}"},
+                {"role": "assistant", "content": f"{prompt}"},
             ]
             completion_params["messages"] = messages
-            custom_prompt = True
         completion = client.chat.completions.create(**completion_params)
-        return completion.choices[0].message.content, custom_prompt
+        return completion.choices[0].message.content
     except Exception as e:
         logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')
