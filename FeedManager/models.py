@@ -31,6 +31,8 @@ class ProcessedFeed(models.Model):
     name = models.CharField(max_length=255, unique=True) # Ensure subscription name is unique
     last_modified = models.DateTimeField(default=None, blank=True, null=True, editable=False)
     feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds', help_text="All selected original feeds will be aggregated into this feed.")
+
+    # Summarization related fields
     articles_to_summarize_per_interval = models.PositiveIntegerField(default=0, help_text="All articles will be included in the feed, but only the set number of articles will be summarized per update, set to 0 to disable summarization.", verbose_name="Articles to summarize per update")
     summary_language = models.CharField(max_length=20, default='English', help_text="Language for summarization, will be ignored if summarization is disabled or using custom prompt.")
     additional_prompt = models.TextField(blank=True, default='', verbose_name='Custom Prompt', help_text="This prompt will override the default prompt for summarization, you can use it for translation or other detailed instructions.")
@@ -39,22 +41,32 @@ class ProcessedFeed(models.Model):
         ('gpt-4-turbo', 'GPT-4 Turbo'),
         ('gpt-4o', 'GPT-4o'),
     ]  
+    model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices)
+
+    # Digest related fields
     toggle_digest = models.BooleanField(default=False, help_text="Send a digest of the feed regularly.")
     toggle_entries = models.BooleanField(default=True, help_text="Include entries in the feed, disable to only send digest regularly.") 
-    additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name='(Optional) Prompt for Digest', help_text="Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest.")
-    send_full_article = models.BooleanField(default=False, help_text="(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent.")
-    
-    def clean(self):
-        if not self.toggle_digest and not self.toggle_entries:
-            raise ValidationError("At least one of 'toggle digest' or 'toggle entries' must be enabled.")
-
     digest_frequency = models.CharField(max_length=20, default='daily', choices=[('daily', 'Daily'), ('weekly', 'Weekly')], help_text="Frequency of the digest.")
     last_digest = models.DateTimeField(default=None, blank=True, null=True, editable=True, help_text="Last time the digest was generated, change if you want to reset the digest timer or force a new digest.")
-    model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices)
+    include_one_line_summary = models.BooleanField(default=True, help_text="Include one line summary in digest, only works for default summarization.")
+    include_summary = models.BooleanField(default=False, help_text="Include full summary in digest.")
+    include_content = models.BooleanField(default=False, help_text="Include full content in digest.")
+
+    # AI-digest related fields
+    use_ai_digest = models.BooleanField(default=False, help_text="Use AI to process digest content.")
+    send_full_article = models.BooleanField(default=False, help_text="(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent.")
+    digest_model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices, help_text="Model for digest generation.")
+    additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name='(Optional) Prompt for Digest', help_text="Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest.")
+
+    # Filter related fields
     filter_relational_operator = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters.")
     filter_relational_operator_summary = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters for summarization.")
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if not self.toggle_digest and not self.toggle_entries:
+            raise ValidationError("At least one of 'toggle digest' or 'toggle entries' must be enabled.")
 
 @receiver(m2m_changed, sender=ProcessedFeed.feeds.through)
 def reset_last_modified(sender, instance, action, **kwargs):
