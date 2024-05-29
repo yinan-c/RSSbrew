@@ -80,7 +80,7 @@ class OriginalFeedAdmin(admin.ModelAdmin):
 
 @admin.register(Digest)
 class DigestAdmin(admin.ModelAdmin):
-    list_display = ['processed_feed', 'created_at']
+    list_display = ['processed_feed', 'created_at', 'start_time']
     search_fields = ['processed_feed__name']
     
 admin.site.register(ProcessedFeed, ProcessedFeedAdmin)

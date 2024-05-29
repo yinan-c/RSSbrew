@@ -40,7 +40,7 @@ class ProcessedAtomFeed(Feed):
             digest = obj.digests.order_by('-created_at').first()
             if digest:
                 digest_article = Article(
-                    title=f"Digest for {obj.name}",
+                    title=f"Digest for {obj.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
                     url="", 
                     published_date=digest.created_at,
                     content=digest.content,

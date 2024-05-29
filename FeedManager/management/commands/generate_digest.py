@@ -48,7 +48,7 @@ class Command(BaseCommand):
                 return
 
             digest_content = self.format_digest(articles)
-            digest = Digest(processed_feed=feed, content=digest_content, created_at=now)
+            digest = Digest(processed_feed=feed, content=digest_content, created_at=now, start_time=start_time)
             digest.save()
             logger.info(f"  Digest for {feed.name} created.")
             feed.last_digest = now

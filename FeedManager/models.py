@@ -59,7 +59,7 @@ class ProcessedFeed(models.Model):
 @receiver(m2m_changed, sender=ProcessedFeed.feeds.through)
 def reset_last_modified(sender, instance, action, **kwargs):
     if action in ["post_add", "post_remove", "post_clear"]:
-        ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None)
+        ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
 
 class Filter(models.Model):
     FIELD_CHOICES = (
@@ -123,6 +123,7 @@ class Article(models.Model):
 class Digest(models.Model):
     processed_feed = models.ForeignKey(ProcessedFeed, on_delete=models.CASCADE, related_name='digests')
     content = models.TextField()
+    start_time = models.DateTimeField(default=None, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
