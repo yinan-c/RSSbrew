@@ -21,18 +21,20 @@ logger = logging.getLogger('feed_logger')
 def fetch_feed(url: str, last_modified: datetime):
     headers = {}
     ua = UserAgent()
+    # Try comment out the following line to see if it works
     if last_modified:
         headers['If-Modified-Since'] = last_modified.strftime('%a, %d %b %Y %H:%M:%S GMT')
     headers['User-Agent'] = ua.random.strip()
     try:
-        #print(time.time())
+#        print(time.time())
         response = requests.get(url, headers=headers, timeout=30)
-        #print(time.time())
+#        print(time.time())
         if response.status_code == 200:
             feed = feedparser.parse(response.text)
             return {'feed': feed, 'status': 'updated', 'last_modified': response.headers.get('Last-Modified')}
         elif response.status_code == 304:
             # ! Why is it taking so long to show not_modified? 8 seconds
+            # Maybe it's because of the User-Agent or the If-Modified-Since header?
             #print(time.time())
             return {'feed': None, 'status': 'not_modified'}
         else:
@@ -94,8 +96,7 @@ class Command(BaseCommand):
         if min_new_modified:
             feed.last_modified = min_new_modified
             feed.save()
-
-        entries.sort(key=lambda x: x[0].get('published_parsed', []), reverse=True)
+        entries.sort(key=lambda x: x[0].get('published_parsed', timezone.now().timetuple()), reverse=True)
         for entry, original_feed in entries:
             try:
                 self.process_entry(entry, feed, original_feed)
