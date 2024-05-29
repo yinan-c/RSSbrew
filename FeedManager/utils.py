@@ -2,8 +2,14 @@ import re
 from bs4 import BeautifulSoup
 import logging
 from urllib.parse import urlparse, urlunparse
+import os
+from openai import OpenAI
+import tiktoken
 
 logger = logging.getLogger('feed_logger')
+OPENAI_PROXY = os.environ.get('OPENAI_PROXY')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v1'
 
 def clean_url(url):
     parsed_url = urlparse(url)
@@ -47,6 +53,26 @@ def clean_html(html_content):
         input.decompose()
 
     return soup.get_text()
+
+def clean_txt_and_truncate(article, model, clean_bool=True):
+    if clean_bool:
+        cleaned_article = clean_html(article.content)
+    cleaned_article = article.content
+    encoding = tiktoken.encoding_for_model(model)
+    token_length = len(encoding.encode(cleaned_article))
+
+    max_length_of_models = {
+        'gpt-3.5-turbo': 16385,
+        'gpt-4': 128000,
+        'gpt-4-32k': 128000
+    }
+
+    # Truncate the text if it exceeds the model's token limit
+    if token_length > max_length_of_models[model]:
+        truncated_article = encoding.decode(encoding.encode(cleaned_article)[:max_length_of_models[model]])
+        return truncated_article
+    else:
+        return cleaned_article
 
 def generate_untitled(entry):
     try: return entry.title
@@ -113,3 +139,45 @@ def match_content(content, filter):
         return len(content) < int(filter.value)
     elif filter.match_type == 'longer_than':
         return len(content) > int(filter.value)
+
+
+def generate_summary(article, model, language, additional_prompt=None):
+    if not model or not OPENAI_API_KEY:
+        logger.info('  OpenAI API key or model not set, skipping summary generation')
+        return 
+    try:
+        client_params = {
+            "api_key": OPENAI_API_KEY,
+            "base_url": OPENAI_BASE_URL
+        }
+        completion_params = {
+            "model": model,
+        }
+        if OPENAI_PROXY:
+            client_params["http_client"] = httpx.Client(proxy=OPENAI_PROXY)
+
+        client = OpenAI(**client_params)
+        if not additional_prompt:
+            truncated_query = clean_txt_and_truncate(article, model, clean_bool=True)
+            additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant for summarizing articles, designed to output JSON format."},
+                {"role": "user", "content": f"{truncated_query}"},
+                {"role": "assistant", "content": f"{additional_prompt}"},
+            ]
+            completion_params["response_format"] = { "type": "json_object" }
+            completion_params["messages"] = messages
+            custom_prompt = False
+        else:
+            truncated_query = clean_txt_and_truncate(article, model, clean_bool=False)
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant for processing article content, designed to only output result in pure HTML, do not block the HTML code using ```, and do not output any other format."},
+                {"role": "user", "content": f"{truncated_query}"},
+                {"role": "assistant", "content": f"{additional_prompt}"},
+            ]
+            completion_params["messages"] = messages
+            custom_prompt = True
+        completion = client.chat.completions.create(**completion_params)
+        return completion.choices[0].message.content, custom_prompt
+    except Exception as e:
+        logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')

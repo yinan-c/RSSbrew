@@ -18,6 +18,7 @@ class Command(BaseCommand):
             try:
                 feed = ProcessedFeed.objects.get(id=feed_id)
                 logger.info(f'Generating digest for feed: {feed.name} at {timezone.now()}')
+                # if feed.toggle_digest: # This will disble force digest generation for a selected feed
                 self.gen_digest(feed)
             except ProcessedFeed.DoesNotExist:
                 raise CommandError(f'ProcessedFeed with ID {feed_id} does not exist.')
@@ -47,7 +48,7 @@ class Command(BaseCommand):
                 return
 
             digest_content = self.format_digest(articles)
-            digest = Digest(processed_feed=feed, content=digest_content)
+            digest = Digest(processed_feed=feed, content=digest_content, created_at=now)
             digest.save()
             logger.info(f"  Digest for {feed.name} created.")
             feed.last_digest = now

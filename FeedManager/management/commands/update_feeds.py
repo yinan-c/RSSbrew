@@ -5,12 +5,10 @@ from datetime import datetime
 import pytz
 import re
 import os
-from openai import OpenAI
 from django.conf import settings
 from django.utils import timezone
-from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_html, clean_url
+from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_html, clean_url, clean_txt_and_truncate, generate_summary
 import logging
-import tiktoken
 from django.db import transaction
 import requests
 from fake_useragent import UserAgent
@@ -19,10 +17,6 @@ import time
 import json
 
 logger = logging.getLogger('feed_logger')
-
-OPENAI_PROXY = os.environ.get('OPENAI_PROXY')
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v1'
 
 def fetch_feed(url: str, last_modified: datetime):
     headers = {}
@@ -119,81 +113,24 @@ class Command(BaseCommand):
                     published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else timezone.now(pytz.UTC),
                     content=entry.content[0].value if 'content' in entry else entry.description
                 )
+                article.save()
                 # 注意这里的缩进，如果已经存在 Database 中的文章（非新文章），那么就不需要浪费 token 总结了
 #            else:
 #                article = existing_article
                 if self.current_n_processed < feed.articles_to_summarize_per_interval and passes_filters(entry, feed, 'summary_filter'): # and not article.summarized:
-                    self.generate_summary(article, feed.model, feed.summary_language, feed.additional_prompt)
+                    summary_results, custom_prompt = generate_summary(article, feed.model, feed.summary_language, feed.additional_prompt)
+                    try:
+                        json_result = json.loads(completion.choices[0].message.content)
+                        article.summary = json_result['summary_long']
+                        article.summary_one_line = json_result['summary_one_line']
+                        article.summarized = True
+                        article.custom_prompt = custom_prompt
+                        logger.info(f'  Summary generated for article: {article.title}')
+                        article.save()
+                    except:
+                        article.summary = completion.choices[0].message.content
+                        article.summarized = True
+                        article.custom_prompt = custom_prompt
+                        logger.info(f'  Summary generated for article: {article.title}')
+                        article.save()
                     self.current_n_processed += 1
-                article.save()
-
-    def clean_txt_and_truncate(self, article, model, clean_bool=True):
-        if clean_bool:
-            cleaned_article = clean_html(article.content)
-        cleaned_article = article.content
-        encoding = tiktoken.encoding_for_model(model)
-        token_length = len(encoding.encode(cleaned_article))
-
-        max_length_of_models = {
-            'gpt-3.5-turbo': 16385,
-            'gpt-4': 128000,
-            'gpt-4-32k': 128000
-        }
-
-        # Truncate the text if it exceeds the model's token limit
-        if token_length > max_length_of_models[model]:
-            truncated_article = encoding.decode(encoding.encode(cleaned_article)[:max_length_of_models[model]])
-            return truncated_article
-        else:
-            return cleaned_article
-
-    def generate_summary(self, article, model, language, additional_prompt=None):
-        if not model or not OPENAI_API_KEY:
-            logger.info('  OpenAI API key or model not set, skipping summary generation')
-            return 
-        try:
-            client_params = {
-                "api_key": OPENAI_API_KEY,
-                "base_url": OPENAI_BASE_URL
-            }
-            completion_params = {
-                "model": model,
-            }
-            if OPENAI_PROXY:
-                client_params["http_client"] = httpx.Client(proxy=OPENAI_PROXY)
-    
-            client = OpenAI(**client_params)
-            if not additional_prompt:
-                truncated_query = self.clean_txt_and_truncate(article, model, clean_bool=True)
-                additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
-                messages = [
-                    {"role": "system", "content": "You are a helpful assistant for summarizing articles, designed to output JSON format."},
-                    {"role": "user", "content": f"{truncated_query}"},
-                    {"role": "assistant", "content": f"{additional_prompt}"},
-                ]
-                completion_params["response_format"] = { "type": "json_object" }
-                completion_params["messages"] = messages
-            else:
-                truncated_query = self.clean_txt_and_truncate(article, model, clean_bool=False)
-                messages = [
-                    {"role": "system", "content": "You are a helpful assistant for processing article content, designed to only output result in pure HTML, do not block the HTML code using ```, and do not output any other format."},
-                    {"role": "user", "content": f"{truncated_query}"},
-                    {"role": "assistant", "content": f"{additional_prompt}"},
-                ]
-                completion_params["messages"] = messages
-                article.custom_prompt = True
-            completion = client.chat.completions.create(**completion_params)
-            try:
-                json_result = json.loads(completion.choices[0].message.content)
-                article.summary = json_result['summary_long']
-                article.summary_one_line = json_result['summary_one_line']
-                article.summarized = True
-                logger.info(f'  Summary generated for article: {article.title}')
-                article.save()
-            except:
-                article.summary = completion.choices[0].message.content
-                article.summarized = True
-                logger.info(f'  Summary generated for article: {article.title}')
-                article.save()
-        except Exception as e:
-            logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')

@@ -9,7 +9,8 @@ from django.core.management import call_command
 def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
         call_command('update_feeds', feed=feed.id)
-        call_command('generate_digest', feed=feed.id)
+        call_command('generate_digest', feed=feed.id) 
+        # If you select a feed to update, you are forcely generating a digest for it
         modeladmin.message_user(request, f"Updated feed: {feed.name}")
 
 def clean_selected_feeds_articles(modeladmin, request, queryset):
