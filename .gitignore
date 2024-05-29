@@ -19,6 +19,7 @@ db.sqlite3
 db.sqlite3-journal
 media/
 static/admin
+debug*
 
 # IDEs
 .vscode/
