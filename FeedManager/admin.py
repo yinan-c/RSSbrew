@@ -68,7 +68,7 @@ class ProcessedFeedAdmin(admin.ModelAdmin):
             'fields': ('toggle_entries', 'toggle_digest', 'digest_frequency',  'last_digest'),#, 'include_one_line_summary', 'include_summary', 'include_content',  'use_ai_digest', 'digest_model', 'additional_prompt_for_digest','send_full_article'),
         }),
         ('What to include in digest', {
-            'fields': ('include_one_line_summary', 'include_summary', 'include_content', 'use_ai_digest', 'digest_model', 'additional_prompt_for_digest', 'send_full_article'),
+            'fields': ('include_toc', 'include_one_line_summary', 'include_summary', 'include_content', 'use_ai_digest', 'digest_model', 'additional_prompt_for_digest', 'send_full_article'),
         }),
     )
 

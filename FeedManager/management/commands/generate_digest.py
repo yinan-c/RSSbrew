@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 logger.info(f"  No new articles for feed {feed.name} since last digest.")
                 return
             what_to_include = []
-            for field in ['include_one_line_summary', 'include_summary', 'include_content', 'use_ai_digest']:
+            for field in ['include_one_line_summary', 'include_summary', 'include_content', 'use_ai_digest', 'include_toc']:
                 if getattr(feed, field):
                     what_to_include.append(field)
             logger.debug(f"  What to include: {what_to_include}")
@@ -103,17 +103,18 @@ class Command(BaseCommand):
         current_feed = None
         digest_builder = []
         # Table of Content: ## Feed Title, - Article Title(URL) > One_line_summary
-        digest_builder.append("<h2>Table of Content</h2>")
-        for article in articles:
-            if current_feed != article.original_feed:
-                if current_feed:
-                    digest_builder.append("<br/>")
-                current_feed = article.original_feed
-                digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
-            digest_builder.append(f"<li><a href='{article.url}'>{article.title}</a></li>")
-            if 'include_one_line_summary' in what_to_include and article.summary_one_line:
-                digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
-            digest_builder.append("<br/>")
+        if 'include_toc' in what_to_include:
+            digest_builder.append("<h2>Table of Content</h2>")
+            for article in articles:
+                if current_feed != article.original_feed:
+                    if current_feed:
+                        digest_builder.append("<br/>")
+                    current_feed = article.original_feed
+                    digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
+                digest_builder.append(f"<li><a href='{article.url}'>{article.title}</a></li>")
+                if 'include_one_line_summary' in what_to_include and article.summary_one_line:
+                    digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
+                digest_builder.append("<br/>")
         # If content in what_to_include, or summary in what_to_include and there should be at least one summary
         # Details: ## Feed Title, - Article Title(URL) > Summary+Content
         if 'include_content' in what_to_include or ('include_summary' in what_to_include and any(article.summary for article in articles)):
@@ -126,6 +127,8 @@ class Command(BaseCommand):
                     current_feed = article.original_feed
                     digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
                 digest_builder.append(f"<li><a href='{article.url}'>{article.title}</a></li>")
+                if 'include_toc' not in what_to_include and 'include_one_line_summary' in what_to_include and article.summary_one_line:
+                    digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
                 if 'include_summary' in what_to_include and article.summary:
                     digest_builder.append(f"<ul>Summary:<br/><blockquote>{article.summary}</blockquote></ul>")
                 if 'include_content' in what_to_include and article.content:

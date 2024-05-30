@@ -48,6 +48,7 @@ class ProcessedFeed(models.Model):
     toggle_entries = models.BooleanField(default=True, help_text="Include entries in the feed, disable to only send digest regularly.") 
     digest_frequency = models.CharField(max_length=20, default='daily', choices=[('daily', 'Daily'), ('weekly', 'Weekly')], help_text="Frequency of the digest.")
     last_digest = models.DateTimeField(default=None, blank=True, null=True, editable=True, help_text="Last time the digest was generated, change if you want to reset the digest timer or force a new digest.")
+    include_toc = models.BooleanField(default=True, help_text="Include table of contents in digest.")
     include_one_line_summary = models.BooleanField(default=True, help_text="Include one line summary in digest, only works for default summarization.")
     include_summary = models.BooleanField(default=False, help_text="Include full summary in digest.")
     include_content = models.BooleanField(default=False, help_text="Include full content in digest.")
