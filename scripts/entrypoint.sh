@@ -11,7 +11,7 @@ set -e
 
 #crontab $CRONTAB_FILE
 
-printenv | grep -v "no_proxy" > /etc/environment
+#printenv | grep -v "no_proxy" > /etc/environment
 
 python3 /app/manage.py init_server
 

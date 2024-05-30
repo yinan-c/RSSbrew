@@ -189,5 +189,5 @@ def parse_cron(cron_string):
         'hour': parts[1],
         'day': parts[2],
         'month': parts[3],
-        'weekday': parts[4]
+        'day_of_week': parts[4]
     }
