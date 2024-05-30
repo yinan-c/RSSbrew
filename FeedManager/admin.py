@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest
+from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest, FilterGroup
 from django.utils.html import format_html
 from django.urls import reverse
 from django.db.models import Count
@@ -7,6 +7,7 @@ from .forms import FilterForm, ReadOnlyArticleForm, ProcessedFeedAdminForm
 from django.contrib.auth.models import User, Group
 from django.core.management import call_command
 from huey.contrib.djhuey import task
+from nested_admin.nested import NestedModelAdmin, NestedTabularInline
 
 @task()
 def update_feed(feed_name):
@@ -31,10 +32,15 @@ def clean_selected_feeds_articles(modeladmin, request, queryset):
 clean_selected_feeds_articles.short_description = "Clean old articles for selected feeds"
 update_selected_feeds.short_description = "Update selected feeds"
 
-class FilterInline(admin.TabularInline):
+class FilterInline(NestedTabularInline):
     model = Filter
     form = FilterForm
     extra = 0
+
+class FilterGroupInline(NestedTabularInline):
+    model = FilterGroup
+    inlines = [FilterInline]
+    extra = 1
 
 class ArticleInline(admin.TabularInline):
     model = Article
@@ -64,9 +70,9 @@ class HasAnyOriginalFeedListFilter(admin.SimpleListFilter):
         if self.value() == 'no':
             return queryset.filter(feeds=None)
 
-class ProcessedFeedAdmin(admin.ModelAdmin):
+class ProcessedFeedAdmin(NestedModelAdmin):
     form = ProcessedFeedAdminForm
-    inlines = [FilterInline]
+    inlines = [FilterGroupInline]
     list_display = ('name', 'articles_to_summarize_per_interval', 'subscription_link', 'original_feed_count')
 #    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
@@ -88,10 +94,10 @@ class ProcessedFeedAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('name', 'feeds', 'filter_relational_operator'),
+            'fields': ('name', 'feeds', 'feed_group_relational_operator'),
         }),
         ('Summarization Options', {
-            'fields': ('articles_to_summarize_per_interval', 'summary_language', 'model', 'filter_relational_operator_summary', 'additional_prompt'),
+            'fields': ('articles_to_summarize_per_interval', 'summary_language', 'model', 'summary_group_relational_operator', 'additional_prompt'),
         }),
         ('Digest Options', {
             'fields': ('toggle_entries', 'toggle_digest', 'digest_frequency',  'last_digest'),#, 'include_one_line_summary', 'include_summary', 'include_content',  'use_ai_digest', 'digest_model', 'additional_prompt_for_digest','send_full_article'),
