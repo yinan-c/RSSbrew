@@ -114,9 +114,9 @@ class Command(BaseCommand):
             if 'include_one_line_summary' in what_to_include and article.summary_one_line:
                 digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
             digest_builder.append("<br/>")
-        # If content in what_to_include, or summary in what_to_include, then inlude Details
+        # If content in what_to_include, or summary in what_to_include and there should be at least one summary
         # Details: ## Feed Title, - Article Title(URL) > Summary+Content
-        if 'include_content' in what_to_include or 'include_summary' in what_to_include:
+        if 'include_content' in what_to_include or ('include_summary' in what_to_include and any(article.summary for article in articles)):
             digest_builder.append("<br/>")
             digest_builder.append("<h2>Details</h2>")
             for article in articles:

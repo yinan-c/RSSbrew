@@ -13,8 +13,8 @@ OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v
 
 def clean_url(url):
     parsed_url = urlparse(url)
-    # 重建 URL，不包括片段和查询字符串
-    clean_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path.rstrip('/'), '', '', ''))
+    # 重建 URL，包括查询字符串，不包括片段
+    clean_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path.rstrip('/'), '', parsed_url.query, ''))
     # 转换为小写
     clean_url = clean_url.lower()
     return clean_url
