@@ -76,6 +76,8 @@ class Command(BaseCommand):
             feed_data = fetch_feed(original_feed.url, current_modified)
             # update feed.last_modified based on earliest last_modified of all original_feeds
             if feed_data['status'] == 'updated':
+                original_feed.valid = True
+                original_feed.save()
                 logger.info(f'  Feed {original_feed.url} updated, the new modified time is {feed_data["last_modified"]}')
                 new_modified = datetime.strptime(feed_data['last_modified'], '%a, %d %b %Y %H:%M:%S GMT').replace(tzinfo=pytz.UTC) if feed_data['last_modified'] else None
                 if new_modified and (not min_new_modified or new_modified < min_new_modified):
@@ -88,10 +90,14 @@ class Command(BaseCommand):
 #                    self.stdout.write(f'  Found {len(parsed_feed.entries)} entries in feed {original_feed.url}')
                     entries.extend((entry, original_feed) for entry in parsed_feed.entries[:original_feed.max_articles_to_keep])
             elif feed_data['status'] == 'not_modified':
+                original_feed.valid = True
+                original_feed.save()
                 logger.info(f'  Feed {original_feed.url} not modified')
                 continue
             elif feed_data['status'] == 'failed':
                 logger.error(f' Failed to fetch feed {original_feed.url}')
+                original_feed.valid = False
+                original_feed.save()
                 continue
         if min_new_modified:
             feed.last_modified = min_new_modified

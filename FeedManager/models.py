@@ -18,6 +18,8 @@ class OriginalFeed(models.Model):
     url = models.URLField(unique=True, help_text="URL of the Atom or RSS feed", max_length=2048)
     title = models.CharField(max_length=255, blank=True, default='', help_text="Optional title for the original feed")
     max_articles_to_keep = models.PositiveIntegerField(default=1000, help_text="Older articles will be removed when the limit is reached.")
+    tag = models.CharField(max_length=255, blank=True, default='', help_text="Optional tag for the original feed")
+    valid = models.BooleanField(default=None, blank=True, null=True, editable=False, help_text="Whether the feed is valid.")
 
     def save(self, *args, **kwargs):
         if not self.title:

@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest
 from django.utils.html import format_html
 from django.urls import reverse
+from django.db.models import Count
 from .forms import FilterForm, ReadOnlyArticleForm, ProcessedFeedAdminForm
 from django.contrib.auth.models import User, Group
 from django.core.management import call_command
@@ -50,12 +51,24 @@ class ArticleInline(admin.TabularInline):
 class ProcessedFeedAdmin(admin.ModelAdmin):
     form = ProcessedFeedAdminForm
     inlines = [FilterInline]
-    list_display = ('name', 'articles_to_summarize_per_interval', 'subscription_link')
+    list_display = ('name', 'articles_to_summarize_per_interval', 'subscription_link', 'original_feed_count')
 #    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
     list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model')
     actions = [update_selected_feeds]
     autocomplete_fields = ['feeds']
+
+    def get_queryset(self, request):
+        # Annotate each ProcessedFeed object with the count of related OriginalFeeds
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(_original_feed_count=Count('feeds'))
+        return queryset
+
+    def original_feed_count(self, obj):
+        # Use the annotated count of related OriginalFeeds
+        return obj._original_feed_count
+    original_feed_count.admin_order_field = '_original_feed_count'  # Allows column to be sortable
+    original_feed_count.short_description = 'Number of Original Feeds'
 
     fieldsets = (
         (None, {
@@ -85,9 +98,41 @@ class ProcessedFeedAdmin(admin.ModelAdmin):
     class Media:
         js = ('js/admin/toggle_digest_fields.js', 'js/admin/toggle_ai_digest_fields.js')
 
+class IncludedInProcessedFeedListFilter(admin.SimpleListFilter):
+    title = 'Included in processed feeds'
+    parameter_name = 'included_in_processed_feed'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(processed_feeds__isnull=False).distinct()
+        if self.value() == 'no':
+            return queryset.filter(processed_feeds__isnull=True)
+
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
+    list_display = ('title', 'url', 'valid', 'processed_feeds_count')
     search_fields = ('title', 'url')
+
+    def get_queryset(self, request):
+        # Annotate each OriginalFeed object with the count of related ProcessedFeeds
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(_processed_feeds_count=Count('processed_feeds'))
+        return queryset
+
+    def processed_feeds_count(self, obj):
+        # Use the annotated count of related ProcessedFeeds
+        return obj._processed_feeds_count
+    processed_feeds_count.admin_order_field = '_processed_feeds_count'  # Allows column to be sortable
+    processed_feeds_count.short_description = 'Number of Processed Feeds'
+
+    # Filter if the original feed is included in the processed feed
+    list_filter = ('valid', 'processed_feeds__name') #IncludedInProcessedFeedListFilter)
     actions = [clean_selected_feeds_articles]
 
 @admin.register(Digest)
