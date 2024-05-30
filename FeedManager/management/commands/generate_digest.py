@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from FeedManager.models import ProcessedFeed, Article, Digest
 from datetime import timedelta
@@ -24,7 +24,7 @@ class Command(BaseCommand):
                 # if feed.toggle_digest: # This will disble force digest generation for a selected feed
                 self.gen_digest(feed, force)
             except ProcessedFeed.DoesNotExist:
-                raise CommandError(f'ProcessedFeed with ID {feed_id} does not exist.')
+                raise CommandError(f'ProcessedFeed with name {feed_name} does not exist.')
         else:
             processed_feeds = ProcessedFeed.objects.filter(toggle_digest=True)
             for feed in processed_feeds:
@@ -71,27 +71,28 @@ class Command(BaseCommand):
                     content=digest.content,
                     summarized=True
                 )
-                prompt = "These are the recent articles from the feed, please summarize them in a paragragh, when you mention a point, please reference to the original article url in query, please output result in Chinese in HTML format." #{feed.summary_language} language."
+                prompt = "These are the recent articles from the feed, please summarize important points in a paragragh, when you mention a point, please reference to the original article url using HTML tag, do not just list the titles, please output result in Chinese." #{feed.summary_language} language."
                 # Build up query for AI digest, by default includes title, link, and summaries
                 query = ""
                 for article in articles:
-                    query += f"{article.title}{article.url}\n"
+                    query += f"Title: {article.title}{article.url}\n"
                     if article.summary_one_line:
-                        query += f"{article.summary_one_line}\n"
+                        query += f"Summary: {article.summary_one_line}\n"
                     if article.summary:
-                        query += f"{article.summary}\n"
+                        query += f"Summary Long: {article.summary}\n"
                     if feed.send_full_article and article.content:
-                        query += f"{article.content}\n"
+                        query += f"Full Content: {article.content}\n"
                 query = clean_txt_and_truncate(query,model= feed.digest_model, clean_bool=True)
                 #logger.debug(f"  Query for AI digest: {query}")
                 if feed.additional_prompt_for_digest:
                     prompt = feed.additional_prompt_for_digest
                 logger.info(f"  Using AI model {feed.digest_model} to generate digest.")
                 digest_ai_result = generate_summary(digest_article, feed.digest_model, output_mode='HTML', prompt=prompt)
-                #logger.debug(f"  AI digest result: {digest_ai_result}")
+                logger.debug(f"  AI digest result: {digest_ai_result}")
                 # prepend the AI digest result to the digest content
+                format_digest_result = '<ul><blockquote>' + digest_ai_result + '</blockquote></ul><br/>'
                 if digest_ai_result:
-                    digest.content = '<h2>AI Digest</h2>' + digest_ai_result + digest.content
+                    digest.content = '<h2>AI Digest</h2>' + format_digest_result + digest.content
 
             digest.save()
             logger.info(f"  Digest for {feed.name} created.")
@@ -106,17 +107,17 @@ class Command(BaseCommand):
         for article in articles:
             if current_feed != article.original_feed:
                 if current_feed:
-                    digest_builder.append("<br>")
+                    digest_builder.append("<br/>")
                 current_feed = article.original_feed
                 digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
             digest_builder.append(f"<li><a href='{article.url}'>{article.title}</a></li>")
             if 'include_one_line_summary' in what_to_include and article.summary_one_line:
                 digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
-            digest_builder.append("<br>")
+            digest_builder.append("<br/>")
         # If content in what_to_include, or summary in what_to_include, then inlude Details
         # Details: ## Feed Title, - Article Title(URL) > Summary+Content
         if 'include_content' in what_to_include or 'include_summary' in what_to_include:
-            digest_builder.append("<br>")
+            digest_builder.append("<br/>")
             digest_builder.append("<h2>Details</h2>")
             for article in articles:
                 if current_feed != article.original_feed:
@@ -126,9 +127,9 @@ class Command(BaseCommand):
                     digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
                 digest_builder.append(f"<li><a href='{article.url}'>{article.title}</a></li>")
                 if 'include_summary' in what_to_include and article.summary:
-                    digest_builder.append(f"<ul>Summary:<br><blockquote>{article.summary}</blockquote></ul>")
+                    digest_builder.append(f"<ul>Summary:<br/><blockquote>{article.summary}</blockquote></ul>")
                 if 'include_content' in what_to_include and article.content:
-                    digest_builder.append(f"<ul>Content:<br>{article.content}</ul>")
-                digest_builder.append("<br>")
+                    digest_builder.append(f"<ul>Content:<br/>{article.content}</ul>")
+                digest_builder.append("<br/>")
 
         return ''.join(digest_builder)

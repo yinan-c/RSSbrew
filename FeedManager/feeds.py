@@ -44,7 +44,8 @@ class ProcessedAtomFeed(Feed):
                     url="", 
                     published_date=digest.created_at,
                     content=digest.content,
-                    summarized=True
+                    summarized=True,
+                    custom_prompt=True
                 )
                 result_items.append(digest_article)
 
@@ -78,10 +79,7 @@ class ProcessedAtomFeed(Feed):
         # otherwise use the summary and content together
         description = item.content
         if item.summary:
-            if not item.custom_prompt:
-                formatted_summary = f"<blockquote style='font-size: smaller;'>{item.summary}</blockquote>"
-            else:
-                formatted_summary = item.summary
+            formatted_summary = f"<ul><blockquote>{item.summary}</blockquote></ul><br/>"
             description = f"<br/>Summary:<br/>{formatted_summary}<br/>Original Content:<br/>{item.content}"
         if item.summary_one_line:
             description = f"{item.summary_one_line}<br/>{description}"

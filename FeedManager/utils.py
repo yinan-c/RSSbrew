@@ -170,7 +170,7 @@ def generate_summary(article, model, output_mode='HTML', prompt=None):
         elif output_mode == 'HTML':
             truncated_query = clean_txt_and_truncate(article.content, model, clean_bool=False)
             messages = [
-                {"role": "system", "content": "You are a helpful assistant for processing article content, designed to only output result in pure HTML, do not block the HTML code using ```, and do not output any other format."},
+                {"role": "system", "content": "You are a helpful assistant for summarizing article content, only use HTML tag for references links, such as <a href='https://example.com'>example</a>. use plain text for the rest of the content."},
                 {"role": "user", "content": f"{truncated_query}"},
                 {"role": "assistant", "content": f"{prompt}"},
             ]
