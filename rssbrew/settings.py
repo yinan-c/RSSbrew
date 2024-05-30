@@ -210,3 +210,11 @@ LOGGING = {
         },
     },
 }
+
+from huey import RedisHuey
+
+HUEY = RedisHuey(
+    'rssbrew-huey',
+    host='redis', # Redis server hostname, docker service name
+    port=6379,
+)

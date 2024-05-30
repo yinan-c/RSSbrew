@@ -16,5 +16,6 @@ printenv | grep -v "no_proxy" > /etc/environment
 python3 /app/manage.py init_server
 
 cron -f &
+python3 /app/manage.py run_huey &
 
 exec gunicorn rssbrew.wsgi:application --bind 0.0.0.0:8000

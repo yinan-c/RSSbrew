@@ -8,3 +8,5 @@ BeautifulSoup4
 tiktoken
 gunicorn
 fake_useragent
+huey
+redis
