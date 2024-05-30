@@ -5,17 +5,26 @@ from django.urls import reverse
 from .forms import FilterForm, ReadOnlyArticleForm, ProcessedFeedAdminForm
 from django.contrib.auth.models import User, Group
 from django.core.management import call_command
+from huey.contrib.djhuey import task
+
+@task()
+def update_feed(feed_name):
+    call_command('update_feeds', name=feed_name)
+    call_command('generate_digest', name=feed_name)
+
+@task()
+def clean_old_articles(feed_id, feed_title):
+    call_command('clean_old_articles', feed=feed_id)
 
 def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
-        call_command('update_feeds', name=feed.name)
-        call_command('generate_digest', name=feed.name)
+        update_feed(feed.name)
         # If you select a feed to update, you are forcely generating a digest for it
         modeladmin.message_user(request, f"Updated feed: {feed.name}")
 
 def clean_selected_feeds_articles(modeladmin, request, queryset):
     for feed in queryset:
-        call_command('clean_old_articles', feed=feed.id)
+        clean_old_articles(feed.id, feed.title)
         modeladmin.message_user(request, f"Cleaned old articles from feed: {feed.title}")
 
 clean_selected_feeds_articles.short_description = "Clean old articles for selected feeds"
