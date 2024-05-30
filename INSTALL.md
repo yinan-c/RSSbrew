@@ -1,6 +1,6 @@
 # INSTALL
 
-## 1. with Docker
+## 1. If install with Docker
 
 1. **Clone the Repository**
    ```bash
@@ -9,9 +9,12 @@
    ```
 2. **Environment Variables**
    
-   Set environment variables such as `OPENAI_API_KEY`, `SECRET_KEY`, `DEPLOYMENT_URL` in `.env`.
-
-   You can use the provided `.env.example` file as a template.
+   Copy the `.env.example` file to create a `.env` file. Modify the `.env` file to set necessary environment variables such as `OPENAI_API_KEY`, `SECRET_KEY`, and `DEPLOYMENT_URL`.
+   
+   ```bash
+   cp .env.example .env
+   # Edit .env to include necessary environment variables
+   ```
 
 3. **Build and Run the Docker Container**
    ```bash
@@ -19,9 +22,9 @@
    docker compose up -d
    ```
 
-## 2. without Docker
+## 2. If install without Docker
 
-The same step 1 and 2 as above.
+The same step 1 and 2 as the Docker installation above.
 
 3. **Install Dependencies**
     ```bash
@@ -33,10 +36,30 @@ The same step 1 and 2 as above.
     python manage.py init_server
     python manage.py runserver
     ```
+
+5. **Set up CRON Jobs**
+
+To automate feed updates and digest generation, add the following entries to your crontab:
+
+```bash
+crontab -e
+```
+
+Add the following lines to schedule the tasks:
+
+```bash
+# Update feeds every hour
+0 * * * * python3 manage.py update_feeds >> logs/cron.log 2>&1
+
+# Generate digest daily at 6 AM
+0 6 * * * python3 manage.py generate_digest >> logs/cron.log 2>&1
+```
+
 ## Access the Application
-   
-The application should be running at `http://localhost:8000/`.
+After starting the server, you can access the application via http://localhost:8000/.
 
-The default username is `admin` and the password is `changeme`.
+The default account credentials are:
+- Username: `admin`
+- Password: `changeme`
 
-You can change the password after logging in. Configure your RSS feeds, filters, and settings from there.
+It is recommended to change the default password after your first login for security reasons. You can configure your RSS feeds, set filters, and adjust other settings from there.
