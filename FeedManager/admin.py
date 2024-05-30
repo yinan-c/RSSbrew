@@ -48,13 +48,29 @@ class ArticleInline(admin.TabularInline):
     def has_change_permission(self, request, obj=None):
         return False
 
+class HasAnyOriginalFeedListFilter(admin.SimpleListFilter):
+    title = 'Has any original feed'
+    parameter_name = 'has_any_original_feed'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.exclude(feeds=None)
+        if self.value() == 'no':
+            return queryset.filter(feeds=None)
+
 class ProcessedFeedAdmin(admin.ModelAdmin):
     form = ProcessedFeedAdminForm
     inlines = [FilterInline]
     list_display = ('name', 'articles_to_summarize_per_interval', 'subscription_link', 'original_feed_count')
 #    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
-    list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model')
+    list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model', HasAnyOriginalFeedListFilter)
     actions = [update_selected_feeds]
     autocomplete_fields = ['feeds']
 
@@ -132,7 +148,7 @@ class OriginalFeedAdmin(admin.ModelAdmin):
     processed_feeds_count.short_description = 'Number of Processed Feeds'
 
     # Filter if the original feed is included in the processed feed
-    list_filter = ('valid', 'processed_feeds__name') #IncludedInProcessedFeedListFilter)
+    list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter)
     actions = [clean_selected_feeds_articles]
 
 @admin.register(Digest)
