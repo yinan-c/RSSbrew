@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from FeedManager.models import ProcessedFeed, OriginalFeed, Article
 import feedparser
 from datetime import datetime

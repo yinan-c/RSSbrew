@@ -20,7 +20,7 @@ def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
         update_feed(feed.name)
         # If you select a feed to update, you are forcely generating a digest for it
-        modeladmin.message_user(request, f"Updated feed: {feed.name}")
+        modeladmin.message_user(request, f"Feed update tasks have been queued for feed: {feed.name}")
 
 def clean_selected_feeds_articles(modeladmin, request, queryset):
     for feed in queryset:

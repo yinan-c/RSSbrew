@@ -60,7 +60,7 @@ class Command(BaseCommand):
             logger.debug(f"  What to include: {what_to_include}")
             digest_content = self.format_digest(articles, what_to_include)
             digest = Digest(processed_feed=feed, content=digest_content, created_at=now, start_time=start_time)
-            digest.save()
+            #digest.save()
 
             if 'use_ai_digest' in what_to_include:
                 # Convert digest to article for AI processing
@@ -90,8 +90,8 @@ class Command(BaseCommand):
                 digest_ai_result = generate_summary(digest_article, feed.digest_model, output_mode='HTML', prompt=prompt)
                 logger.debug(f"  AI digest result: {digest_ai_result}")
                 # prepend the AI digest result to the digest content
-                format_digest_result = '<ul><blockquote>' + digest_ai_result + '</blockquote></ul><br/>'
                 if digest_ai_result:
+                    format_digest_result = '<ul><blockquote>' + digest_ai_result + '</blockquote></ul><br/>'
                     digest.content = '<h2>AI Digest</h2>' + format_digest_result + digest.content
 
             digest.save()

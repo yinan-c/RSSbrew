@@ -219,7 +219,7 @@ HUEY = RedisHuey(
     'rssbrew-huey',
     host='redis', # Redis server hostname, docker service name
     port=6379,
-    result_store=False,
+    result_store=True,
     events=True,
     store_none=False,
 )
