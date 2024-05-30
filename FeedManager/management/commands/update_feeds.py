@@ -7,7 +7,7 @@ import re
 import os
 from django.conf import settings
 from django.utils import timezone
-from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_url, generate_summary
+from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_url, generate_summary, parse_cron
 import logging
 from django.db import transaction
 import requests
@@ -15,8 +15,18 @@ from fake_useragent import UserAgent
 import httpx
 import time
 import json
+from huey.contrib.djhuey import periodic_task, crontab
+from django.core.management import call_command
 
 logger = logging.getLogger('feed_logger')
+
+CRON = os.getenv('CRON', '0 * * * *') # default to every hour
+cron_settings = parse_cron(CRON)
+
+@periodic_task(crontab(minute=cron_settings['minute'], hour=cron_settings['hour'], day=cron_settings['day'], month=cron_settings['month'], weekday=cron_settings['weekday']))
+def update_feeds_task():
+    call_command('update_feeds')
+    call_command('clean_old_articles')
 
 def fetch_feed(url: str, last_modified: datetime):
     headers = {}

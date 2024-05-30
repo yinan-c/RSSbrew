@@ -3,9 +3,18 @@ from django.utils import timezone
 from FeedManager.models import ProcessedFeed, Article, Digest
 from datetime import timedelta
 import logging
-from FeedManager.utils import generate_summary, clean_txt_and_truncate
+from FeedManager.utils import generate_summary, clean_txt_and_truncate, parse_cron
+from huey.contrib.djhuey import periodic_task, crontab
+from django.core.management import call_command
 
 logger = logging.getLogger('feed_logger')
+CRON_DIGEST = os.getenv('CRON_DIGEST', '0 0 * * *') # default to every day
+
+cron_settings = parse_cron(CRON)
+
+@periodic_task(crontab(minute=cron_settings['minute'], hour=cron_settings['hour'], day=cron_settings['day'], month=cron_settings['month'], weekday=cron_settings['weekday']))
+def update_feeds_task():
+    call_command('generate_digest')
 
 class Command(BaseCommand):
     help = 'Generate digest for each processed feed.'

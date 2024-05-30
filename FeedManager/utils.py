@@ -179,3 +179,15 @@ def generate_summary(article, model, output_mode='HTML', prompt=None):
         return completion.choices[0].message.content
     except Exception as e:
         logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')
+    
+def parse_cron(cron_string):
+    parts = cron_string.split()
+    if len(parts) != 5:
+        raise ValueError("CRON string must have exactly 5 parts separated by spaces (minute, hour, day of month, month, day of week)")
+    return {
+        'minute': parts[0],
+        'hour': parts[1],
+        'day': parts[2],
+        'month': parts[3],
+        'weekday': parts[4]
+    }
