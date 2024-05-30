@@ -108,7 +108,7 @@ class Filter(models.Model):
         ('shorter_than', 'Shorter than'),
         ('longer_than', 'Longer than'),
     )
-    filter_group = models.ForeignKey(FilterGroup, on_delete=models.CASCADE, related_name='filters', default=None)
+    filter_group = models.ForeignKey(FilterGroup, on_delete=models.CASCADE, related_name='filters', null=True, default=None)
     field = models.CharField(max_length=15, choices=FIELD_CHOICES)
     match_type = models.CharField(max_length=20, choices=MATCH_TYPE_CHOICES)
     value = models.TextField()
