@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'huey.contrib.djhuey',
     'FeedManager',
 ]
 
@@ -187,6 +188,7 @@ STATIC_ROOT = BASE_DIR / "static"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', 'DEBUG')
+LOGGING_FOLDER = BASE_DIR / "logs"
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -198,7 +200,7 @@ LOGGING = {
         'file': {
             'level': LOGGING_LEVEL,
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': DATA_FOLDER / 'feed_processing.log',
+            'filename': LOGGING_FOLDER / 'feed_processing.log',
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
         },
     },
@@ -217,4 +219,7 @@ HUEY = RedisHuey(
     'rssbrew-huey',
     host='redis', # Redis server hostname, docker service name
     port=6379,
+    result_store=False,
+    events=True,
+    store_none=False,
 )

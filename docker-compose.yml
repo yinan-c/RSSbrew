@@ -12,6 +12,7 @@ services:
       - TIME_ZONE=Europe/London # Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
     volumes:
       - ./data:/app/data
+      - ./logs:/app/logs
     ports:
       - "8000:8000"
     restart: always
