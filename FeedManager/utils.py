@@ -88,7 +88,7 @@ def passes_filters(entry, processed_feed, filter_type):
     for group in groups:
         filters = group.filters.all()
         results = [match_content(entry, filter) for filter in filters]
-        logger.debug(f'  Results for group {group.usage}: {results} for {entry.title} {entry.url}')
+        logger.debug(f'  Results for group {group.usage}: {results} for {entry.title} {entry.link}')
         if group.relational_operator == 'all':
             group_results.append(all(results))
         elif group.relational_operator == 'any':
@@ -110,11 +110,16 @@ def passes_filters(entry, processed_feed, filter_type):
 
 def match_content(entry, filter):
     if filter.field == 'title':
-        content = entry.title
-    elif filter.field == 'link':
-        content = entry.url
+        content = generate_untitled(entry)
     elif filter.field == 'content':
-        content = entry.content
+        try:
+            content = entry.content[0].value
+        except:
+            try: content = entry.description
+            except: content = entry.content
+
+    elif filter.field == 'link':
+        content = entry.link
     if not content:
         return True
 

@@ -41,7 +41,7 @@ class ProcessedAtomFeed(Feed):
             if digest:
                 digest_article = Article(
                     title=f"Digest for {obj.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-                    url="", 
+                    link="",
                     published_date=digest.created_at,
                     content=digest.content,
                     summarized=True,
@@ -60,7 +60,7 @@ class ProcessedAtomFeed(Feed):
             unique_articles = []
             for article in filtered_articles:
                 # 由于是数据库中的已经 clean 过的 URL，所以不需要再次 clean
-                identifier = article.url
+                identifier = article.link
                 if identifier not in seen:
                     seen.add(identifier)
                     unique_articles.append(article)
@@ -87,4 +87,4 @@ class ProcessedAtomFeed(Feed):
 
     def item_link(self, item):
         # 直接返回文章的原始链接，假设每篇文章都有一个URL字段
-        return item.url
+        return item.link

@@ -133,7 +133,7 @@ class Filter(models.Model):
 class Article(models.Model):
     original_feed = models.ForeignKey(OriginalFeed, on_delete=models.CASCADE, related_name='articles')
     title = models.CharField(max_length=255)
-    url = models.URLField()
+    link = models.URLField()
     published_date = models.DateTimeField()
     content = models.TextField(blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
@@ -143,7 +143,7 @@ class Article(models.Model):
     # URL should not be unique when different original feeds have the same article
     # The unique check should happen when adding articles to a ProcessedFeed
     class Meta:
-        unique_together = ('url', 'original_feed')
+        unique_together = ('link', 'original_feed')
 
     def __str__(self):
         return self.title
