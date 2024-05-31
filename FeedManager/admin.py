@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest, FilterGroup
+from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest, FilterGroup, Tag
 from django.utils.html import format_html
 from django.urls import reverse
 from django.db.models import Count
@@ -160,6 +160,7 @@ class OriginalFeedAdmin(admin.ModelAdmin):
     # Filter if the original feed is included in the processed feed
     list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter)
     actions = [clean_selected_feeds_articles]
+    autocomplete_fields = ['tags']
 
 @admin.register(Digest)
 class DigestAdmin(admin.ModelAdmin):
@@ -176,3 +177,8 @@ class AppSettingAdmin(admin.ModelAdmin):
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name']
+    search_fields = ['name']
