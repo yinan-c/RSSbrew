@@ -143,7 +143,7 @@ class IncludedInProcessedFeedListFilter(admin.SimpleListFilter):
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
     list_display = ('title', 'valid', 'url', 'processed_feeds_count')
-    search_fields = ('title', 'url')
+    search_fields = ('title', 'url') 
 
     def get_queryset(self, request):
         # Annotate each OriginalFeed object with the count of related ProcessedFeeds
@@ -158,7 +158,7 @@ class OriginalFeedAdmin(admin.ModelAdmin):
     processed_feeds_count.short_description = 'Processed Feeds'
 
     # Filter if the original feed is included in the processed feed
-    list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter)
+    list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter, 'tags')
     actions = [clean_selected_feeds_articles]
     autocomplete_fields = ['tags']
 
