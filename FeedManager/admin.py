@@ -40,7 +40,7 @@ class FilterInline(NestedTabularInline):
 class FilterGroupInline(NestedTabularInline):
     model = FilterGroup
     inlines = [FilterInline]
-    extra = 1
+    extra = 0
 
 class ArticleInline(admin.TabularInline):
     model = Article

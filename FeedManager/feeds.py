@@ -30,7 +30,7 @@ class ProcessedAtomFeed(Feed):
 
     def description(self, obj):
         original_feeds = ', '.join([feed.url for feed in obj.feeds.all()])
-        return f"Processed feed combining these original feeds: {original_feeds}, filtered by {', '.join([filter.field for filter in obj.filters.all()])}"
+        return f"Processed feed combining these original feeds: {original_feeds}, with {obj.filter_groups.count()} filter groups"
 
 
     def items(self, obj):

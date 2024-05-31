@@ -82,6 +82,8 @@ def generate_untitled(entry):
 
 def passes_filters(entry, processed_feed, filter_type):
     groups = processed_feed.filter_groups.filter(usage=filter_type)
+    if not groups:
+        return True
     group_results = []
     for group in groups:
         filters = group.filters.all()
