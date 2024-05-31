@@ -121,7 +121,7 @@ def match_content(entry, filter):
     elif filter.field == 'link':
         content = entry.link
     if not content:
-        return True
+        return False
 
     if filter.match_type == 'contains':
         return filter.value in content

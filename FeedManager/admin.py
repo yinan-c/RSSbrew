@@ -73,7 +73,11 @@ class HasAnyOriginalFeedListFilter(admin.SimpleListFilter):
 class ProcessedFeedAdmin(NestedModelAdmin):
     form = ProcessedFeedAdminForm
     inlines = [FilterGroupInline]
-    list_display = ('name', 'articles_to_summarize_per_interval', 'subscription_link', 'original_feed_count')
+    # rename articles_to_summarize_per_interval to Summarize per Update in list display
+    def summarize_per_update(self, obj):
+        return obj.articles_to_summarize_per_interval
+    summarize_per_update.short_description = 'Summarize per Update'
+    list_display = ('name', 'summarize_per_update', 'subscription_link', 'original_feed_count')
 #    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
     list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model', HasAnyOriginalFeedListFilter)
@@ -90,7 +94,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         # Use the annotated count of related OriginalFeeds
         return obj._original_feed_count
     original_feed_count.admin_order_field = '_original_feed_count'  # Allows column to be sortable
-    original_feed_count.short_description = 'Number of Original Feeds'
+    original_feed_count.short_description = 'Original Feeds'
 
     fieldsets = (
         (None, {
@@ -138,7 +142,7 @@ class IncludedInProcessedFeedListFilter(admin.SimpleListFilter):
 
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
-    list_display = ('title', 'url', 'valid', 'processed_feeds_count')
+    list_display = ('title', 'valid', 'url', 'processed_feeds_count')
     search_fields = ('title', 'url')
 
     def get_queryset(self, request):
@@ -151,7 +155,7 @@ class OriginalFeedAdmin(admin.ModelAdmin):
         # Use the annotated count of related ProcessedFeeds
         return obj._processed_feeds_count
     processed_feeds_count.admin_order_field = '_processed_feeds_count'  # Allows column to be sortable
-    processed_feeds_count.short_description = 'Number of Processed Feeds'
+    processed_feeds_count.short_description = 'Processed Feeds'
 
     # Filter if the original feed is included in the processed feed
     list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter)
