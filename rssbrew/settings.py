@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'huey.contrib.djhuey',
     'FeedManager',
+    'nested_admin',
 ]
 
 MIDDLEWARE = [

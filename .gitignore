@@ -15,10 +15,12 @@ __pycache__/
 # Django
 *.log
 logs/
+data/
 db.sqlite3
 db.sqlite3-journal
 media/
 static/admin
+static/nested_admin
 debug*
 
 # IDEs

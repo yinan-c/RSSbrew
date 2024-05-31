@@ -62,8 +62,8 @@ class ProcessedFeed(models.Model):
     additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name='(Optional) Prompt for Digest', help_text="Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest.")
 
     # Filter related fields
-    filter_relational_operator = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters.")
-    filter_relational_operator_summary = models.CharField(max_length=20, default='any', choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], help_text="The included articles must match All/Any/None of the filters for summarization.")
+    feed_group_relational_operator = models.CharField(max_length=20, choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], default='any', help_text="The included articles must match All/Any/None of the filters.")
+    summary_group_relational_operator = models.CharField(max_length=20, choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], default='any', help_text="The included articles must match All/Any/None of the filters for summarization.")
     def __str__(self):
         return self.name
 
@@ -75,6 +75,24 @@ class ProcessedFeed(models.Model):
 def reset_last_modified(sender, instance, action, **kwargs):
     if action in ["post_add", "post_remove", "post_clear"]:
         ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
+
+class FilterGroup(models.Model):
+    PROCESSED_FEED_CHOICES = (
+        ('feed_filter', 'Feed Filter'),
+        ('summary_filter', 'Summary Filter'),
+    )
+    RELATIONAL_OPERATOR_CHOICES = (
+        ('all', 'All'),
+        ('any', 'Any'),
+        ('none', 'None'),
+    )
+
+    processed_feed = models.ForeignKey(ProcessedFeed, on_delete=models.CASCADE, related_name='filter_groups')
+    usage = models.CharField(max_length=15, choices=PROCESSED_FEED_CHOICES, default='feed_filter')
+    relational_operator = models.CharField(max_length=20, choices=RELATIONAL_OPERATOR_CHOICES, default='any')
+
+    def __str__(self):
+        return f"{self.usage}"
 
 class Filter(models.Model):
     FIELD_CHOICES = (
@@ -90,15 +108,10 @@ class Filter(models.Model):
         ('shorter_than', 'Shorter than'),
         ('longer_than', 'Longer than'),
     )
-    USAGE_CHOICES = (
-        ('feed_filter', 'Feed Filter'),
-        ('summary_filter', 'Summary Filter'),
-    )
-    processed_feed = models.ForeignKey(ProcessedFeed, on_delete=models.CASCADE, related_name='filters')
+    filter_group = models.ForeignKey(FilterGroup, on_delete=models.CASCADE, related_name='filters') #null=True, default=None)
     field = models.CharField(max_length=15, choices=FIELD_CHOICES)
     match_type = models.CharField(max_length=20, choices=MATCH_TYPE_CHOICES)
     value = models.TextField()
-    usage = models.CharField(max_length=15, choices=USAGE_CHOICES, default='feed_filter')
 
     def clean(self):
         # Validate value based on match_type
@@ -120,7 +133,7 @@ class Filter(models.Model):
 class Article(models.Model):
     original_feed = models.ForeignKey(OriginalFeed, on_delete=models.CASCADE, related_name='articles')
     title = models.CharField(max_length=255)
-    url = models.URLField()
+    link = models.URLField()
     published_date = models.DateTimeField()
     content = models.TextField(blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
@@ -130,7 +143,7 @@ class Article(models.Model):
     # URL should not be unique when different original feeds have the same article
     # The unique check should happen when adding articles to a ProcessedFeed
     class Meta:
-        unique_together = ('url', 'original_feed')
+        unique_together = ('link', 'original_feed')
 
     def __str__(self):
         return self.title

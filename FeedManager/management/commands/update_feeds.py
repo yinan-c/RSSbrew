@@ -112,14 +112,14 @@ class Command(BaseCommand):
     def process_entry(self, entry, feed, original_feed):
         # 先检查 filter 再检查数据库
         if passes_filters(entry, feed, 'feed_filter'):
-            existing_article = Article.objects.filter(url=clean_url(entry.link), original_feed=original_feed).first()
+            existing_article = Article.objects.filter(link=clean_url(entry.link), original_feed=original_feed).first()
             logger.info(f'  Already in db: {entry.title}' if existing_article else f'  Processing new article: {entry.title}')
             if not existing_article:
                 # 如果不存在，则创建新文章
                 article = Article(
                     original_feed=original_feed,
-                    title=entry.title,
-                    url= clean_url(entry.link),
+                    title=generate_untitled(entry),
+                    link=clean_url(entry.link),
                     published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else timezone.now(),
                     content=entry.content[0].value if 'content' in entry else entry.description
                 )

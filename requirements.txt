@@ -10,3 +10,4 @@ gunicorn
 fake_useragent
 huey
 redis
+django-nested-admin

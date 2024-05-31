@@ -80,53 +80,49 @@ def generate_untitled(entry):
         try: return entry.article[:50]
         except: return entry.link
 
-def passes_filters(entry, feed, filter_type):
-    # if there are no filters, return True
-    if not feed.filters.filter(usage=filter_type).exists():
+def passes_filters(entry, processed_feed, filter_type):
+    groups = processed_feed.filter_groups.filter(usage=filter_type)
+    if not groups:
         return True
+    group_results = []
+    for group in groups:
+        filters = group.filters.all()
+        results = [match_content(entry, filter) for filter in filters]
+        logger.debug(f'  Results for group {group.usage}: {results} for {entry.title} {entry.link}')
+        if group.relational_operator == 'all':
+            group_results.append(all(results))
+        elif group.relational_operator == 'any':
+            group_results.append(any(results))
+        elif group.relational_operator == 'none':
+            group_results.append(not any(results))
     if filter_type == 'feed_filter':
-        filter_relational_operator = feed.filter_relational_operator
+        group_relational_operator = processed_feed.feed_group_relational_operator
     elif filter_type == 'summary_filter':
-        filter_relational_operator = feed.filter_relational_operator_summary
-    results = []
-    for filter in feed.filters.filter(usage=filter_type):
-        if filter.field == 'title':
-            content = generate_untitled(entry)
-        elif filter.field == 'content':
-            try:
-                content = entry.content[0].value
-            except:
-                try: content = entry.description
-                except: content = entry.content
+        group_relational_operator = processed_feed.summary_group_relational_operator
 
-        elif filter.field == 'link':
-            content = entry.url
-        if match_content(content, filter):
-#            logger.info(f"  Filter {filter_type}, Entry {entry.title} passed filter {filter}")
-            results.append(True)
-        else:
-            results.append(False)
+    logger.debug(f'  Group results for {filter_type}: {group_results} for {entry.title}')
+    if group_relational_operator == 'all':
+        return all(group_results)
+    elif group_relational_operator == 'any':
+        return any(group_results)
+    elif group_relational_operator == 'none':
+        return not any(group_results)
 
-    if filter_relational_operator == 'all':
-        if all(results):
-            return True
-        else:
-            logger.info(f"  Filter {filter_type}, Entry {entry.title} did not pass all filters")
-            return False
-    elif filter_relational_operator == 'any':
-        if any(results):
-            return True
-        else:
-            logger.info(f"  Filter {filter_type}, Entry {entry.title} did not pass any filters")
-            return False
-    elif filter_relational_operator == 'none':
-        if not any(results):
-            return True
-        else:
-            logger.info(f"  Filter {filter_type}, Entry {entry.title} passed at least one filter")
-            return False
+def match_content(entry, filter):
+    if filter.field == 'title':
+        content = generate_untitled(entry)
+    elif filter.field == 'content':
+        try:
+            content = entry.content[0].value
+        except:
+            try: content = entry.description
+            except: content = entry.content
 
-def match_content(content, filter):
+    elif filter.field == 'link':
+        content = entry.link
+    if not content:
+        return False
+
     if filter.match_type == 'contains':
         return filter.value in content
     elif filter.match_type == 'does_not_contain':

@@ -66,7 +66,7 @@ class Command(BaseCommand):
                 # Convert digest to article for AI processing
                 digest_article = Article(
                     title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-                    url="", 
+                    link="",
                     published_date=digest.created_at,
                     content=digest.content,
                     summarized=True
@@ -75,7 +75,7 @@ class Command(BaseCommand):
                 # Build up query for AI digest, by default includes title, link, and summaries
                 query = ""
                 for article in articles:
-                    query += f"Title: {article.title}{article.url}\n"
+                    query += f"Title: {article.title}{article.link}\n"
                     if article.summary_one_line:
                         query += f"Summary: {article.summary_one_line}\n"
                     if article.summary:
@@ -111,7 +111,7 @@ class Command(BaseCommand):
                         digest_builder.append("<br/>")
                     current_feed = article.original_feed
                     digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
-                digest_builder.append(f"<li><a href='{article.url}'>{article.title}</a></li>")
+                digest_builder.append(f"<li><a href='{article.link}'>{article.title}</a></li>")
                 if 'include_one_line_summary' in what_to_include and article.summary_one_line:
                     digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
                 digest_builder.append("<br/>")
@@ -126,7 +126,7 @@ class Command(BaseCommand):
                         digest_builder.append("</br>")
                     current_feed = article.original_feed
                     digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
-                digest_builder.append(f"<li><a href='{article.url}'>{article.title}</a></li>")
+                digest_builder.append(f"<li><a href='{article.link}'>{article.title}</a></li>")
                 if 'include_toc' not in what_to_include and 'include_one_line_summary' in what_to_include and article.summary_one_line:
                     digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
                 if 'include_summary' in what_to_include and article.summary:
