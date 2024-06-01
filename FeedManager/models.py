@@ -18,7 +18,8 @@ class OriginalFeed(models.Model):
     url = models.URLField(unique=True, help_text="URL of the Atom or RSS feed", max_length=2048)
     title = models.CharField(max_length=255, blank=True, default='', help_text="Optional title for the original feed")
     max_articles_to_keep = models.PositiveIntegerField(default=1000, help_text="Older articles will be removed when the limit is reached.")
-    tag = models.CharField(max_length=255, blank=True, default='', help_text="Optional tag for the original feed")
+    #tag = models.CharField(max_length=255, blank=True, default='', help_text="Optional tag for the original feed")
+    tags = models.ManyToManyField('Tag', related_name='original_feeds', blank=True, help_text="Tags associated with this feed")
     valid = models.BooleanField(default=None, blank=True, null=True, editable=False, help_text="Whether the feed is valid.")
 
     def save(self, *args, **kwargs):
@@ -28,6 +29,12 @@ class OriginalFeed(models.Model):
 
     def __str__(self):
         return self.title or self.url
+
+class Tag(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self):
+        return self.name
 
 class ProcessedFeed(models.Model):
     name = models.CharField(max_length=255, unique=True) # Ensure subscription name is unique

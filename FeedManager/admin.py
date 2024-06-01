@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest, FilterGroup
+from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest, FilterGroup, Tag
 from django.utils.html import format_html
 from django.urls import reverse
 from django.db.models import Count
@@ -143,7 +143,7 @@ class IncludedInProcessedFeedListFilter(admin.SimpleListFilter):
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
     list_display = ('title', 'valid', 'url', 'processed_feeds_count')
-    search_fields = ('title', 'url')
+    search_fields = ('title', 'url') 
 
     def get_queryset(self, request):
         # Annotate each OriginalFeed object with the count of related ProcessedFeeds
@@ -158,8 +158,9 @@ class OriginalFeedAdmin(admin.ModelAdmin):
     processed_feeds_count.short_description = 'Processed Feeds'
 
     # Filter if the original feed is included in the processed feed
-    list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter)
+    list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter, 'tags')
     actions = [clean_selected_feeds_articles]
+    autocomplete_fields = ['tags']
 
 @admin.register(Digest)
 class DigestAdmin(admin.ModelAdmin):
@@ -176,3 +177,8 @@ class AppSettingAdmin(admin.ModelAdmin):
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ['name']
+    search_fields = ['name']
