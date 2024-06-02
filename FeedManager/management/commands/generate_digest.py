@@ -71,7 +71,7 @@ class Command(BaseCommand):
                     content=digest.content,
                     summarized=True
                 )
-                prompt = "These are the recent articles from the feed, please summarize important points in a paragragh, when you mention a point, please reference to the original article url using HTML tag, do not just list the titles, please output result in {feed.summary_language} language."
+                prompt = "These are the recent articles from the feed, please summarize important points in a paragragh, with summarized details, do not just make a list of the titles; when you mention a point, please reference to the original article url using HTML tag, please output result in {feed.summary_language} language."
                 # Build up query for AI digest, by default includes title, link, and summaries
                 query = ""
                 for article in articles:

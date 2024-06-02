@@ -22,7 +22,7 @@ def update_feeds_task():
     call_command('update_feeds')
     call_command('clean_old_articles')
 
-
+# TODO Maybe add time of the day to generate digest after digest_frequency
 CRON_DIGEST = os.getenv('CRON_DIGEST', '0 0 * * *') # default to every day
 cron_settings = parse_cron(CRON_DIGEST)
 logger.info(f"Scheduled task with CRON settings: {cron_settings}")
