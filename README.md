@@ -3,9 +3,13 @@
   <h1>RSSBrew</h1>
 </div>
 
-A self-hosted, easy-to-deploy RSS tool that allows you to aggregate multiple RSS feeds, apply custom filters, and generate AI summaries.
+[中文](README-zh.md) | English
 
-⚠️This project is still under development. The current version may contain bugs or incomplete features. Please report any issues you encounter. Suggestions and contributions are welcome. Documentation in progress.
+A self-hosted, easy-to-deploy RSS tool that allows you to aggregate multiple RSS feeds, apply custom filters, generate AI summaries and daily/weekly digests.
+
+Telegram Discussion Group: [RSSBrew](https://t.me/rssbrew)
+
+⚠️This project is still under development. The current version may contain bugs or incomplete features. Please report any issues you encounter. Suggestions and contributions are welcome. Documentation in progress. For now, please refer to [an intro in my blog](https://yinan.me/rssbrew-config).
 
 ## Features
 
@@ -13,7 +17,7 @@ A self-hosted, easy-to-deploy RSS tool that allows you to aggregate multiple RSS
 Apply custom filters to your feeds to control what content gets through or not. You can filter based on Link, Title and Description.
 Besides:
 - Various match types including contains, does not contain, matches regex or not.
-- Multiple filters can be applied together with various relationship operators: AND, OR, NOT.
+- Multiple filters can be grouped together with relationship operators: AND, OR, NOT, relationships between groups can also be set.
 - You can set the filter scope to apply to filter out matched entries entirely or filter for summary generation only.
   
 ### 2. Aggregate Multiple Feeds
@@ -37,5 +41,10 @@ This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE)
 
 ## SUPPORT
 
-If you find this project helpful, please consider leaving a star or supporting the development by [buying me a coffee](https://www.buymeacoffee.com/yinan).
+If you find this project helpful, please consider leaving a star or supporting the development by donating to the author.
+
+[Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
+
+[afdian](https://afdian.net/a/yinanc)
+
 We would greatly appreciate your support to keep this project going.
