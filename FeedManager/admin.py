@@ -162,10 +162,10 @@ class OriginalFeedAdmin(admin.ModelAdmin):
     actions = [clean_selected_feeds_articles]
     autocomplete_fields = ['tags']
 
-@admin.register(Digest)
-class DigestAdmin(admin.ModelAdmin):
-    list_display = ['processed_feed', 'created_at', 'start_time']
-    search_fields = ['processed_feed__name']
+#@admin.register(Digest)
+#class DigestAdmin(admin.ModelAdmin):
+#    list_display = ['processed_feed', 'created_at', 'start_time']
+#    search_fields = ['processed_feed__name']
     
 admin.site.register(ProcessedFeed, ProcessedFeedAdmin)
 admin.site.register(OriginalFeed, OriginalFeedAdmin)
@@ -178,7 +178,12 @@ class AppSettingAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 admin.site.unregister(Group)
 
+class OriginalFeedInline(admin.TabularInline):
+    model = OriginalFeed.tags.through
+    extra = 0
+
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ['name']
+    inlines = [OriginalFeedInline]
     search_fields = ['name']
