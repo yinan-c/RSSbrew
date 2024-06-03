@@ -103,7 +103,7 @@ class Command(BaseCommand):
         current_feed = None
         digest_builder = []
         # Table of Content: ## Feed Title, - Article Title(URL) > One_line_summary
-        if 'include_toc' in what_to_include:
+        if 'include_toc' in what_to_include or ('include_one_line_summary' in what_to_include and any(article.summary_one_line for article in articles)):
             digest_builder.append("<h2>Table of Content</h2>")
             for article in articles:
                 if current_feed != article.original_feed:
@@ -112,7 +112,7 @@ class Command(BaseCommand):
                     current_feed = article.original_feed
                     digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
                 digest_builder.append(f"<li><a href='{article.link}'>{article.title}</a></li>")
-                if 'include_one_line_summary' in what_to_include and article.summary_one_line:
+                if article.summary_one_line:
                     digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
                 digest_builder.append("<br/>")
         # If content in what_to_include, or summary in what_to_include and there should be at least one summary

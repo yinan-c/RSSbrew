@@ -121,7 +121,7 @@ class Command(BaseCommand):
                     title=generate_untitled(entry),
                     link=clean_url(entry.link),
                     published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC) if 'published_parsed' in entry else timezone.now(),
-                    content=entry.content[0].value if 'content' in entry else entry.description
+                    content=(entry.content[0].value if 'content' in entry else (entry.description if 'description' in entry else ''))
                 )
                 article.save()
                 # 注意这里的缩进，如果已经存在 Database 中的文章（非新文章），那么就不需要浪费 token 总结了
