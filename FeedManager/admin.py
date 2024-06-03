@@ -174,8 +174,36 @@ class OriginalFeedInline(admin.TabularInline):
     model = OriginalFeed.tags.through
     extra = 0
 
+
+class HasAnyOriginalFeedListFilter_Tag(admin.SimpleListFilter):
+    title = 'Has any original feed'
+    parameter_name = 'has_any_original_feed'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.exclude(original_feeds=None)
+        if self.value() == 'no':
+            return queryset.filter(original_feeds=None)
+
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ['name']
+    def get_queryset(self, request):
+        # Annotate each Tag object with the count of related OriginalFeeds
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(_original_feed_count=Count('original_feeds'))
+        return queryset
+    
+    def original_feed_count(self, obj):
+        # Use the annotated count of related OriginalFeeds
+        return obj._original_feed_count
+    original_feed_count.admin_order_field = '_original_feed_count'
+    list_display = ['name', 'original_feed_count']
+    list_filter = [HasAnyOriginalFeedListFilter_Tag]
     inlines = [OriginalFeedInline]
     search_fields = ['name']
