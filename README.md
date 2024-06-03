@@ -43,8 +43,8 @@ This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE)
 
 If you find this project helpful, please consider leaving a star or supporting the development by donating to the author.
 
-[Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
+- [Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
 
-[afdian](https://afdian.net/a/yinanc)
+- [afdian](https://afdian.net/a/yinanc)
 
 We would greatly appreciate your support to keep this project going.

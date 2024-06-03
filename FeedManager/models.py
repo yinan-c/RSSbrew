@@ -5,6 +5,7 @@ from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 import re
+from .tasks import async_update_feeds_and_digest
 
 class AppSetting(models.Model):
     auth_code = models.CharField(max_length=64, blank=True, null=True)
@@ -80,8 +81,7 @@ class ProcessedFeed(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        async_update_feeds(self.name)
-        async_generate_digest(self.name)
+        async_update_feeds_and_digest(self.name)
 
 @receiver(m2m_changed, sender=ProcessedFeed.feeds.through)
 def reset_last_modified(sender, instance, action, **kwargs):

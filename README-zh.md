@@ -51,8 +51,8 @@ Telegram 讨论群：[RSSBrew](https://t.me/rssbrew)
 
 如果你发现此项目有帮助，请考虑 star 这个项目或通过捐赠作者来支持开发。
 
-[Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
+- [爱发电](https://afdian.net/a/yinanc)
 
-[爱发电](https://afdian.net/a/yinanc)
+- [Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
 
-我们非常感谢你的支持，以使该项目得以继续。
+非常感谢你的支持!
