@@ -78,6 +78,11 @@ class ProcessedFeed(models.Model):
         if not self.toggle_digest and not self.toggle_entries:
             raise ValidationError("At least one of 'toggle digest' or 'toggle entries' must be enabled.")
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        async_update_feeds(self.name)
+        async_generate_digest(self.name)
+
 @receiver(m2m_changed, sender=ProcessedFeed.feeds.through)
 def reset_last_modified(sender, instance, action, **kwargs):
     if action in ["post_add", "post_remove", "post_clear"]:

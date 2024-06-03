@@ -1,4 +1,4 @@
-from huey.contrib.djhuey import periodic_task
+from huey.contrib.djhuey import periodic_task, task
 from huey import crontab
 from django.core.management import call_command
 from django.conf import settings
@@ -36,3 +36,12 @@ logger.info(f"Scheduled task with CRON settings: {cron_settings}")
     retries=3,)
 def generate_digest_task():
     call_command('generate_digest')
+
+@task(retries=3)
+def async_update_feeds_and_digest(feed_name):
+    call_command('update_feeds', name=feed_name)
+    call_command('generate_digest', name=feed_name)
+
+@task(retries=3)
+def clean_old_articles(feed_id):
+    call_command('clean_old_articles', feed=feed_id)

@@ -8,25 +8,17 @@ from django.contrib.auth.models import User, Group
 from django.core.management import call_command
 from huey.contrib.djhuey import task
 from nested_admin.nested import NestedModelAdmin, NestedTabularInline
-
-@task()
-def update_feed(feed_name):
-    call_command('update_feeds', name=feed_name)
-    call_command('generate_digest', name=feed_name)
-
-@task()
-def clean_old_articles(feed_id, feed_title):
-    call_command('clean_old_articles', feed=feed_id)
+from .tasks import async_update_feeds_and_digest, clean_old_articles
 
 def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
-        update_feed(feed.name)
+        async_update_feeds_and_digest(feed.name)
         # If you select a feed to update, you are forcely generating a digest for it
         modeladmin.message_user(request, f"Feed update tasks have been queued for feed: {feed.name}")
 
 def clean_selected_feeds_articles(modeladmin, request, queryset):
     for feed in queryset:
-        clean_old_articles(feed.id, feed.title)
+        clean_old_articles(feed.id)
         modeladmin.message_user(request, f"Cleaned old articles from feed: {feed.title}")
 
 clean_selected_feeds_articles.short_description = "Clean old articles for selected feeds"
