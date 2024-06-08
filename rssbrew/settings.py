@@ -119,6 +119,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": DATA_FOLDER / "db.sqlite3",
+        "OPTIONS": {
+            "timeout": 20,
+        },
     }
 }
 
@@ -188,7 +191,7 @@ STATIC_ROOT = BASE_DIR / "static"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', 'DEBUG')
+LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', 'INFO')
 LOGGING_FOLDER = BASE_DIR / "logs"
 LOGGING = {
     'version': 1,
@@ -202,7 +205,8 @@ LOGGING = {
             'level': LOGGING_LEVEL,
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOGGING_FOLDER / 'feed_processing.log',
-            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'maxBytes': 1024 * 1024 * 200,  # 200 MB
+            'backupCount': 20,
         },
     },
     'loggers': {
