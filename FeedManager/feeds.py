@@ -41,7 +41,7 @@ class ProcessedAtomFeed(Feed):
             if digest:
                 digest_article = Article(
                     title=f"Digest for {obj.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-                    link="",
+                    link=f"/admin/FeedManager/digest/{digest.id}/change/",
                     published_date=digest.created_at,
                     content=digest.content,
                     summarized=True,
