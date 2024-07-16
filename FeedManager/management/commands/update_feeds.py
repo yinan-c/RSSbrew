@@ -36,7 +36,7 @@ def fetch_feed(url: str, last_modified: datetime):
             # ! Why is it taking so long to show not_modified? 8 seconds
             # Maybe it's because of the User-Agent or the If-Modified-Since header?
             #print(time.time())
-            return {'feed': None, 'status': 'not_modified'}
+            return {'feed': None, 'status': 'not_modified', 'last_modified': response.headers.get('Last-Modified')}
         else:
             logger.error(f'Failed to fetch feed {url}: {response.status_code}')
             return {'feed': None, 'status': 'failed'}
@@ -93,6 +93,7 @@ class Command(BaseCommand):
                 original_feed.valid = True
                 original_feed.save()
                 logger.info(f'  Feed {original_feed.url} not modified')
+                logger.info(f'  Feed {original_feed.url} modified time is {feed_data["last_modified"]} and the current feed modified time is {current_modified}')
                 continue
             elif feed_data['status'] == 'failed':
                 logger.error(f' Failed to fetch feed {original_feed.url}')
@@ -113,7 +114,7 @@ class Command(BaseCommand):
         # 先检查 filter 再检查数据库
         if passes_filters(entry, feed, 'feed_filter'):
             existing_article = Article.objects.filter(link=clean_url(entry.link), original_feed=original_feed).first()
-            logger.info(f'  Already in db: {entry.title}' if existing_article else f'  Processing new article: {entry.title}')
+            logger.debug(f'  Already in db: {entry.title}' if existing_article else f'  Processing new article: {entry.title}')
             if not existing_article:
                 # 如果不存在，则创建新文章
                 article = Article(
