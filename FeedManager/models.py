@@ -51,10 +51,10 @@ class ProcessedFeed(models.Model):
         ('gpt-4-turbo', 'GPT-4 Turbo'),
         ('gpt-4o', 'GPT-4o'),
         ('gpt-4o-mini', 'GPT-4o Mini'),
-        ('other', 'Other'),
+        ('other', 'Other (specify below)'),
     ]  
     model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices)
-    other_model = models.CharField(max_length=255, blank=True, default='', help_text="AI Model for summarization, only used if 'Other' is selected.")
+    other_model = models.CharField(max_length=255, blank=True, default='', help_text="Please specify the model if 'Other' is selected above, e.g. 'gemini-1.5-pro' in OneAPI.")
 
     # Digest related fields
     toggle_digest = models.BooleanField(default=False, help_text="Send a digest of the feed regularly.")
@@ -70,7 +70,7 @@ class ProcessedFeed(models.Model):
     use_ai_digest = models.BooleanField(default=False, help_text="Use AI to process digest content.")
     send_full_article = models.BooleanField(default=False, help_text="(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent.")
     digest_model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices, help_text="Model for digest generation.")
-    other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text="AI Model for digest generation, only used if 'Other' is selected.")
+    other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text="Please specify the model if 'Other' is selected above, e.g. 'gemini-1.5-pro' in OneAPI.")
     additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name='(Optional) Prompt for Digest', help_text="Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest.")
 
     # Filter related fields
