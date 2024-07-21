@@ -28,6 +28,8 @@ class Command(BaseCommand):
         else:
             processed_feeds = ProcessedFeed.objects.filter(toggle_digest=True)
             for feed in processed_feeds:
+                if not feed.toggle_digest:
+                    continue
                 logger.info(f'Generating digest for feed: {feed.name} at {timezone.now()}')
                 self.gen_digest(feed, force)
 
@@ -83,11 +85,19 @@ class Command(BaseCommand):
                     if feed.send_full_article and article.content:
                         query += f"Full Content: {article.content}\n"
                 query = clean_txt_and_truncate(query,model= feed.digest_model, clean_bool=True)
-                #logger.debug(f"  Query for AI digest: {query}")
+                # Generate a pseudo article for AI digest
+                for_summary_only_article = Article(
+                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+                    link=f"/admin/FeedManager/digest/{digest.id}/change/",
+                    published_date=digest.created_at,
+                    content=query,
+                    summarized=True
+                )
+                logger.debug(f"  Query for AI digest: {query}")
                 if feed.additional_prompt_for_digest:
                     prompt = feed.additional_prompt_for_digest
                 logger.info(f"  Using AI model {feed.digest_model} to generate digest.")
-                digest_ai_result = generate_summary(digest_article, feed.digest_model, output_mode='HTML', prompt=prompt, other_model=feed.other_digest_model)
+                digest_ai_result = generate_summary(for_summary_only_article, feed.digest_model, output_mode='HTML', prompt=prompt, other_model=feed.other_digest_model)
                 logger.debug(f"  AI digest result: {digest_ai_result}")
                 # prepend the AI digest result to the digest content
                 if digest_ai_result:
