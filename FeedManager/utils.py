@@ -65,6 +65,8 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
         'gpt-3.5-turbo': 16200,
         'gpt-4o': 127800,
         'gpt-4-turbo': 127800,
+        'gpt-4o-mini': 127800,
+        'other': 127800 #! User-defined models
     }
 
     # Truncate the text if it exceeds the model's token limit
@@ -137,7 +139,9 @@ def match_content(entry, filter):
         return len(content) > int(filter.value)
 
 
-def generate_summary(article, model, output_mode='HTML', prompt=None):
+def generate_summary(article, model, output_mode='HTML', prompt=None, other_model=''):
+    if model == 'other':
+        model = other_model
     if not model or not OPENAI_API_KEY:
         logger.info('  OpenAI API key or model not set, skipping summary generation')
         return 

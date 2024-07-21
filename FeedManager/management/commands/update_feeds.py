@@ -134,7 +134,7 @@ class Command(BaseCommand):
                     if feed.additional_prompt:
                         prompt = f"{feed.additional_prompt}"
                         output_mode = 'HTML'
-                    summary_results = generate_summary(article, feed.model, output_mode, prompt)
+                    summary_results = generate_summary(article, feed.model, output_mode, prompt, feed.other_model)
                     # TODO the JSON mode parse is hard-coded as is the default prompt, maybe support automatic json parsing in the future
                     try:
                         json_result = json.loads(summary_results)

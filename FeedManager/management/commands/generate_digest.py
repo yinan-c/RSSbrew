@@ -87,7 +87,7 @@ class Command(BaseCommand):
                 if feed.additional_prompt_for_digest:
                     prompt = feed.additional_prompt_for_digest
                 logger.info(f"  Using AI model {feed.digest_model} to generate digest.")
-                digest_ai_result = generate_summary(digest_article, feed.digest_model, output_mode='HTML', prompt=prompt)
+                digest_ai_result = generate_summary(digest_article, feed.digest_model, output_mode='HTML', prompt=prompt, other_model=feed.other_digest_model)
                 logger.debug(f"  AI digest result: {digest_ai_result}")
                 # prepend the AI digest result to the digest content
                 if digest_ai_result:
