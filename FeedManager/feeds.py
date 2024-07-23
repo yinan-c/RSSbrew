@@ -5,7 +5,7 @@ from django.http import HttpResponseForbidden
 from .models import ProcessedFeed, Article, Filter, AppSetting
 from django.utils import timezone
 import re
-from .utils import passes_filters, match_content, generate_untitled
+from .utils import passes_filters, match_content, generate_untitled, remove_control_characters
 
 class ProcessedAtomFeed(Feed):
     feed_type = Rss201rev2Feed
@@ -69,7 +69,7 @@ class ProcessedAtomFeed(Feed):
         return result_items
 
     def item_title(self, item):
-        return item.title
+        return remove_control_characters(item.title)
     
     def item_pubdate(self, item):
         return item.published_date
@@ -77,7 +77,7 @@ class ProcessedAtomFeed(Feed):
     def item_description(self, item):
         # if there is no summary, use the content,
         # otherwise use the summary and content together
-        description = item.content
+        description = remove_control_characters(item.content)
         if item.summary:
             formatted_summary = f"<ul><blockquote>{item.summary}</blockquote></ul><br/>"
             description = f"<br/>Summary:<br/>{formatted_summary}<br/>Original Content:<br/>{item.content}"

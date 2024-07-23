@@ -11,6 +11,11 @@ OPENAI_PROXY = os.environ.get('OPENAI_PROXY')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v1'
 
+def remove_control_characters(s):
+    control_chars = ''.join(map(chr, range(0, 32))) + chr(127)
+    control_char_re = re.compile('[%s]' % re.escape(control_chars))
+    return control_char_re.sub('', s)
+
 def clean_url(url):
     parsed_url = urlparse(url)
     # 重建 URL，包括查询字符串，不包括片段
