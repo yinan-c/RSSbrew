@@ -63,7 +63,10 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
     cleaned_article = query
     if clean_bool:
         cleaned_article = clean_html(query)
-    encoding = tiktoken.encoding_for_model(model)
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except:
+        encoding = tiktoken.encoding_for_model('gpt-4o')
     token_length = len(encoding.encode(cleaned_article))
 
     max_length_of_models = {
@@ -71,12 +74,14 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
         'gpt-4o': 127800,
         'gpt-4-turbo': 127800,
         'gpt-4o-mini': 127800,
-        'other': 127800 #! User-defined models
+        'default': 127800  # Default for all other models
     }
 
+    max_length = max_length_of_models.get(model, max_length_of_models['default'])
+
     # Truncate the text if it exceeds the model's token limit
-    if token_length > max_length_of_models[model]:
-        truncated_article = encoding.decode(encoding.encode(cleaned_article)[:max_length_of_models[model]])
+    if token_length > max_length:
+        truncated_article = encoding.decode(encoding.encode(cleaned_article)[:max_length])
         return truncated_article
     else:
         return cleaned_article
