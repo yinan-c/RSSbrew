@@ -79,8 +79,8 @@ class ProcessedAtomFeed(Feed):
         # otherwise use the summary and content together
         description = remove_control_characters(item.content)
         if item.summary:
-            formatted_summary = f"<ul><blockquote>{item.summary}</blockquote></ul><br/>"
-            description = f"<br/>Summary:<br/>{formatted_summary}<br/>Original Content:<br/>{item.content}"
+            formatted_summary = f"{item.summary}<br/>"
+            description = f"<br/><br/>{formatted_summary}<br/>Original Content:<br/>{item.content}"
         if item.summary_one_line:
             description = f"{item.summary_one_line}<br/>{description}"
         return description
