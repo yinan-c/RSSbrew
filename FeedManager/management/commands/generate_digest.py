@@ -79,7 +79,7 @@ class Command(BaseCommand):
                 for article in articles:
                     query += f"Title: {article.title}{article.link}\n"
                     if article.summary_one_line:
-                        query += f"Summary: {article.summary_one_line}\n"
+                        query += f"{article.summary_one_line}\n"
                     if article.summary:
                         query += f"Summary Long: {article.summary}\n"
                     if feed.send_full_article and article.content:
@@ -101,7 +101,7 @@ class Command(BaseCommand):
                 logger.debug(f"  AI digest result: {digest_ai_result}")
                 # prepend the AI digest result to the digest content
                 if digest_ai_result:
-                    format_digest_result = '<ul><blockquote>' + digest_ai_result + '</blockquote></ul><br/>'
+                    format_digest_result = '' + digest_ai_result + '<br/>'
                     digest.content = '<h2>AI Digest</h2>' + format_digest_result + digest.content
 
             digest.save()
@@ -123,7 +123,7 @@ class Command(BaseCommand):
                     digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
                 digest_builder.append(f"<li><a href='{article.link}'>{article.title}</a></li>")
                 if article.summary_one_line:
-                    digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
+                    digest_builder.append(f"{article.summary_one_line}")
                 digest_builder.append("<br/>")
         # If content in what_to_include, or summary in what_to_include and there should be at least one summary
         # Details: ## Feed Title, - Article Title(URL) > Summary+Content
@@ -138,11 +138,11 @@ class Command(BaseCommand):
                     digest_builder.append(f"<h3><a href='{current_feed.url}'>{current_feed.title}</a></h3>")
                 digest_builder.append(f"<li><a href='{article.link}'>{article.title}</a></li>")
                 if 'include_toc' not in what_to_include and 'include_one_line_summary' in what_to_include and article.summary_one_line:
-                    digest_builder.append(f"<ul><blockquote>{article.summary_one_line}</blockquote></ul>")
+                    digest_builder.append(f"{article.summary_one_line}")
                 if 'include_summary' in what_to_include and article.summary:
-                    digest_builder.append(f"<ul>Summary:<br/><blockquote>{article.summary}</blockquote></ul>")
+                    digest_builder.append(f"<br/>{article.summary}")
                 if 'include_content' in what_to_include and article.content:
-                    digest_builder.append(f"<ul>Content:<br/>{article.content}</ul>")
+                    digest_builder.append(f"Content:<br/>{article.content}")
                 digest_builder.append("<br/>")
 
         return ''.join(digest_builder)
