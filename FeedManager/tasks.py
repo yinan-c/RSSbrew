@@ -9,7 +9,7 @@ logger = logging.getLogger('feed_logger')
 
 CRON = os.getenv('CRON', '0 * * * *')  # default to every hour
 cron_settings = parse_cron(CRON)
-logger.info(f"Scheduled task with CRON settings: {cron_settings}")
+logger.debug(f"Scheduled task with CRON settings: {cron_settings}")
 
 @periodic_task(crontab(
     minute=cron_settings['minute'],
@@ -25,7 +25,7 @@ def update_feeds_task():
 # TODO Maybe add time of the day to generate digest after digest_frequency
 CRON_DIGEST = os.getenv('CRON_DIGEST', '0 0 * * *') # default to every day
 cron_settings = parse_cron(CRON_DIGEST)
-logger.info(f"Scheduled task with CRON settings: {cron_settings}")
+logger.debug(f"Scheduled task with CRON settings: {cron_settings}")
 
 @periodic_task(crontab(
     minute=cron_settings['minute'],

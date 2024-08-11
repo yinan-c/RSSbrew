@@ -71,14 +71,14 @@ class Command(BaseCommand):
         entries = []
         current_modified = feed.last_modified
         min_new_modified = None
-        logger.info(f'  Current last modified: {current_modified} for feed {feed.name}')
+        logger.debug(f'  Current last modified: {current_modified} for feed {feed.name}')
         for original_feed in feed.feeds.all():
             feed_data = fetch_feed(original_feed.url, current_modified)
             # update feed.last_modified based on earliest last_modified of all original_feeds
             if feed_data['status'] == 'updated':
                 original_feed.valid = True
                 original_feed.save()
-                logger.info(f'  Feed {original_feed.url} updated, the new modified time is {feed_data["last_modified"]}')
+                logger.debug(f'  Feed {original_feed.url} updated, the new modified time is {feed_data["last_modified"]}')
                 new_modified = datetime.strptime(feed_data['last_modified'], '%a, %d %b %Y %H:%M:%S GMT').replace(tzinfo=pytz.UTC) if feed_data['last_modified'] else None
                 if new_modified and (not min_new_modified or new_modified < min_new_modified):
                     min_new_modified = new_modified
@@ -92,8 +92,8 @@ class Command(BaseCommand):
             elif feed_data['status'] == 'not_modified':
                 original_feed.valid = True
                 original_feed.save()
-                logger.info(f'  Feed {original_feed.url} not modified')
-                logger.info(f'  Feed {original_feed.url} modified time is {feed_data["last_modified"]} and the current feed modified time is {current_modified}')
+                logger.debug(f'  Feed {original_feed.url} not modified')
+                logger.debug(f'  Feed {original_feed.url} modified time is {feed_data["last_modified"]} and the current feed modified time is {current_modified}')
                 continue
             elif feed_data['status'] == 'failed':
                 logger.error(f' Failed to fetch feed {original_feed.url}')

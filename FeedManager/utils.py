@@ -153,7 +153,7 @@ def generate_summary(article, model, output_mode='HTML', prompt=None, other_mode
     if model == 'other':
         model = other_model
     if not model or not OPENAI_API_KEY:
-        logger.info('  OpenAI API key or model not set, skipping summary generation')
+        logger.warning('  OpenAI API key or model not set, skipping summary generation')
         return 
     try:
         client_params = {
@@ -186,6 +186,7 @@ def generate_summary(article, model, output_mode='HTML', prompt=None, other_mode
             ]
             completion_params["messages"] = messages
         completion = client.chat.completions.create(**completion_params)
+        logger.debug(f"prompt is {prompt}")
         return completion.choices[0].message.content
     except Exception as e:
         logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')
