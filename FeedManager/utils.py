@@ -1,7 +1,7 @@
 import re
 from bs4 import BeautifulSoup
 import logging
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 import os
 from openai import OpenAI
 import tiktoken
@@ -18,10 +18,33 @@ def remove_control_characters(s):
 
 def clean_url(url):
     parsed_url = urlparse(url)
-    # 重建 URL，包括查询字符串，不包括片段
-    clean_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path.rstrip('/'), '', parsed_url.query, ''))
+    
+    # 解析查询字符串
+    query_params = parse_qs(parsed_url.query)
+    
+    # 移除 'hl' 参数（如果存在）
+    query_params.pop('hl', None)
+    
+    # 重新构建查询字符串
+    new_query = urlencode(query_params, doseq=True)
+    
+    # 重建 URL，包括新的查询字符串，不包括片段
+    clean_url = urlunparse((
+        parsed_url.scheme,
+        parsed_url.netloc,
+        parsed_url.path.rstrip('/'),
+        '',
+        new_query,
+        ''
+    ))
+    
     # 转换为小写
     clean_url = clean_url.lower()
+    
+    # 如果清理后的 URL 以 '?' 结尾，则移除它
+    if clean_url.endswith('?'):
+        clean_url = clean_url[:-1]
+    
     return clean_url
 
 def clean_html(html_content):
