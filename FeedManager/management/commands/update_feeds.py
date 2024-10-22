@@ -129,7 +129,7 @@ class Command(BaseCommand):
 #            else:
 #                article = existing_article
                 if self.current_n_processed < feed.articles_to_summarize_per_interval and passes_filters(entry, feed, 'summary_filter'): # and not article.summarized:
-                    prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {feed.summary_language} language."
+                    prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long', third item is the translated article title as 'title'. Output result in {feed.summary_language} language."
                     output_mode = 'json'
                     if feed.additional_prompt:
                         prompt = f"{feed.additional_prompt}"
@@ -140,6 +140,8 @@ class Command(BaseCommand):
                         json_result = json.loads(summary_results)
                         article.summary = json_result['summary_long']
                         article.summary_one_line = json_result['summary_one_line']
+                        if feed.translate_title:
+                            article.title = json_result['title']
                         article.summarized = True
                         article.custom_prompt = False
                         logger.info(f'  Summary generated for article: {article.title}')
