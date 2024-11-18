@@ -41,7 +41,7 @@ Telegram 讨论群：[RSSBrew](https://t.me/rssbrew)
 
 ## 安装
 
-支持 Docker 部署或常规安装，请参阅 [INSTALL.md](INSTALL.md)。
+Docker 部署，请参阅 [INSTALL.md](INSTALL.md)。
 
 ## 许可证
 
@@ -51,7 +51,7 @@ Telegram 讨论群：[RSSBrew](https://t.me/rssbrew)
 
 如果你发现此项目有帮助，请考虑 star 这个项目或通过捐赠作者来支持开发。
 
-- [爱发电](https://afdian.net/a/yinanc)
+- [爱发电](https://afdian.com/a/yinanc)
 
 - [Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
 

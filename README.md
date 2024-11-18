@@ -33,7 +33,7 @@ You can optionally choose what to include in the digest (e.g. content, summary, 
 
 ## INSTALL
 
-Docker deployment or regular installation supported, please refer to [INSTALL.md](INSTALL.md).
+Docker deployment, please refer to [INSTALL.md](INSTALL.md).
 
 ## LICENSE
 
@@ -45,6 +45,6 @@ If you find this project helpful, please consider leaving a star or supporting t
 
 - [Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
 
-- [afdian](https://afdian.net/a/yinanc)
+- [afdian](https://afdian.com/a/yinanc)
 
 We would greatly appreciate your support to keep this project going.

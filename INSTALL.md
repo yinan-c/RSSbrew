@@ -15,13 +15,9 @@ wget https://raw.githubusercontent.com/yinan-c/rssbrew/main/.env.example
    cp .env.example .env
    # Edit .env to include necessary environment variables
    ```
-3. **Create local data and logs folders**
+   Modify `docker-compose.yml` as needed (e.g. ports, volumes, etc.)
 
-```bash
-mkdir data logs
-```
-
-4. **Start the server**
+3. **Start the server**
 
 ```bash
 docker compose up -d
