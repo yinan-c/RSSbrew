@@ -10,6 +10,12 @@ services:
       - DEBUG=1
       - CRON=*/5 * * * * # cron job for updating feeds
       - TIME_ZONE=Europe/London # Refer to https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+      # Redis configuration (optional, defaults shown)
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      # Or use REDIS_URL for full connection string
+      # - REDIS_URL=redis://username:password@redis:6379/0
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
