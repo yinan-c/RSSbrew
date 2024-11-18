@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   rssbrew:
-    build: .
+    image: yinanc/rssbrew:latest
     # Setup DEPLOYMENT_URL (optional if deploy locally), OPENAI_API_KEY(optional), SECRET_KEY in .env
     env_file:
       - .env
