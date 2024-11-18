@@ -19,8 +19,17 @@ logger.debug(f"Scheduled task with CRON settings: {cron_settings}")
     day_of_week=cron_settings['day_of_week']),
     retries=3,)
 def update_feeds_task():
-    call_command('update_feeds')
-    call_command('clean_old_articles')
+    try:
+        call_command('update_feeds')
+    except Exception as e:
+        logger.error(f"Error in update_feeds_task: {str(e)}")
+        raise
+    
+    try:
+        call_command('clean_old_articles')
+    except Exception as e:
+        logger.error(f"Error in clean_old_articles: {str(e)}")
+        raise
 
 # TODO Maybe add time of the day to generate digest after digest_frequency
 CRON_DIGEST = os.getenv('CRON_DIGEST', '0 0 * * *') # default to every day

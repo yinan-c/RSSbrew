@@ -60,11 +60,17 @@ class Command(BaseCommand):
                 self.update_feed(feed)
             except ProcessedFeed.DoesNotExist:
                 raise CommandError('ProcessedFeed "%s" does not exist' % feed_name)
+            except Exception as e:
+                logger.error(f'Error processing feed {feed_name}: {str(e)}')
         else:
             processed_feeds = ProcessedFeed.objects.all()
             for feed in processed_feeds:
-                logger.info(f'Processing feed: {feed.name} at {timezone.now()}')
-                self.update_feed(feed)
+                try:
+                    logger.info(f'Processing feed: {feed.name} at {timezone.now()}')
+                    self.update_feed(feed)
+                except Exception as e:
+                    logger.error(f'Error processing feed {feed.name}: {str(e)}')
+                    continue  # make sure to continue to the next feed
 
     def update_feed(self, feed):
         self.current_n_processed = 0
