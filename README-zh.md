@@ -13,6 +13,12 @@ Telegram 讨论群：[RSSBrew](https://t.me/rssbrew)
 
 ⚠️ 此项目仍在开发中。当前版本可能包含错误或未完成的功能。请在 issues 或者 telegram 群里报告遇到的任何问题。欢迎提供建议和贡献。完整文档正在进行中，请暂时参考[我博客中的介绍](https://yinan.me/rssbrew-config)。
 
+## 演示
+
+https://demo.rssbrew.com
+username: `admin`
+password: `changeme` (数据每周会重置，请不要保存重要数据和使用后修改密码)
+
 ## 特性
 
 ### 1. 自定义过滤器
