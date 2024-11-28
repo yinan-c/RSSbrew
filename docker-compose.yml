@@ -14,8 +14,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
-      # Or use REDIS_URL for full connection string
-      # - REDIS_URL=redis://username:password@redis:6379/0
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
@@ -25,6 +23,4 @@ services:
 
   redis:
     image: redis:latest
-    ports:
-      - "6379:6379"
     restart: always

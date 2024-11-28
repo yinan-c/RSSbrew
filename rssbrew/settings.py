@@ -225,7 +225,6 @@ HUEY = RedisHuey(
     host=os.environ.get('REDIS_HOST', 'redis'),
     port=int(os.environ.get('REDIS_PORT', 6379)),
     db=int(os.environ.get('REDIS_DB', 0)),
-    url=os.environ.get('REDIS_URL'), # Optional, full connection string
     result_store=True,
     events=True,
     store_none=False,
