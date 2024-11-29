@@ -28,11 +28,16 @@ class ProcessedAtomFeed(Feed):
         return obj.name
 
     def link(self, obj):
-        url = reverse('processed_feed_by_id', args=[obj.id])
+        #url = reverse('processed_feed_by_id', args=[obj.id])
+        #url = f"/feeds/{obj.name}/"
+        url = reverse('processed_feed_by_name', args=[obj.name])
         auth_code = AppSetting.get_auth_code()  # Get the universal auth code
         if not auth_code:
             return url
         return f"{url}?key={auth_code}"
+    
+    def feed_url(self, obj):
+        return self.link(obj)
 
     def description(self, obj):
         original_feeds = ', '.join([feed.url for feed in obj.feeds.all()])
