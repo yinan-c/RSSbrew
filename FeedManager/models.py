@@ -116,6 +116,7 @@ class Filter(models.Model):
         ('title', 'Title'),
         ('content', 'Content'),
         ('link', 'Link'),
+        ('title_or_content', 'Title or content'),
     )
     MATCH_TYPE_CHOICES = (
         ('contains', 'Contains'),
@@ -126,7 +127,7 @@ class Filter(models.Model):
         ('longer_than', 'Longer than'),
     )
     filter_group = models.ForeignKey(FilterGroup, on_delete=models.CASCADE, related_name='filters') #null=True, default=None)
-    field = models.CharField(max_length=15, choices=FIELD_CHOICES)
+    field = models.CharField(max_length=20, choices=FIELD_CHOICES)
     match_type = models.CharField(max_length=20, choices=MATCH_TYPE_CHOICES)
     value = models.TextField()
 

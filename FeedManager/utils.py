@@ -144,18 +144,21 @@ def passes_filters(entry, processed_feed, filter_type):
         return not any(group_results)
 
 def match_content(entry, filter):
-    if filter.field == 'title':
-        content = generate_untitled(entry)
-    elif filter.field == 'content':
+    content = ''
+    if filter.field in ['title', 'title_or_content']:
+        content += generate_untitled(entry) + ' '
+    if filter.field in ['content', 'title_or_content']:
         try:
-            content = entry.content[0].value
+            content += entry.content[0].value + ' '
         except:
-            try: content = entry.description
-            except: content = entry.content
-
+            pass
+        try:
+            content += entry.description + ' '
+        except:
+            pass
     elif filter.field == 'link':
         content = entry.link
-    if not content:
+    if not content.strip(): # Strip is necessary for removing leading and trailing spaces
         return False
 
     if filter.match_type == 'contains':
