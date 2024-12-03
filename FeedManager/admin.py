@@ -69,10 +69,23 @@ class ProcessedFeedAdmin(NestedModelAdmin):
     def summarize_per_update(self, obj):
         return obj.articles_to_summarize_per_interval
     summarize_per_update.short_description = 'Summarize per Update'
-    list_display = ('name', 'summarize_per_update', 'subscription_link', 'original_feed_count')
+
+    def toggle_digest_and_update(self, obj):
+        # An emoji description to show if the digest/entries are enabled
+        if obj.toggle_digest and obj.toggle_entries:
+            return '✅/✅'
+        elif obj.toggle_digest and not obj.toggle_entries:
+            return '✅/❌'
+        elif not obj.toggle_digest and obj.toggle_entries:
+            return '❌/✅'
+        else:
+            return '❌/❌'
+    toggle_digest_and_update.short_description = 'Digest/Entries'
+
+    list_display = ('name', 'summarize_per_update', 'subscription_link', 'original_feed_count', 'toggle_digest_and_update')
 #    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
-    list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model', HasAnyOriginalFeedListFilter)
+    list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model', HasAnyOriginalFeedListFilter, 'toggle_digest', 'toggle_entries', 'digest_frequency', 'use_ai_digest', 'digest_model')
     actions = [update_selected_feeds]
     autocomplete_fields = ['feeds']
 
