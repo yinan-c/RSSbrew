@@ -36,7 +36,7 @@ Besides:
 Easily combine multiple RSS feeds into a single processed feed, even more powerful when used with custom filters.
 
 ### 3. Article Summarization
-Using AI (currently supports GPT-3.5 Turbo, GPT-4 Turbo or GPT-4o, more planned) to generate and prepend a summary to the article. The default summaries include a one-line summary and a slightly longer summary. You can also customize your prompt to use AI for other purposes.
+Using AI (currently supports all OpenAI compatible models via user configuration) to generate and prepend a summary to the article. The default summaries include a one-line summary and a slightly longer summary. You can also customize your prompt to use AI for other purposes.
   
 ### 4. Digests with AI
 
