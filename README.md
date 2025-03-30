@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/yinan-c/RSSbrew/assets/95043151/15876fda-28aa-468f-b012-f1bbc4c03a84" alt="RSSbrew Icon" width="180"/>
+  <img src="https://github.com/user-attachments/assets/d38aff13-0271-41cb-86d6-65bc762c2b97" alt="RSSbrew Icon" width="180"/>
   <h1>RSSBrew</h1>
 </div>
 
