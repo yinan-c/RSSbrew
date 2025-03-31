@@ -208,10 +208,22 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 200,  # 200 MB
             'backupCount': 20,
         },
+        'huey_file': {
+            'level': LOGGING_LEVEL,
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGGING_FOLDER / 'huey.log',
+            'maxBytes': 1024 * 1024 * 50,  # 50 MB
+            'backupCount': 5,
+        },
     },
     'loggers': {
         'feed_logger': {
             'handlers': ['console', 'file'],
+            'level': LOGGING_LEVEL,
+            'propagate': True,
+        },
+        'huey': {
+            'handlers': ['huey_file', 'console'],
             'level': LOGGING_LEVEL,
             'propagate': True,
         },
