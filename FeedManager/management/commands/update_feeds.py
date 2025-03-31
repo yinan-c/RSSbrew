@@ -135,18 +135,22 @@ class Command(BaseCommand):
 #            else:
 #                article = existing_article
                 if self.current_n_processed < feed.articles_to_summarize_per_interval and passes_filters(entry, feed, 'summary_filter'): # and not article.summarized:
-                    prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long', third item is the translated article title as 'title'. Output result in {feed.summary_language} language."
+                    prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {feed.summary_language} language."
                     output_mode = 'json'
+                    if feed.translate_title:
+                        translate_prompt = f"Please translate the article title to {feed.summary_language} language, and output plain text only."
+                        article.title = generate_summary(article, feed.model, output_mode='translate', prompt=translate_prompt, other_model=feed.other_model)
                     if feed.additional_prompt:
-                        prompt += f"Above are default prompt, Following is a user-provided prompt, please keep all default json items except override the 'summary_long' item in the json with the output from the following prompt: {feed.additional_prompt}."
+                        prompt = feed.additional_prompt
+                        output_mode = 'HTML'
+
+
                     summary_results = generate_summary(article, feed.model, output_mode, prompt, feed.other_model)
                     # TODO the JSON mode parse is hard-coded as is the default prompt, maybe support automatic json parsing in the future
                     try:
                         json_result = json.loads(summary_results)
                         article.summary = json_result['summary_long']
                         article.summary_one_line = json_result['summary_one_line']
-                        if feed.translate_title:
-                            article.title = json_result['title']
                         article.summarized = True
                         article.custom_prompt = False
                         logger.info(f'  Summary generated for article: {article.title}')

@@ -193,7 +193,14 @@ def generate_summary(article, model, output_mode='HTML', prompt=None, other_mode
             client_params["http_client"] = httpx.Client(proxy=OPENAI_PROXY)
 
         client = OpenAI(**client_params)
-        if output_mode == 'json':
+        if output_mode == 'translate':
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant for translating text."},
+                {"role": "user", "content": f"{article.title}"},
+                {"role": "assistant", "content": f"{prompt}"},
+            ]
+            completion_params["messages"] = messages
+        elif output_mode == 'json':
             truncated_query = clean_txt_and_truncate(article.content, model, clean_bool=True)
             #additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
             messages = [
