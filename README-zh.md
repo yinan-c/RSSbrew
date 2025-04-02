@@ -1,7 +1,7 @@
 # RSSBrew
 
 <div align="center">
-  <img src="https://github.com/yinan-c/RSSbrew/assets/95043151/15876fda-28aa-468f-b012-f1bbc4c03a84" alt="RSSbrew Icon" width="180"/>
+  <img src="https://github.com/user-attachments/assets/f3c46cec-bd6d-4184-9970-db3cb79a3c9e" alt="RSSbrew Icon" width="180"/>
   <h1>RSSBrew</h1>
 </div>
 
