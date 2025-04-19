@@ -161,19 +161,29 @@ def match_content(entry, filter):
     if not content.strip(): # Strip is necessary for removing leading and trailing spaces
         return False
 
+    # Apply case sensitivity handling
+    compare_content = content
+    compare_value = filter.value
+    
+    # If case insensitive, convert both content and filter value to lowercase
+    if not filter.case_sensitive:
+        compare_content = compare_content.lower()
+        compare_value = compare_value.lower()
+
     if filter.match_type == 'contains':
-        return filter.value in content
+        return compare_value in compare_content
     elif filter.match_type == 'does_not_contain':
-        return filter.value not in content
+        return compare_value not in compare_content
     elif filter.match_type == 'matches_regex':
-        return re.search(filter.value, content) is not None
+        flags = 0 if filter.case_sensitive else re.IGNORECASE
+        return re.search(filter.value, content, flags) is not None
     elif filter.match_type == 'does_not_match_regex':
-        return re.search(filter.value, content) is None
+        flags = 0 if filter.case_sensitive else re.IGNORECASE
+        return re.search(filter.value, content, flags) is None
     elif filter.match_type == 'shorter_than':
         return len(content) < int(filter.value)
     elif filter.match_type == 'longer_than':
         return len(content) > int(filter.value)
-
 
 def generate_summary(article, model, output_mode='HTML', prompt=None, other_model=''):
     if model == 'other':

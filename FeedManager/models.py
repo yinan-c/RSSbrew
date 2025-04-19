@@ -71,12 +71,13 @@ class ProcessedFeed(models.Model):
     use_ai_digest = models.BooleanField(default=False, help_text="Use AI to process digest content.")
     send_full_article = models.BooleanField(default=False, help_text="(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent.")
     digest_model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices, help_text="Model for digest generation.")
-    other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text="Please specify the model if 'Other' is selected above, e.g. 'gemini-1.5-pro' in OneAPI.")
+    other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text="Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3-beta' in GrokAI or OneAPI.")
     additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name='(Optional) Prompt for Digest', help_text="Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest.")
 
     # Filter related fields
     feed_group_relational_operator = models.CharField(max_length=20, choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], default='any', help_text="The included articles must match All/Any/None of the filters.")
     summary_group_relational_operator = models.CharField(max_length=20, choices=[('all', 'All'), ('any', 'Any'), ('none', 'None')], default='any', help_text="The included articles must match All/Any/None of the filters for summarization.")
+    case_sensitive = models.BooleanField(default=False, help_text="For filter keyword, default to unchecked for ignoring case.")
     def __str__(self):
         return self.name
 

@@ -103,7 +103,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('name', 'feeds', 'feed_group_relational_operator'),
+            'fields': ('name', 'feeds', 'feed_group_relational_operator', 'case_sensitive'),
         }),
         ('Summarization Options', {
             'fields': ('articles_to_summarize_per_interval', 'summary_language', 'translate_title', 'model', 'other_model', 'summary_group_relational_operator', 'additional_prompt'),
