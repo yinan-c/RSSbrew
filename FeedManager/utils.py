@@ -122,7 +122,7 @@ def passes_filters(entry, processed_feed, filter_type):
     group_results = []
     for group in groups:
         filters = group.filters.all()
-        results = [match_content(entry, filter) for filter in filters]
+        results = [match_content(entry, filter, processed_feed.case_sensitive) for filter in filters]
         logger.debug(f'  Results for group {group.usage}: {results} for {entry.title} {entry.link}')
         if group.relational_operator == 'all':
             group_results.append(all(results))
@@ -143,7 +143,7 @@ def passes_filters(entry, processed_feed, filter_type):
     elif group_relational_operator == 'none':
         return not any(group_results)
 
-def match_content(entry, filter):
+def match_content(entry, filter, case_sensitive=False):
     content = ''
     if filter.field in ['title', 'title_or_content']:
         content += generate_untitled(entry) + ' '
@@ -158,32 +158,32 @@ def match_content(entry, filter):
             pass
     elif filter.field == 'link':
         content = entry.link
-    if not content.strip(): # Strip is necessary for removing leading and trailing spaces
+    if not content.strip():  # Strip is necessary for removing leading and trailing spaces
         return False
 
-    # Apply case sensitivity handling
-    compare_content = content
-    compare_value = filter.value
+    # Get the filter value for comparison
+    filter_value = filter.value
     
-    # If case insensitive, convert both content and filter value to lowercase
-    if not filter.case_sensitive:
-        compare_content = compare_content.lower()
-        compare_value = compare_value.lower()
+    # If not case sensitive, convert both content and filter value to lowercase
+    if not case_sensitive:
+        content = content.lower()
+        filter_value = filter_value.lower()
 
     if filter.match_type == 'contains':
-        return compare_value in compare_content
+        return filter_value in content
     elif filter.match_type == 'does_not_contain':
-        return compare_value not in compare_content
+        return filter_value not in content
     elif filter.match_type == 'matches_regex':
-        flags = 0 if filter.case_sensitive else re.IGNORECASE
-        return re.search(filter.value, content, flags) is not None
+        # Add re.IGNORECASE flag if not case sensitive
+        flags = 0 if case_sensitive else re.IGNORECASE
+        return re.search(filter_value, content, flags=flags) is not None
     elif filter.match_type == 'does_not_match_regex':
-        flags = 0 if filter.case_sensitive else re.IGNORECASE
-        return re.search(filter.value, content, flags) is None
+        flags = 0 if case_sensitive else re.IGNORECASE
+        return re.search(filter_value, content, flags=flags) is None
     elif filter.match_type == 'shorter_than':
-        return len(content) < int(filter.value)
+        return len(content) < int(filter_value)
     elif filter.match_type == 'longer_than':
-        return len(content) > int(filter.value)
+        return len(content) > int(filter_value)
 
 def generate_summary(article, model, output_mode='HTML', prompt=None, other_model=''):
     if model == 'other':
