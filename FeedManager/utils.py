@@ -28,18 +28,15 @@ def clean_url(url):
     # 重新构建查询字符串
     new_query = urlencode(query_params, doseq=True)
     
-    # 重建 URL，包括新的查询字符串，不包括片段
+    # 重建 URL，只将域名部分转为小写，保持路径的原始大小写
     clean_url = urlunparse((
         parsed_url.scheme,
-        parsed_url.netloc,
-        parsed_url.path.rstrip('/'),
+        parsed_url.netloc.lower(),  # 只对域名部分转小写
+        parsed_url.path.rstrip('/'),  # 保持路径大小写
         '',
         new_query,
         ''
     ))
-    
-    # 转换为小写
-    clean_url = clean_url.lower()
     
     # 如果清理后的 URL 以 '?' 结尾，则移除它
     if clean_url.endswith('?'):
