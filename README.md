@@ -43,7 +43,7 @@ Using AI (currently supports all OpenAI compatible models via user configuration
 If you are overwhelmed by the number of articles, you can set up digests aggregating articles into one entry on a daily or weekly basis.
 You can optionally choose what to include in the digest (e.g. content, summary, ) and use AI to help you summarize the digest.
 
-## INSTALL
+## Install
 
 Docker deployment, please refer to [INSTALL.md](INSTALL.md).
 
@@ -51,7 +51,7 @@ Docker deployment, please refer to [INSTALL.md](INSTALL.md).
 
 This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE) file for details.
 
-## SUPPORT
+## Support
 
 If you find this project helpful, please consider leaving a star or supporting the development by donating to the author.
 
@@ -60,3 +60,13 @@ If you find this project helpful, please consider leaving a star or supporting t
 - [afdian](https://afdian.com/a/yinanc)
 
 We would greatly appreciate your support to keep this project going.
+
+## Acknowledgment
+
+[NodeSupport](https://github.com/NodeSeekDev/NodeSupport) has sponsored this project for hosting public and demo instances.
+
+<div align="left">
+  <a href="https://yxvm.com/">
+    <img src="https://github.com/user-attachments/assets/6a79ad5a-d023-434a-a09f-80c4eefe9cea" width="300" />
+  </a>
+</div>
