@@ -91,9 +91,9 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
 
     max_length_of_models = {
         'gpt-3.5-turbo': 16200,
-        'gpt-4o': 127800,
-        'gpt-4-turbo': 127800,
-        'gpt-4o-mini': 127800,
+        'gpt-4.1': 1047376,
+        'gpt-4.1-mini': 1047376,
+        'gpt-4.1-nano': 1047376,
         'default': 127800  # Default for all other models
     }
 

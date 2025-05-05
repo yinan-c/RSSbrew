@@ -7,6 +7,23 @@ from django.core.exceptions import ValidationError
 import re
 from .tasks import async_update_feeds_and_digest
 
+DEFAULT_MODEL = getattr(settings, 'OPENAI_DEFAULT_MODEL', 'gpt-4.1-mini')
+
+MODEL_CHOICES = [
+    ('gpt-4.1-mini', 'GPT-4.1 Mini'),
+    ('gpt-4.1-nano', 'GPT-4.1 Nano'),
+    ('gpt-4.1', 'GPT-4.1'),
+    ('gpt-4.5-preview', 'GPT-4.5 Preview'),
+    ('gpt-4o-mini', 'GPT-4o Mini'),
+    ('gpt-4o', 'GPT-4o'),
+    ('gpt-4-turbo', 'GPT-4 Turbo'),
+    ('gpt-3.5-turbo', 'GPT-3.5 Turbo'),
+    ('other', 'Other (specify below)'),
+]
+
+if DEFAULT_MODEL not in [choice[0] for choice in MODEL_CHOICES]:
+    MODEL_CHOICES.insert(0, (DEFAULT_MODEL, f"{DEFAULT_MODEL} (Default)"))
+
 class AppSetting(models.Model):
     auth_code = models.CharField(max_length=64, blank=True, null=True)
 
@@ -47,14 +64,11 @@ class ProcessedFeed(models.Model):
     summary_language = models.CharField(max_length=20, default='English', help_text="Language for summarization, will be ignored if summarization is disabled or using custom prompt.")
     additional_prompt = models.TextField(blank=True, default='', verbose_name='Custom Prompt', help_text="This prompt will override the default prompt for summarization, you can use it for translation or other detailed instructions.")
     translate_title = models.BooleanField(default=False, verbose_name="Article Title Translation", help_text="If this options is true, Article title is translated to summary language.")
-    choices = [ 
-        ('gpt-3.5-turbo', 'GPT-3.5 Turbo'),
-        ('gpt-4-turbo', 'GPT-4 Turbo'),
-        ('gpt-4o', 'GPT-4o'),
-        ('gpt-4o-mini', 'GPT-4o Mini'),
-        ('other', 'Other (specify below)'),
-    ]  
-    model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices)
+    model = models.CharField(
+        max_length=255,
+        default=DEFAULT_MODEL,
+        choices=MODEL_CHOICES,
+    )
     other_model = models.CharField(max_length=255, blank=True, default='', help_text="Please specify the model if 'Other' is selected above, e.g. 'gemini-1.5-pro' in OneAPI.")
 
     # Digest related fields
@@ -70,7 +84,12 @@ class ProcessedFeed(models.Model):
     # AI-digest related fields
     use_ai_digest = models.BooleanField(default=False, help_text="Use AI to process digest content.")
     send_full_article = models.BooleanField(default=False, help_text="(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent.")
-    digest_model = models.CharField(max_length=20, default='gpt-3.5-turbo', choices=choices, help_text="Model for digest generation.")
+    digest_model = models.CharField(
+        max_length=255,
+        default=DEFAULT_MODEL,
+        choices=MODEL_CHOICES,
+        help_text="Model for digest generation."
+    )
     other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text="Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3-beta' in GrokAI or OneAPI.")
     additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name='(Optional) Prompt for Digest', help_text="Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest.")
 
