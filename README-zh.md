@@ -61,10 +61,17 @@ Docker 部署，请参阅 [INSTALL.md](INSTALL.md)。
 
 ## 支持
 
-如果你发现此项目有帮助，请考虑 star 这个项目或通过捐赠作者来支持开发。
+感谢 [NodeSupport](https://github.com/NodeSeekDev/NodeSupport) 赞助了本项目的 demo 和公共示例的部署。
+
+<div align="left">
+  <a href="https://yxvm.com/">
+    <img src="https://github.com/user-attachments/assets/6a79ad5a-d023-434a-a09f-80c4eefe9cea" width="300" />
+  </a>
+</div>
+
+
+如果你发现此项目有帮助，请考虑 star 这个项目或通过捐赠作者来支持开发。非常感谢你的支持!
 
 - [爱发电](https://afdian.com/a/yinanc)
 
 - [Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
-
-非常感谢你的支持!
