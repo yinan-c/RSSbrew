@@ -65,13 +65,13 @@ Docker 部署，请参阅 [INSTALL.md](INSTALL.md)。
 
 <div align="left">
   <a href="https://yxvm.com/">
-    <img src="https://github.com/user-attachments/assets/6a79ad5a-d023-434a-a09f-80c4eefe9cea" width="300" />
+    <img src="https://github.com/user-attachments/assets/ea85cf8c-9c83-4e57-a211-eb7708847647" width="300" />
   </a>
 </div>
 
+如果你发现此项目有帮助，请考虑 star 这个项目或通过捐赠来支持开发。非常感谢你的支持!
 
-如果你发现此项目有帮助，请考虑 star 这个项目或通过捐赠作者来支持开发。非常感谢你的支持!
 
-- [爱发电](https://afdian.com/a/yinanc)
-
-- [Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
+<a href='https://ko-fi.com/yinanc' target='_blank'> <img height='36'
+style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi1.png?v=3'
+border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
