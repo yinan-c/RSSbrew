@@ -53,11 +53,11 @@ This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE)
 
 ## Support
 
-If you find this project helpful, please consider leaving a star or supporting the development by donating to the author.
+If you find this project helpful, please consider leaving a star or supporting the development by buying me a coffee.
 
-- [Buy Me A Coffee](https://www.buymeacoffee.com/yinan)
-
-- [afdian](https://afdian.com/a/yinanc)
+<a href='https://ko-fi.com/yinanc' target='_blank'> <img height='36'
+style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi1.png?v=3'
+border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
 We would greatly appreciate your support to keep this project going.
 
@@ -67,6 +67,6 @@ We would greatly appreciate your support to keep this project going.
 
 <div align="left">
   <a href="https://yxvm.com/">
-    <img src="https://github.com/user-attachments/assets/6a79ad5a-d023-434a-a09f-80c4eefe9cea" width="300" />
+    <img src="https://github.com/user-attachments/assets/ea85cf8c-9c83-4e57-a211-eb7708847647" width="300" />
   </a>
 </div>
