@@ -20,4 +20,7 @@ python3 /app/manage.py init_server
 mkdir -p /app/logs
 python3 /app/manage.py run_huey >> /app/logs/huey.log 2>&1 &
 
-exec gunicorn rssbrew.wsgi:application --bind 0.0.0.0:8000
+APP_PORT=${INTERNAL_PORT:-8000}
+
+exec gunicorn rssbrew.wsgi:application --bind 0.0.0.0:${APP_PORT}
+

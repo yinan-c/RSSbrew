@@ -16,11 +16,12 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
+      - INTERNAL_PORT=${INTERNAL_PORT:-8000} # set INTERNAL_PORT in .env, otherwise default to 8000
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
     ports:
-      - "8000:8000"
+      - "8000:${INTERNAL_PORT:-8000}" # external:internal
     restart: always
 
   redis:
