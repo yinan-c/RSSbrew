@@ -35,10 +35,10 @@ msgstr "否"
 
 # Admin column headers
 msgid "Summarize per Update"
-msgstr "每次更新摘要数量"
+msgstr "每次更新总结文章数"
 
 msgid "Digest/Entries"
-msgstr "文摘/条目"
+msgstr "摘要/条目"
 
 msgid "Original Feeds"
 msgstr "原始订阅源"
@@ -51,13 +51,13 @@ msgstr "订阅链接"
 
 # Admin fieldsets
 msgid "Summarization Options"
-msgstr "摘要选项"
+msgstr "总结选项"
 
 msgid "Digest Options"
-msgstr "文摘选项"
+msgstr "摘要选项"
 
 msgid "What to include in digest"
-msgstr "文摘包含内容"
+msgstr "摘要包含内容"
 
 msgid "Included in processed feeds"
 msgstr "包含在处理后订阅源中"
@@ -100,10 +100,10 @@ msgid "Articles"
 msgstr "文章"
 
 msgid "Digest"
-msgstr "文摘"
+msgstr "摘要"
 
 msgid "Digests"
-msgstr "文摘"
+msgstr "摘要"
 
 # Field names
 msgid "Auth Code"
@@ -128,10 +128,10 @@ msgid "Last Modified"
 msgstr "最后修改时间"
 
 msgid "Articles to summarize per update"
-msgstr "每次更新摘要文章数"
+msgstr "每次更新总结文章数"
 
 msgid "Summary Language"
-msgstr "摘要语言"
+msgstr "总结目标语言"
 
 msgid "Custom Prompt"
 msgstr "自定义提示词"
@@ -146,49 +146,49 @@ msgid "Other Model"
 msgstr "其他模型"
 
 msgid "Enable Digest"
-msgstr "启用文摘"
+msgstr "启用摘要"
 
 msgid "Include Entries"
 msgstr "包含条目"
 
 msgid "Digest Frequency"
-msgstr "文摘频率"
+msgstr "摘要频率"
 
 msgid "Last Digest"
-msgstr "上次文摘时间"
+msgstr "上次摘要时间"
 
 msgid "Include Table of Contents"
 msgstr "包含目录"
 
 msgid "Include One Line Summary"
-msgstr "包含一行摘要"
+msgstr "包含单行总结"
 
 msgid "Include Full Summary"
-msgstr "包含完整摘要"
+msgstr "包含完整总结"
 
 msgid "Include Full Content"
-msgstr "包含完整内容"
+msgstr "包含文章内容"
 
 msgid "Use AI Digest"
-msgstr "使用 AI 文摘"
+msgstr "使用 AI 摘要"
 
 msgid "Send Full Article"
 msgstr "发送完整文章"
 
 msgid "Digest Model"
-msgstr "文摘模型"
+msgstr "摘要模型"
 
 msgid "Other Digest Model"
-msgstr "其他文摘模型"
+msgstr "其他摘要模型"
 
 msgid "(Optional) Prompt for Digest"
-msgstr "（可选）文摘提示词"
+msgstr "（可选）摘要提示词"
 
 msgid "Feed Filter Logic"
 msgstr "订阅源过滤逻辑"
 
 msgid "Summary Filter Logic"
-msgstr "摘要过滤逻辑"
+msgstr "总结过滤逻辑"
 
 msgid "Case Sensitive"
 msgstr "区分大小写"
@@ -218,13 +218,13 @@ msgid "Content"
 msgstr "内容"
 
 msgid "Summary"
-msgstr "摘要"
+msgstr "总结"
 
 msgid "One Line Summary"
-msgstr "一行摘要"
+msgstr "单行总结"
 
 msgid "Summarized"
-msgstr "已生成摘要"
+msgstr "已生成总结"
 
 msgid "Custom Prompt Used"
 msgstr "已使用自定义提示词"
@@ -236,6 +236,9 @@ msgid "Created At"
 msgstr "创建时间"
 
 # Help texts
+msgid "Optional authentication code required to access RSS feeds."
+msgstr "访问 RSS 订阅源所需的可选身份验证码。"
+
 msgid "URL of the Atom or RSS feed"
 msgstr "Atom 或 RSS 订阅源的网址"
 
@@ -255,70 +258,70 @@ msgid "All selected original feeds will be aggregated into this feed."
 msgstr "所有选中的原始订阅源将被聚合到此订阅源中。"
 
 msgid "All articles will be included in the feed, but only the set number of articles will be summarized per update, set to 0 to disable summarization."
-msgstr "所有文章都将包含在订阅源中，但每次更新只会对设定数量的文章生成摘要，设置为 0 以禁用摘要功能。"
+msgstr "所有文章都将包含在订阅源中，但每次更新只会对设定数量的文章生成总结，设置为 0 以禁用总结功能。"
 
 msgid "Language for summarization, will be ignored if summarization is disabled or using custom prompt."
-msgstr "摘要语言，如果禁用摘要或使用自定义提示词，此设置将被忽略。"
+msgstr "总结目标语言，如果禁用总结或使用自定义提示词，此设置将被忽略。"
 
 msgid "This prompt will override the default prompt for summarization, you can use it for translation or other detailed instructions."
-msgstr "此提示词将覆盖默认的摘要提示词，您可以用它进行翻译或其他详细说明。"
+msgstr "此提示词将覆盖默认的总结用提示词，您可以修改提示词来完成翻译等其他操作。"
 
 msgid "If this option is true, Article title is translated to summary language."
-msgstr "如果启用此选项，文章标题将被翻译为摘要语言。"
+msgstr "如果启用此选项，文章标题将被翻译为总结目标语言。"
 
 msgid "Please specify the model if 'Other' is selected above, e.g. 'gemini-1.5-pro' in OneAPI."
 msgstr "如果上面选择了\"其他\"，请指定模型，例如 OneAPI 中的 'gemini-1.5-pro'。"
 
 msgid "Send a digest of the feed regularly."
-msgstr "定期发送订阅源文摘。"
+msgstr "定期发送订阅源摘要。"
 
 msgid "Include entries in the feed, disable to only send digest regularly."
-msgstr "在订阅源中包含条目，禁用后将只定期发送文摘。"
+msgstr "在订阅源中包含条目，禁用后将只定期发送摘要。"
 
 msgid "Frequency of the digest."
-msgstr "文摘频率。"
+msgstr "摘要频率。"
 
 msgid "Last time the digest was generated, change if you want to reset the digest timer or force a new digest."
-msgstr "上次生成文摘的时间，如果要重置文摘计时器或强制生成新文摘，可以修改此项。"
+msgstr "上次生成摘要的时间，如果要重置摘要计时器或强制生成新摘要，可以修改此项。"
 
 msgid "Include table of contents in digest."
-msgstr "在文摘中包含目录。"
+msgstr "在摘要中包含目录。"
 
 msgid "Include one line summary in digest, only works for default summarization."
-msgstr "在文摘中包含一行摘要，仅适用于默认摘要。"
+msgstr "在摘要中包含单行总结，仅适用于在默认总结设置（不自定义总结用提示词）。"
 
 msgid "Include full summary in digest."
-msgstr "在文摘中包含完整摘要。"
+msgstr "在摘要中包含完整 AI 总结。"
 
 msgid "Include full content in digest."
-msgstr "在文摘中包含完整内容。"
+msgstr "在摘要中包含文章内容。"
 
 msgid "Use AI to process digest content."
-msgstr "使用 AI 处理文摘内容。"
+msgstr "使用 AI 处理摘要内容。"
 
 msgid "(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent."
-msgstr "（无提示词时忽略）为 AI 文摘发送完整文章内容，默认只发送链接、标题和摘要。"
+msgstr "（无提示词时忽略）为 AI 摘要发送完整文章内容，默认只发送链接、标题和总结。"
 
 msgid "Model for digest generation."
-msgstr "文摘生成模型。"
+msgstr "摘要生成模型。"
 
-msgid "Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3-beta' in GrokAI or OneAPI."
-msgstr "如果上面选择了\"其他\"，请指定与 OpenAI 兼容的模型，例如 GrokAI 或 OneAPI 中的 'grok-3-beta'。"
+msgid "Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3' in xAI."
+msgstr "如果上面选择了\"其他\"，请指定与 OpenAI 兼容的模型，例如使用 xAI 接口的 'grok-3' 模型。"
 
 msgid "Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest."
-msgstr "使用 AI 生成文摘，否则文摘中只包含数据库中的标题、链接和摘要。"
+msgstr "使用 AI 生成摘要，否则摘要中只包含数据库中的标题、链接和总结。"
 
 msgid "The included articles must match All/Any/None of the filters."
 msgstr "包含的文章必须匹配所有/任意/无过滤器。"
 
 msgid "The included articles must match All/Any/None of the filters for summarization."
-msgstr "包含的文章必须匹配所有/任意/无过滤器以生成摘要。"
+msgstr "包含的文章必须匹配所有/任意/无过滤器以生成总结。"
 
 msgid "For filter keyword, default to unchecked for ignoring case."
 msgstr "对于过滤关键词，默认不勾选以忽略大小写。"
 
 msgid "At least one of 'toggle digest' or 'toggle entries' must be enabled."
-msgstr "必须至少启用\"启用文摘\"或\"包含条目\"中的一项。"
+msgstr "必须至少启用\"启用摘要\"或\"包含条目\"中的一项。"
 
 msgid "Value must be a positive integer for length comparisons."
 msgstr "长度比较的值必须是正整数。"
@@ -356,7 +359,7 @@ msgid "Feed Filter"
 msgstr "订阅源过滤器"
 
 msgid "Summary Filter"
-msgstr "摘要过滤器"
+msgstr "总结过滤器"
 
 msgid "Title or content"
 msgstr "标题或内容"

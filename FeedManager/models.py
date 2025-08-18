@@ -26,7 +26,13 @@ if DEFAULT_MODEL not in [choice[0] for choice in MODEL_CHOICES]:
     MODEL_CHOICES.insert(0, (DEFAULT_MODEL, f"{DEFAULT_MODEL} (Default)"))
 
 class AppSetting(models.Model):
-    auth_code = models.CharField(max_length=64, blank=True, null=True, verbose_name=_('Auth Code'))
+    auth_code = models.CharField(
+        max_length=64, 
+        blank=True, 
+        null=True, 
+        verbose_name=_('Auth Code'),
+        help_text=_('Optional authentication code required to access RSS feeds.')
+    )
 
     class Meta:
         verbose_name = _('App Setting')
@@ -83,7 +89,7 @@ class ProcessedFeed(models.Model):
         choices=MODEL_CHOICES,
         verbose_name=_('Model')
     )
-    other_model = models.CharField(max_length=255, blank=True, default='', help_text=_("Please specify the model if 'Other' is selected above, e.g. 'gemini-1.5-pro' in OneAPI."), verbose_name=_('Other Model'))
+    other_model = models.CharField(max_length=255, blank=True, default='', help_text=_("Please specify the model if 'Other' is selected above, e.g. 'grok-3' in xAI."), verbose_name=_('Other Model'))
 
     # Digest related fields
     toggle_digest = models.BooleanField(default=False, help_text=_("Send a digest of the feed regularly."), verbose_name=_('Enable Digest'))
@@ -105,7 +111,7 @@ class ProcessedFeed(models.Model):
         help_text=_("Model for digest generation."),
         verbose_name=_('Digest Model')
     )
-    other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text=_("Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3-beta' in GrokAI or OneAPI."), verbose_name=_('Other Digest Model'))
+    other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text=_("Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3' in xAI."), verbose_name=_('Other Digest Model'))
     additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name=_('(Optional) Prompt for Digest'), help_text=_("Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest."))
 
     # Filter related fields

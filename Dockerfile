@@ -27,4 +27,8 @@ COPY scripts/entrypoint.sh /app/scripts/entrypoint.sh
 
 RUN chmod +x /app/scripts/update_feeds.sh /app/scripts/entrypoint.sh
 
+# Collect static files and compile translation messages
+RUN python manage.py collectstatic --no-input --clear
+RUN python manage.py compilemessages
+
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]
