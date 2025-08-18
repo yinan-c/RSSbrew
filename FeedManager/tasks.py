@@ -49,7 +49,13 @@ def generate_digest_task():
 @task(retries=3)
 def async_update_feeds_and_digest(feed_name):
     call_command('update_feeds', name=feed_name)
-    call_command('generate_digest', name=feed_name)
+    from FeedManager.models import ProcessedFeed
+    try:
+        feed = ProcessedFeed.objects.get(name=feed_name)
+        if feed.toggle_digest:
+            call_command('generate_digest', name=feed_name)
+    except ProcessedFeed.DoesNotExist:
+        logger.error(f"ProcessedFeed with name {feed_name} does not exist.")
 
 @task(retries=3)
 def clean_old_articles(feed_id):
