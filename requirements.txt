@@ -1,4 +1,5 @@
 django
+django-admin-interface
 django-debug-toolbar
 whitenoise
 openai

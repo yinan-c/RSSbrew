@@ -6,7 +6,7 @@ class Command(BaseCommand):
     help = 'Initialize the server by running collectstatic, makemigrations, migrate and create_default_superuser commands.'
 
     def handle(self, *args, **options):
-        call_command('collectstatic', '--no-input')
+        call_command('collectstatic', '--no-input', '--clear')
         call_command('makemigrations')
         call_command('migrate')
         call_command('create_default_superuser')
