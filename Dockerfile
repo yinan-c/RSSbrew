@@ -7,6 +7,7 @@ ENV PIP_NO_CACHE_DIR=1
 
 RUN apt-get update && apt-get install -y \
     cron \
+    gettext \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
