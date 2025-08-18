@@ -180,6 +180,11 @@ LANGUAGES = [
     ('tr', _('Turkish')),
 ]
 
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+    BASE_DIR / 'FeedManager' / 'locale',
+]
+
 TIME_ZONE = os.getenv('TIME_ZONE', 'UTC')
 
 USE_I18N = True

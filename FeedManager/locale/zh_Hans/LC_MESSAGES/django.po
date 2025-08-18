@@ -1,0 +1,380 @@
+# Chinese (Simplified) translations for RSSBrew
+# Copyright (C) 2024
+# This file is distributed under the same license as the RSSBrew package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: RSSBrew 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-08-18 20:59+0000\n"
+"PO-Revision-Date: 2025-08-18 21:00+0000\n"
+"Last-Translator: RSSBrew Team\n"
+"Language-Team: Chinese (Simplified)\n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# Admin actions
+msgid "Clean old articles for selected feeds"
+msgstr "清理选中订阅源的旧文章"
+
+msgid "Update selected feeds"
+msgstr "更新选中的订阅源"
+
+# Filter labels
+msgid "Has any original feed"
+msgstr "包含原始订阅源"
+
+msgid "Yes"
+msgstr "是"
+
+msgid "No"
+msgstr "否"
+
+# Admin column headers
+msgid "Summarize per Update"
+msgstr "每次更新摘要数量"
+
+msgid "Digest/Entries"
+msgstr "文摘/条目"
+
+msgid "Original Feeds"
+msgstr "原始订阅源"
+
+msgid "Processed Feeds"
+msgstr "处理后订阅源"
+
+msgid "Subscribe Link"
+msgstr "订阅链接"
+
+# Admin fieldsets
+msgid "Summarization Options"
+msgstr "摘要选项"
+
+msgid "Digest Options"
+msgstr "文摘选项"
+
+msgid "What to include in digest"
+msgstr "文摘包含内容"
+
+msgid "Included in processed feeds"
+msgstr "包含在处理后订阅源中"
+
+# Model names
+msgid "App Setting"
+msgstr "应用设置"
+
+msgid "App Settings"
+msgstr "应用设置"
+
+msgid "Original Feed"
+msgstr "原始订阅源"
+
+msgid "Tag"
+msgstr "标签"
+
+msgid "Tags"
+msgstr "标签"
+
+msgid "Processed Feed"
+msgstr "处理后订阅源"
+
+msgid "Filter Group"
+msgstr "过滤器组"
+
+msgid "Filter Groups"
+msgstr "过滤器组"
+
+msgid "Filter"
+msgstr "过滤器"
+
+msgid "Filters"
+msgstr "过滤器"
+
+msgid "Article"
+msgstr "文章"
+
+msgid "Articles"
+msgstr "文章"
+
+msgid "Digest"
+msgstr "文摘"
+
+msgid "Digests"
+msgstr "文摘"
+
+# Field names
+msgid "Auth Code"
+msgstr "授权码"
+
+msgid "URL"
+msgstr "网址"
+
+msgid "Title"
+msgstr "标题"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "Max Articles to Keep"
+msgstr "最大保留文章数"
+
+msgid "Valid"
+msgstr "有效"
+
+msgid "Last Modified"
+msgstr "最后修改时间"
+
+msgid "Articles to summarize per update"
+msgstr "每次更新摘要文章数"
+
+msgid "Summary Language"
+msgstr "摘要语言"
+
+msgid "Custom Prompt"
+msgstr "自定义提示词"
+
+msgid "Article Title Translation"
+msgstr "文章标题翻译"
+
+msgid "Model"
+msgstr "模型"
+
+msgid "Other Model"
+msgstr "其他模型"
+
+msgid "Enable Digest"
+msgstr "启用文摘"
+
+msgid "Include Entries"
+msgstr "包含条目"
+
+msgid "Digest Frequency"
+msgstr "文摘频率"
+
+msgid "Last Digest"
+msgstr "上次文摘时间"
+
+msgid "Include Table of Contents"
+msgstr "包含目录"
+
+msgid "Include One Line Summary"
+msgstr "包含一行摘要"
+
+msgid "Include Full Summary"
+msgstr "包含完整摘要"
+
+msgid "Include Full Content"
+msgstr "包含完整内容"
+
+msgid "Use AI Digest"
+msgstr "使用 AI 文摘"
+
+msgid "Send Full Article"
+msgstr "发送完整文章"
+
+msgid "Digest Model"
+msgstr "文摘模型"
+
+msgid "Other Digest Model"
+msgstr "其他文摘模型"
+
+msgid "(Optional) Prompt for Digest"
+msgstr "（可选）文摘提示词"
+
+msgid "Feed Filter Logic"
+msgstr "订阅源过滤逻辑"
+
+msgid "Summary Filter Logic"
+msgstr "摘要过滤逻辑"
+
+msgid "Case Sensitive"
+msgstr "区分大小写"
+
+msgid "Usage"
+msgstr "用途"
+
+msgid "Relational Operator"
+msgstr "关系运算符"
+
+msgid "Field"
+msgstr "字段"
+
+msgid "Match Type"
+msgstr "匹配类型"
+
+msgid "Value"
+msgstr "值"
+
+msgid "Link"
+msgstr "链接"
+
+msgid "Published Date"
+msgstr "发布日期"
+
+msgid "Content"
+msgstr "内容"
+
+msgid "Summary"
+msgstr "摘要"
+
+msgid "One Line Summary"
+msgstr "一行摘要"
+
+msgid "Summarized"
+msgstr "已生成摘要"
+
+msgid "Custom Prompt Used"
+msgstr "已使用自定义提示词"
+
+msgid "Start Time"
+msgstr "开始时间"
+
+msgid "Created At"
+msgstr "创建时间"
+
+# Help texts
+msgid "URL of the Atom or RSS feed"
+msgstr "Atom 或 RSS 订阅源的网址"
+
+msgid "Optional title for the original feed"
+msgstr "原始订阅源的可选标题"
+
+msgid "Older articles will be removed when the limit is reached."
+msgstr "达到限制时将删除较旧的文章。"
+
+msgid "Tags associated with this feed"
+msgstr "与此订阅源关联的标签"
+
+msgid "Whether the feed is valid."
+msgstr "订阅源是否有效。"
+
+msgid "All selected original feeds will be aggregated into this feed."
+msgstr "所有选中的原始订阅源将被聚合到此订阅源中。"
+
+msgid "All articles will be included in the feed, but only the set number of articles will be summarized per update, set to 0 to disable summarization."
+msgstr "所有文章都将包含在订阅源中，但每次更新只会对设定数量的文章生成摘要，设置为 0 以禁用摘要功能。"
+
+msgid "Language for summarization, will be ignored if summarization is disabled or using custom prompt."
+msgstr "摘要语言，如果禁用摘要或使用自定义提示词，此设置将被忽略。"
+
+msgid "This prompt will override the default prompt for summarization, you can use it for translation or other detailed instructions."
+msgstr "此提示词将覆盖默认的摘要提示词，您可以用它进行翻译或其他详细说明。"
+
+msgid "If this option is true, Article title is translated to summary language."
+msgstr "如果启用此选项，文章标题将被翻译为摘要语言。"
+
+msgid "Please specify the model if 'Other' is selected above, e.g. 'gemini-1.5-pro' in OneAPI."
+msgstr "如果上面选择了\"其他\"，请指定模型，例如 OneAPI 中的 'gemini-1.5-pro'。"
+
+msgid "Send a digest of the feed regularly."
+msgstr "定期发送订阅源文摘。"
+
+msgid "Include entries in the feed, disable to only send digest regularly."
+msgstr "在订阅源中包含条目，禁用后将只定期发送文摘。"
+
+msgid "Frequency of the digest."
+msgstr "文摘频率。"
+
+msgid "Last time the digest was generated, change if you want to reset the digest timer or force a new digest."
+msgstr "上次生成文摘的时间，如果要重置文摘计时器或强制生成新文摘，可以修改此项。"
+
+msgid "Include table of contents in digest."
+msgstr "在文摘中包含目录。"
+
+msgid "Include one line summary in digest, only works for default summarization."
+msgstr "在文摘中包含一行摘要，仅适用于默认摘要。"
+
+msgid "Include full summary in digest."
+msgstr "在文摘中包含完整摘要。"
+
+msgid "Include full content in digest."
+msgstr "在文摘中包含完整内容。"
+
+msgid "Use AI to process digest content."
+msgstr "使用 AI 处理文摘内容。"
+
+msgid "(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent."
+msgstr "（无提示词时忽略）为 AI 文摘发送完整文章内容，默认只发送链接、标题和摘要。"
+
+msgid "Model for digest generation."
+msgstr "文摘生成模型。"
+
+msgid "Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3-beta' in GrokAI or OneAPI."
+msgstr "如果上面选择了\"其他\"，请指定与 OpenAI 兼容的模型，例如 GrokAI 或 OneAPI 中的 'grok-3-beta'。"
+
+msgid "Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest."
+msgstr "使用 AI 生成文摘，否则文摘中只包含数据库中的标题、链接和摘要。"
+
+msgid "The included articles must match All/Any/None of the filters."
+msgstr "包含的文章必须匹配所有/任意/无过滤器。"
+
+msgid "The included articles must match All/Any/None of the filters for summarization."
+msgstr "包含的文章必须匹配所有/任意/无过滤器以生成摘要。"
+
+msgid "For filter keyword, default to unchecked for ignoring case."
+msgstr "对于过滤关键词，默认不勾选以忽略大小写。"
+
+msgid "At least one of 'toggle digest' or 'toggle entries' must be enabled."
+msgstr "必须至少启用\"启用文摘\"或\"包含条目\"中的一项。"
+
+msgid "Value must be a positive integer for length comparisons."
+msgstr "长度比较的值必须是正整数。"
+
+msgid "Value must be a positive integer greater than zero."
+msgstr "值必须是大于零的正整数。"
+
+msgid "Invalid regular expression."
+msgstr "无效的正则表达式。"
+
+# App name
+msgid "Feed Manager"
+msgstr "订阅源管理"
+
+# Choice labels
+msgid "Other (specify below)"
+msgstr "其他（在下方指定）"
+
+msgid "Daily"
+msgstr "每日"
+
+msgid "Weekly"
+msgstr "每周"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Any"
+msgstr "任意"
+
+msgid "None"
+msgstr "无"
+
+msgid "Feed Filter"
+msgstr "订阅源过滤器"
+
+msgid "Summary Filter"
+msgstr "摘要过滤器"
+
+msgid "Title or content"
+msgstr "标题或内容"
+
+msgid "Contains"
+msgstr "包含"
+
+msgid "Does not contain"
+msgstr "不包含"
+
+msgid "Matches regex"
+msgstr "匹配正则表达式"
+
+msgid "Does not match regex"
+msgstr "不匹配正则表达式"
+
+msgid "Shorter than"
+msgstr "短于"
+
+msgid "Longer than"
+msgstr "长于"
