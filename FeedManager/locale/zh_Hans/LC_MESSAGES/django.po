@@ -312,10 +312,10 @@ msgid "Using AI to generate digest, otherwise only the title, link and summary f
 msgstr "使用 AI 生成摘要，否则摘要中只包含数据库中的标题、链接和总结。"
 
 msgid "The included articles must match All/Any/None of the filters."
-msgstr "包含的文章必须匹配所有/任意/无过滤器。"
+msgstr "包含的文章必须匹配所有/任一/不符合任何过滤条件。"
 
 msgid "The included articles must match All/Any/None of the filters for summarization."
-msgstr "包含的文章必须匹配所有/任意/无过滤器以生成总结。"
+msgstr "文章必须匹配所有/任一/不符合任何过滤条件，才能生成总结。"
 
 msgid "For filter keyword, default to unchecked for ignoring case."
 msgstr "对于过滤关键词，默认不勾选以忽略大小写。"
@@ -347,13 +347,13 @@ msgid "Weekly"
 msgstr "每周"
 
 msgid "All"
-msgstr "全部"
+msgstr "所有"
 
 msgid "Any"
-msgstr "任意"
+msgstr "任一"
 
 msgid "None"
-msgstr "无"
+msgstr "无一"
 
 msgid "Feed Filter"
 msgstr "订阅源过滤器"
