@@ -127,7 +127,7 @@ class ProcessedFeed(models.Model):
 
     def clean(self):
         if not self.toggle_digest and not self.toggle_entries:
-            raise ValidationError(_("At least one of 'toggle digest' or 'toggle entries' must be enabled."))
+            raise ValidationError(_("At least one of 'Enable Digest' or 'Include Entries' must be enabled."))
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

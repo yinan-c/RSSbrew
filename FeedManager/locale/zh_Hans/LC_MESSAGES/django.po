@@ -282,7 +282,7 @@ msgstr "区分大小写"
 msgid "Processed Feed"
 msgstr "处理后订阅源"
 
-msgid "At least one of 'toggle digest' or 'toggle entries' must be enabled."
+msgid "At least one of 'Enable Digest' or 'Include Entries' must be enabled."
 msgstr "必须至少启用\"启用摘要\"或\"包含条目\"中的一项。"
 
 msgid "Feed Filter"
