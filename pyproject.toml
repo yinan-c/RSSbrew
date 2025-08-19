@@ -1,0 +1,102 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [
+    "migrations",
+    "static",
+    "templates",
+    "data",
+    "logs",
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "S",    # flake8-bandit
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "DJ",   # flake8-django
+    "RUF",  # Ruff-specific rules
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",  # Line too long (handled by formatter)
+    "S101",  # Use of assert (common in tests)
+    "S105",  # Possible hardcoded password (false positives)
+    "S106",  # Possible hardcoded password (false positives)
+    "DJ001", # Avoid using null=True on string fields
+    "RUF012", # Mutable class attributes should be annotated
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests.py" = ["S101"]  # Allow assert in tests
+"*/test_*.py" = ["S101"]  # Allow assert in tests
+"*/settings.py" = ["S105", "S106"]  # Allow hardcoded secrets in settings
+"*/migrations/*.py" = ["E501", "N806"]  # Allow long lines and non-lowercase variables in migrations
+
+[tool.ruff.lint.isort]
+known-first-party = ["FeedManager", "rssbrew"]
+section-order = ["future", "standard-library", "django", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+"django" = ["django"]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = ["mypy_django_plugin.main"]
+ignore_missing_imports = true
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+disallow_any_generics = false
+disallow_untyped_calls = false
+disallow_subclassing_any = false
+disallow_incomplete_defs = false
+no_implicit_optional = true
+show_error_codes = true
+show_column_numbers = true
+show_error_context = true
+
+[tool.django-stubs]
+django_settings_module = "rssbrew.settings"
+
+[[tool.mypy.overrides]]
+module = [
+    "feedparser.*",
+    "fake_useragent.*",
+    "huey.*",
+    "tiktoken.*",
+    "nested_admin.*",
+]
+ignore_missing_imports = true
+
+[tool.djlint]
+profile = "django"
+max_line_length = 120
+indent = 2
+blank_line_after_tag = "load,extends,include"
+close_void_tags = true
+format_css = true
+format_js = false
+ignore = "H006,H017,H023,H030,H031"  # Ignore some HTML rules that conflict with Django
+preserve_blank_lines = true
+preserve_leading_space = true
+
+[tool.djlint.per-file-ignores]
+"*/admin/*" = ["H006"]  # Allow img without alt in admin templates
