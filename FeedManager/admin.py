@@ -10,6 +10,12 @@ from huey.contrib.djhuey import task
 from nested_admin.nested import NestedModelAdmin, NestedTabularInline
 from .tasks import async_update_feeds_and_digest, clean_old_articles
 from django.utils.translation import gettext_lazy as _
+from django.http import HttpResponse
+from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom import minidom
+from datetime import datetime
+import pytz
+from django.conf import settings
 
 def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
@@ -24,6 +30,113 @@ def clean_selected_feeds_articles(modeladmin, request, queryset):
 
 clean_selected_feeds_articles.short_description = _("Clean old articles for selected feeds")
 update_selected_feeds.short_description = _("Update selected feeds")
+
+def export_original_feeds_as_opml(modeladmin, request, queryset):
+    """Export selected original feeds as OPML"""
+    # Create OPML structure
+    opml = Element('opml')
+    opml.set('version', '2.0')
+    
+    # Create head section
+    head = SubElement(opml, 'head')
+    title = SubElement(head, 'title')
+    title.text = 'RSSBrew Original Feeds Export'
+    date_created = SubElement(head, 'dateCreated')
+    tz = pytz.timezone(getattr(settings, 'TIME_ZONE', 'UTC'))
+    date_created.text = datetime.now(tz).strftime('%a, %d %b %Y %H:%M:%S %z')
+    
+    # Create body section
+    body = SubElement(opml, 'body')
+    
+    # Add each selected feed as an outline
+    for feed in queryset:
+        outline = SubElement(body, 'outline')
+        outline.set('text', feed.title or feed.url)
+        outline.set('title', feed.title or feed.url)
+        outline.set('type', 'rss')
+        outline.set('xmlUrl', feed.url)
+        outline.set('htmlUrl', feed.url)  # Using feed URL as HTML URL since we don't track website URL
+        
+        # Add tags as categories if present
+        tags = feed.tags.all()
+        if tags:
+            categories = ', '.join([tag.name for tag in tags])
+            outline.set('category', categories)
+    
+    # Convert to pretty XML string
+    xml_string = minidom.parseString(tostring(opml, encoding='unicode')).toprettyxml(indent='  ')
+    
+    # Create HTTP response with OPML content
+    response = HttpResponse(xml_string, content_type='text/xml; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="rssbrew_original_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
+    
+    return response
+
+export_original_feeds_as_opml.short_description = _("Export selected feeds as OPML")
+
+def export_processed_feeds_as_opml(modeladmin, request, queryset):
+    """Export selected processed feeds as OPML with their original feeds"""
+    # Create OPML structure
+    opml = Element('opml')
+    opml.set('version', '2.0')
+    
+    # Create head section
+    head = SubElement(opml, 'head')
+    title = SubElement(head, 'title')
+    title.text = 'RSSBrew Processed Feeds Export'
+    date_created = SubElement(head, 'dateCreated')
+    tz = pytz.timezone(getattr(settings, 'TIME_ZONE', 'UTC'))
+    date_created.text = datetime.now(tz).strftime('%a, %d %b %Y %H:%M:%S %z')
+    
+    # Create body section
+    body = SubElement(opml, 'body')
+    
+    # Add each processed feed as a folder with its original feeds
+    for processed_feed in queryset:
+        # Create folder for processed feed
+        folder = SubElement(body, 'outline')
+        folder.set('text', processed_feed.name)
+        folder.set('title', processed_feed.name)
+        
+        # Add the processed feed URL itself
+        processed_outline = SubElement(folder, 'outline')
+        processed_outline.set('text', f'{processed_feed.name} (Processed Feed)')
+        processed_outline.set('title', f'{processed_feed.name} (Processed Feed)')
+        processed_outline.set('type', 'rss')
+        
+        # Generate the processed feed URL
+        processed_url = request.build_absolute_uri(reverse('processed_feed_by_name', args=[processed_feed.name]))
+        auth_code = AppSetting.get_auth_code()
+        if auth_code:
+            processed_url += f'?key={auth_code}'
+        processed_outline.set('xmlUrl', processed_url)
+        processed_outline.set('htmlUrl', processed_url)
+        
+        # Add all original feeds in this processed feed
+        for original_feed in processed_feed.feeds.all():
+            outline = SubElement(folder, 'outline')
+            outline.set('text', original_feed.title or original_feed.url)
+            outline.set('title', original_feed.title or original_feed.url)
+            outline.set('type', 'rss')
+            outline.set('xmlUrl', original_feed.url)
+            outline.set('htmlUrl', original_feed.url)
+            
+            # Add tags as categories if present
+            tags = original_feed.tags.all()
+            if tags:
+                categories = ', '.join([tag.name for tag in tags])
+                outline.set('category', categories)
+    
+    # Convert to pretty XML string
+    xml_string = minidom.parseString(tostring(opml, encoding='unicode')).toprettyxml(indent='  ')
+    
+    # Create HTTP response with OPML content
+    response = HttpResponse(xml_string, content_type='text/xml; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="rssbrew_processed_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
+    
+    return response
+
+export_processed_feeds_as_opml.short_description = _("Export selected feeds as OPML")
 
 class FilterInline(NestedTabularInline):
     model = Filter
@@ -87,7 +200,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
 #    filter_horizontal = ('feeds',)
     search_fields = ('name', 'feeds__title', 'feeds__url')
     list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model', HasAnyOriginalFeedListFilter, 'toggle_digest', 'toggle_entries', 'digest_frequency', 'use_ai_digest', 'digest_model')
-    actions = [update_selected_feeds]
+    actions = [update_selected_feeds, export_processed_feeds_as_opml]
     autocomplete_fields = ['feeds']
 
     def get_queryset(self, request):
@@ -165,7 +278,7 @@ class OriginalFeedAdmin(admin.ModelAdmin):
 
     # Filter if the original feed is included in the processed feed
     list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter, 'tags')
-    actions = [clean_selected_feeds_articles]
+    actions = [clean_selected_feeds_articles, export_original_feeds_as_opml]
     autocomplete_fields = ['tags']
 
 admin.site.register(ProcessedFeed, ProcessedFeedAdmin)

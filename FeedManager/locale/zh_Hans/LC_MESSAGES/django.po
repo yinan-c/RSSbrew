@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RSSBrew 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-18 20:59+0000\n"
+"POT-Creation-Date: 2025-08-19 01:11+0000\n"
 "PO-Revision-Date: 2025-08-18 21:00+0000\n"
 "Last-Translator: RSSBrew Team\n"
 "Language-Team: Chinese (Simplified)\n"
@@ -22,6 +22,9 @@ msgstr "清理选中订阅源的旧文章"
 
 msgid "Update selected feeds"
 msgstr "更新选中的订阅源"
+
+msgid "Export selected feeds as OPML"
+msgstr "导出选中的订阅源为 OPML"
 
 # Filter labels
 msgid "Has any original feed"
@@ -43,12 +46,6 @@ msgstr "摘要/条目"
 msgid "Original Feeds"
 msgstr "原始订阅源"
 
-msgid "Processed Feeds"
-msgstr "处理后订阅源"
-
-msgid "Subscribe Link"
-msgstr "订阅链接"
-
 # Admin fieldsets
 msgid "Summarization Options"
 msgstr "总结选项"
@@ -59,8 +56,30 @@ msgstr "摘要选项"
 msgid "What to include in digest"
 msgstr "摘要包含内容"
 
+msgid "Subscribe Link"
+msgstr "订阅链接"
+
 msgid "Included in processed feeds"
 msgstr "包含在处理后订阅源中"
+
+msgid "Processed Feeds"
+msgstr "处理后订阅源"
+
+# App name
+msgid "Feed Manager"
+msgstr "订阅源管理"
+
+# Choice labels
+msgid "Other (specify below)"
+msgstr "其他（在下方指定）"
+
+# Field names
+msgid "Auth Code"
+msgstr "授权码"
+
+# Help texts
+msgid "Optional authentication code to access RSS feeds"
+msgstr "访问 RSS 订阅源的可选身份验证码"
 
 # Model names
 msgid "App Setting"
@@ -69,66 +88,58 @@ msgstr "应用设置"
 msgid "App Settings"
 msgstr "应用设置"
 
-msgid "Original Feed"
-msgstr "原始订阅源"
-
-msgid "Tag"
-msgstr "标签"
-
-msgid "Tags"
-msgstr "标签"
-
-msgid "Processed Feed"
-msgstr "处理后订阅源"
-
-msgid "Filter Group"
-msgstr "过滤器组"
-
-msgid "Filter Groups"
-msgstr "过滤器组"
-
-msgid "Filter"
-msgstr "过滤器"
-
-msgid "Filters"
-msgstr "过滤器"
-
-msgid "Article"
-msgstr "文章"
-
-msgid "Articles"
-msgstr "文章"
-
-msgid "Digest"
-msgstr "摘要"
-
-msgid "Digests"
-msgstr "摘要"
-
-# Field names
-msgid "Auth Code"
-msgstr "授权码"
+msgid "RSS or Atom feed URL"
+msgstr "RSS 或 Atom 订阅源网址"
 
 msgid "URL"
 msgstr "网址"
 
+msgid "Display name for this feed"
+msgstr "此订阅源的显示名称"
+
 msgid "Title"
 msgstr "标题"
 
-msgid "Name"
-msgstr "名称"
+msgid "Older articles will be removed when limit is reached"
+msgstr "达到限制时将删除较旧的文章"
 
 msgid "Max Articles to Keep"
 msgstr "最大保留文章数"
 
+msgid "Tags"
+msgstr "标签"
+
 msgid "Valid"
 msgstr "有效"
+
+msgid "Original Feed"
+msgstr "原始订阅源"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "Tag"
+msgstr "标签"
 
 msgid "Last Modified"
 msgstr "最后修改时间"
 
+# Removed - no help text needed for tags field
+# Removed - no help text needed for valid field
+msgid "Original feeds to aggregate into this processed feed"
+msgstr "要聚合到此处理后订阅源的原始订阅源"
+
+msgid ""
+"Number of articles to summarize per update. All articles included in feed, "
+"set to 0 to disable summarization"
+msgstr ""
+"每次更新总结的文章数量。所有文章都包含在订阅源中，设置为 0 禁用总结功能"
+
 msgid "Articles to summarize per update"
 msgstr "每次更新总结文章数"
+
+msgid "Target language for summarization. Ignored if using custom prompt"
+msgstr "总结目标语言。使用自定义提示词时将忽略此设置"
 
 msgid "Summary Language"
 msgstr "总结目标语言"
@@ -136,29 +147,60 @@ msgstr "总结目标语言"
 msgid "Custom Prompt"
 msgstr "自定义提示词"
 
+msgid ""
+"Override default summarization prompt. Can be used for translation or custom "
+"instructions"
+msgstr "覆盖默认总结提示词。可用于翻译或自定义指令"
+
 msgid "Article Title Translation"
 msgstr "文章标题翻译"
+
+msgid "Translate article titles to summary language"
+msgstr "将文章标题翻译为总结目标语言"
 
 msgid "Model"
 msgstr "模型"
 
+msgid "Specify model name if 'Other' is selected above, e.g. 'grok-3' in xAI"
+msgstr "如果上面选择了\"其他\"，请指定模型名称，例如 xAI 中的 'grok-3'"
+
 msgid "Other Model"
 msgstr "其他模型"
+
+msgid "Generate periodic digest of the feed"
+msgstr "定期生成订阅源摘要"
 
 msgid "Enable Digest"
 msgstr "启用摘要"
 
+msgid "Include individual entries in feed. Disable to only generate digest"
+msgstr "在订阅源中包含单独条目。禁用后仅生成摘要"
+
 msgid "Include Entries"
 msgstr "包含条目"
 
+msgid "Daily"
+msgstr "每日"
+
+msgid "Weekly"
+msgstr "每周"
+
 msgid "Digest Frequency"
 msgstr "摘要频率"
+
+# Removed - no help text needed for digest frequency field
+msgid "Last digest generation time. Modify to reset timer or force new digest"
+msgstr "上次摘要生成时间。修改此项可重置计时器或强制生成新摘要"
 
 msgid "Last Digest"
 msgstr "上次摘要时间"
 
 msgid "Include Table of Contents"
 msgstr "包含目录"
+
+# Removed - no help text needed for include_toc field
+msgid "Only works with default summarization (no custom prompt)"
+msgstr "仅适用于默认总结设置（无自定义提示词）"
 
 msgid "Include One Line Summary"
 msgstr "包含单行总结"
@@ -172,11 +214,26 @@ msgstr "包含文章内容"
 msgid "Use AI Digest"
 msgstr "使用 AI 摘要"
 
+# Removed - no help text needed for include_summary field
+# Removed - no help text needed for include_content field
+# Removed - no help text needed for use_ai_digest field
+msgid ""
+"Send full article content to AI. Ignored without digest prompt. Default "
+"sends only link, title, and summary"
+msgstr "向 AI 发送完整文章内容。无摘要提示词时忽略。默认只发送链接、标题和总结"
+
 msgid "Send Full Article"
 msgstr "发送完整文章"
 
 msgid "Digest Model"
 msgstr "摘要模型"
+
+# Removed - no help text needed for digest_model field
+msgid ""
+"Specify OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3' "
+"in xAI"
+msgstr ""
+"如果上面选择了\"其他\"，请指定与 OpenAI 兼容的模型，例如 xAI 中的 'grok-3'"
 
 msgid "Other Digest Model"
 msgstr "其他摘要模型"
@@ -184,159 +241,10 @@ msgstr "其他摘要模型"
 msgid "Digest Prompt"
 msgstr "摘要提示词"
 
-msgid "Feed Filter Logic"
-msgstr "订阅源过滤逻辑"
-
-msgid "Summary Filter Logic"
-msgstr "总结过滤逻辑"
-
-msgid "Case Sensitive"
-msgstr "区分大小写"
-
-msgid "Usage"
-msgstr "用途"
-
-msgid "Relational Operator"
-msgstr "关系运算符"
-
-msgid "Field"
-msgstr "字段"
-
-msgid "Match Type"
-msgstr "匹配类型"
-
-msgid "Value"
-msgstr "值"
-
-msgid "Link"
-msgstr "链接"
-
-msgid "Published Date"
-msgstr "发布日期"
-
-msgid "Content"
-msgstr "内容"
-
-msgid "Summary"
-msgstr "总结"
-
-msgid "One Line Summary"
-msgstr "单行总结"
-
-msgid "Summarized"
-msgstr "已生成总结"
-
-msgid "Custom Prompt Used"
-msgstr "已使用自定义提示词"
-
-msgid "Start Time"
-msgstr "开始时间"
-
-msgid "Created At"
-msgstr "创建时间"
-
-# Help texts
-msgid "Optional authentication code to access RSS feeds"
-msgstr "访问 RSS 订阅源的可选身份验证码"
-
-msgid "RSS or Atom feed URL"
-msgstr "RSS 或 Atom 订阅源网址"
-
-msgid "Display name for this feed"
-msgstr "此订阅源的显示名称"
-
-msgid "Older articles will be removed when limit is reached"
-msgstr "达到限制时将删除较旧的文章"
-
-# Removed - no help text needed for tags field
-
-# Removed - no help text needed for valid field
-
-msgid "Original feeds to aggregate into this processed feed"
-msgstr "要聚合到此处理后订阅源的原始订阅源"
-
-msgid "Number of articles to summarize per update. All articles included in feed, set to 0 to disable summarization"
-msgstr "每次更新总结的文章数量。所有文章都包含在订阅源中，设置为 0 禁用总结功能"
-
-msgid "Target language for summarization. Ignored if using custom prompt"
-msgstr "总结目标语言。使用自定义提示词时将忽略此设置"
-
-msgid "Override default summarization prompt. Can be used for translation or custom instructions"
-msgstr "覆盖默认总结提示词。可用于翻译或自定义指令"
-
-msgid "Translate article titles to summary language"
-msgstr "将文章标题翻译为总结目标语言"
-
-msgid "Specify model name if 'Other' is selected above, e.g. 'grok-3' in xAI"
-msgstr "如果上面选择了\"其他\"，请指定模型名称，例如 xAI 中的 'grok-3'"
-
-msgid "Generate periodic digest of the feed"
-msgstr "定期生成订阅源摘要"
-
-msgid "Include individual entries in feed. Disable to only generate digest"
-msgstr "在订阅源中包含单独条目。禁用后仅生成摘要"
-
-# Removed - no help text needed for digest frequency field
-
-msgid "Last digest generation time. Modify to reset timer or force new digest"
-msgstr "上次摘要生成时间。修改此项可重置计时器或强制生成新摘要"
-
-# Removed - no help text needed for include_toc field
-
-msgid "Only works with default summarization (no custom prompt)"
-msgstr "仅适用于默认总结设置（无自定义提示词）"
-
-# Removed - no help text needed for include_summary field
-
-# Removed - no help text needed for include_content field
-
-# Removed - no help text needed for use_ai_digest field
-
-msgid "Send full article content to AI. Ignored without digest prompt. Default sends only link, title, and summary"
-msgstr "向 AI 发送完整文章内容。无摘要提示词时忽略。默认只发送链接、标题和总结"
-
-# Removed - no help text needed for digest_model field
-
-msgid "Specify OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3' in xAI"
-msgstr "如果上面选择了\"其他\"，请指定与 OpenAI 兼容的模型，例如 xAI 中的 'grok-3'"
-
-msgid "Custom prompt for AI digest generation. Without this, only title, link and summary are included"
+msgid ""
+"Custom prompt for AI digest generation. Without this, only title, link and "
+"summary are included"
 msgstr "AI 摘要生成的自定义提示词。没有此项时，只包含标题、链接和总结"
-
-msgid "Articles must match All/Any/None of the filters to be included"
-msgstr "文章必须匹配所有/任一/不符合任何过滤条件才能被包含"
-
-msgid "Articles must match All/Any/None of the filters to be summarized"
-msgstr "文章必须匹配所有/任一/不符合任何过滤条件才能生成总结"
-
-msgid "Enable case-sensitive filter matching. Default is case-insensitive"
-msgstr "启用区分大小写的过滤匹配。默认不区分大小写"
-
-msgid "At least one of 'toggle digest' or 'toggle entries' must be enabled."
-msgstr "必须至少启用\"启用摘要\"或\"包含条目\"中的一项。"
-
-msgid "Value must be a positive integer for length comparisons."
-msgstr "长度比较的值必须是正整数。"
-
-msgid "Value must be a positive integer greater than zero."
-msgstr "值必须是大于零的正整数。"
-
-msgid "Invalid regular expression."
-msgstr "无效的正则表达式。"
-
-# App name
-msgid "Feed Manager"
-msgstr "订阅源管理"
-
-# Choice labels
-msgid "Other (specify below)"
-msgstr "其他（在下方指定）"
-
-msgid "Daily"
-msgstr "每日"
-
-msgid "Weekly"
-msgstr "每周"
 
 msgid "All"
 msgstr "所有"
@@ -347,11 +255,53 @@ msgstr "任一"
 msgid "None"
 msgstr "无一"
 
+msgid "Articles must match All/Any/None of the filters to be included"
+msgstr "文章必须匹配所有/任一/不符合任何过滤条件才能被包含"
+
+msgid "Feed Filter Logic"
+msgstr "订阅源过滤逻辑"
+
+msgid "Articles must match All/Any/None of the filters to be summarized"
+msgstr "文章必须匹配所有/任一/不符合任何过滤条件才能生成总结"
+
+msgid "Summary Filter Logic"
+msgstr "总结过滤逻辑"
+
+msgid "Enable case-sensitive filter matching. Default is case-insensitive"
+msgstr "启用区分大小写的过滤匹配。默认不区分大小写"
+
+msgid "Case Sensitive"
+msgstr "区分大小写"
+
+msgid "Processed Feed"
+msgstr "处理后订阅源"
+
+msgid "At least one of 'toggle digest' or 'toggle entries' must be enabled."
+msgstr "必须至少启用\"启用摘要\"或\"包含条目\"中的一项。"
+
 msgid "Feed Filter"
 msgstr "订阅源过滤器"
 
 msgid "Summary Filter"
 msgstr "总结过滤器"
+
+msgid "Usage"
+msgstr "用途"
+
+msgid "Relational Operator"
+msgstr "关系运算符"
+
+msgid "Filter Group"
+msgstr "过滤器组"
+
+msgid "Filter Groups"
+msgstr "过滤器组"
+
+msgid "Content"
+msgstr "内容"
+
+msgid "Link"
+msgstr "链接"
 
 msgid "Title or content"
 msgstr "标题或内容"
@@ -373,3 +323,60 @@ msgstr "短于"
 
 msgid "Longer than"
 msgstr "长于"
+
+msgid "Field"
+msgstr "字段"
+
+msgid "Match Type"
+msgstr "匹配类型"
+
+msgid "Value"
+msgstr "值"
+
+msgid "Filter"
+msgstr "过滤器"
+
+msgid "Filters"
+msgstr "过滤器"
+
+msgid "Value must be a positive integer for length comparisons."
+msgstr "长度比较的值必须是正整数。"
+
+msgid "Value must be a positive integer greater than zero."
+msgstr "值必须是大于零的正整数。"
+
+msgid "Invalid regular expression."
+msgstr "无效的正则表达式。"
+
+msgid "Published Date"
+msgstr "发布日期"
+
+msgid "Summary"
+msgstr "总结"
+
+msgid "One Line Summary"
+msgstr "单行总结"
+
+msgid "Summarized"
+msgstr "已生成总结"
+
+msgid "Custom Prompt Used"
+msgstr "已使用自定义提示词"
+
+msgid "Article"
+msgstr "文章"
+
+msgid "Articles"
+msgstr "文章"
+
+msgid "Start Time"
+msgstr "开始时间"
+
+msgid "Created At"
+msgstr "创建时间"
+
+msgid "Digest"
+msgstr "摘要"
+
+msgid "Digests"
+msgstr "摘要"
