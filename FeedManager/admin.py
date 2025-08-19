@@ -75,7 +75,7 @@ def export_original_feeds_as_opml(modeladmin, request, queryset):
 export_original_feeds_as_opml.short_description = _("Export selected feeds as OPML")
 
 def export_processed_feeds_as_opml(modeladmin, request, queryset):
-    """Export selected processed feeds as OPML with their original feeds"""
+    """Export selected processed feeds as OPML"""
     # Create OPML structure
     opml = Element('opml')
     opml.set('version', '2.0')
@@ -91,41 +91,20 @@ def export_processed_feeds_as_opml(modeladmin, request, queryset):
     # Create body section
     body = SubElement(opml, 'body')
     
-    # Add each processed feed as a folder with its original feeds
+    # Add each processed feed as an outline
     for processed_feed in queryset:
-        # Create folder for processed feed
-        folder = SubElement(body, 'outline')
-        folder.set('text', processed_feed.name)
-        folder.set('title', processed_feed.name)
+        outline = SubElement(body, 'outline')
+        outline.set('text', processed_feed.name)
+        outline.set('title', processed_feed.name)
+        outline.set('type', 'rss')
         
-        # Add the processed feed URL itself
-        processed_outline = SubElement(folder, 'outline')
-        processed_outline.set('text', f'{processed_feed.name} (Processed Feed)')
-        processed_outline.set('title', f'{processed_feed.name} (Processed Feed)')
-        processed_outline.set('type', 'rss')
-        
-        # Generate the processed feed URL
+        # Generate the processed feed URL (same as Subscribe link)
         processed_url = request.build_absolute_uri(reverse('processed_feed_by_name', args=[processed_feed.name]))
         auth_code = AppSetting.get_auth_code()
         if auth_code:
             processed_url += f'?key={auth_code}'
-        processed_outline.set('xmlUrl', processed_url)
-        processed_outline.set('htmlUrl', processed_url)
-        
-        # Add all original feeds in this processed feed
-        for original_feed in processed_feed.feeds.all():
-            outline = SubElement(folder, 'outline')
-            outline.set('text', original_feed.title or original_feed.url)
-            outline.set('title', original_feed.title or original_feed.url)
-            outline.set('type', 'rss')
-            outline.set('xmlUrl', original_feed.url)
-            outline.set('htmlUrl', original_feed.url)
-            
-            # Add tags as categories if present
-            tags = original_feed.tags.all()
-            if tags:
-                categories = ', '.join([tag.name for tag in tags])
-                outline.set('category', categories)
+        outline.set('xmlUrl', processed_url)
+        outline.set('htmlUrl', processed_url)
     
     # Convert to pretty XML string
     xml_string = minidom.parseString(tostring(opml, encoding='unicode')).toprettyxml(indent='  ')
