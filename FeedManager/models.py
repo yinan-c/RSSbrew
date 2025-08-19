@@ -114,8 +114,8 @@ class ProcessedFeed(models.Model):
     additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name=_('Digest Prompt'), help_text=_("Custom prompt for AI digest generation. Without this, only title, link and summary are included"))
 
     # Filter related fields
-    feed_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("Articles must match All/Any/None of the filters to be included"), verbose_name=_('Feed Filter Logic'))
-    summary_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("Articles must match All/Any/None of the filters to be summarized"), verbose_name=_('Summary Filter Logic'))
+    feed_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("Logic between filter groups for feed inclusion: match All/Any/None of the filter groups"), verbose_name=_('Logic Between Feed Filter Groups'))
+    summary_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("Logic between filter groups for summarization: match All/Any/None of the filter groups"), verbose_name=_('Logic Between Summary Filter Groups'))
     case_sensitive = models.BooleanField(default=False, help_text=_("Enable case-sensitive filter matching. Default is case-insensitive"), verbose_name=_('Case Sensitive'))
     
     class Meta:

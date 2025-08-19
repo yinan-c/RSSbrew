@@ -255,17 +255,17 @@ msgstr "任一"
 msgid "None"
 msgstr "无一"
 
-msgid "Articles must match All/Any/None of the filters to be included"
-msgstr "文章必须匹配所有/任一/不符合任何过滤条件才能被包含"
+msgid "Logic between filter groups for feed inclusion: match All/Any/None of the filter groups"
+msgstr "订阅源包含的过滤组间逻辑：匹配所有/任一/不符合任何过滤组"
 
-msgid "Feed Filter Logic"
-msgstr "订阅源过滤逻辑"
+msgid "Logic Between Feed Filter Groups"
+msgstr "订阅源过滤组间逻辑"
 
-msgid "Articles must match All/Any/None of the filters to be summarized"
-msgstr "文章必须匹配所有/任一/不符合任何过滤条件才能生成总结"
+msgid "Logic between filter groups for summarization: match All/Any/None of the filter groups"
+msgstr "生成总结的过滤组间逻辑：匹配所有/任一/不符合任何过滤组"
 
-msgid "Summary Filter Logic"
-msgstr "总结过滤逻辑"
+msgid "Logic Between Summary Filter Groups"
+msgstr "总结过滤组间逻辑"
 
 msgid "Enable case-sensitive filter matching. Default is case-insensitive"
 msgstr "启用区分大小写的过滤匹配。默认不区分大小写"
