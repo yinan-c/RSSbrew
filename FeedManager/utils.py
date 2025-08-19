@@ -141,14 +141,13 @@ def match_content(entry, filter, case_sensitive=False):
                 content += entry.content + ' '
         else:
             # This is a feedparser entry object
-            try:
-                content += entry.content[0].value + ' '
-            except:
-                pass
-            try:
+            if hasattr(entry, 'content') and entry.content:
+                try:
+                    content += entry.content[0].value + ' '
+                except (IndexError, AttributeError, TypeError):
+                    pass
+            if hasattr(entry, 'description') and entry.description:
                 content += entry.description + ' '
-            except:
-                pass
     elif filter.field == 'link':
         content = entry.link
     if not content.strip():  # Strip is necessary for removing leading and trailing spaces
