@@ -196,10 +196,14 @@ class ProcessedFeedAdmin(NestedModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('name', 'feeds', 'feed_group_relational_operator', 'case_sensitive'),
+            'fields': ('name', 'feeds'),
+        }),
+        (_('Filter Settings'), {
+            'fields': ('feed_group_relational_operator', 'case_sensitive'),
+            'description': _('Configure filter groups at the end. The logic operator determines how multiple filter groups are combined.')
         }),
         (_('Summarization Options'), {
-            'fields': ('articles_to_summarize_per_interval', 'summary_language', 'translate_title', 'model', 'other_model', 'summary_group_relational_operator', 'additional_prompt'),
+            'fields': ('summary_group_relational_operator', 'articles_to_summarize_per_interval', 'summary_language', 'translate_title', 'model', 'other_model', 'additional_prompt'),
         }),
         (_('Digest Options'), {
             'fields': ('toggle_entries', 'toggle_digest', 'digest_frequency',  'last_digest'),#, 'include_one_line_summary', 'include_summary', 'include_content',  'use_ai_digest', 'digest_model', 'additional_prompt_for_digest','send_full_article'),

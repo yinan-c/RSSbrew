@@ -56,6 +56,12 @@ msgstr "摘要选项"
 msgid "What to include in digest"
 msgstr "摘要包含内容"
 
+msgid "Filter Settings"
+msgstr "过滤设置"
+
+msgid "Configure filter groups at the end. The logic operator determines how multiple filter groups are combined."
+msgstr "在页面最后配置过滤组。逻辑运算符决定多个过滤组如何组合。"
+
 msgid "Subscribe Link"
 msgstr "订阅链接"
 
