@@ -51,10 +51,21 @@ def clean_html(html_content):
     """
     This function is used to clean the HTML content.
     It will remove all the <script>, <style>, <img>, <a>, <video>, <audio>, <iframe>, <input> tags.
+    It also removes HTML comments to prevent false matches in filters.
     Returns:
         Cleaned text for summarization
     """
-    soup = BeautifulSoup(html_content, "html.parser")
+    import html
+    
+    # First decode HTML entities (&lt; becomes <, &gt; becomes >, etc.)
+    decoded_content = html.unescape(html_content)
+    
+    soup = BeautifulSoup(decoded_content, "html.parser")
+
+    # Remove HTML comments (like <!-- SC_OFF --> and <!-- SC_ON -->)
+    from bs4 import Comment
+    for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
+        comment.extract()
 
     # Remove all unwanted tags in a single loop
     tags_to_remove = ['script', 'style', 'img', 'a', 'video', 'audio', 'iframe', 'input']
@@ -138,16 +149,16 @@ def match_content(entry, filter, case_sensitive=False):
         if hasattr(entry, 'content') and isinstance(entry.content, str):
             # This is an Article object with a simple content field
             if entry.content:
-                content += entry.content + ' '
+                content += clean_html(entry.content) + ' '
         else:
             # This is a feedparser entry object
             if hasattr(entry, 'content') and entry.content:
                 try:
-                    content += entry.content[0].value + ' '
+                    content += clean_html(entry.content[0].value) + ' '
                 except (IndexError, AttributeError, TypeError):
                     pass
             if hasattr(entry, 'description') and entry.description:
-                content += entry.description + ' '
+                content += clean_html(entry.description) + ' '
     elif filter.field == 'link':
         content = entry.link
     if not content.strip():  # Strip is necessary for removing leading and trailing spaces

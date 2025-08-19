@@ -457,3 +457,60 @@ class TestFeedparserContentFilter(TestCase):
             result = passes_filters(entry, self.processed_feed, 'feed_filter')
             self.assertEqual(result, expected_results[i],
                            f"Entry {i} should {'pass' if expected_results[i] else 'not pass'} 'does_not_contain' filter for 'ipsum'")
+
+    def test_html_comments_filter_bug(self):
+        """Test that HTML comments don't cause false positive matches in filters"""
+        
+        # Mock feedparser entry with HTML comments containing filter keywords
+        class MockHtmlEntry:
+            def __init__(self):
+                self.title = "Lorem Ipsum Article"
+                self.link = "https://example.com/lorem-ipsum"
+                # HTML content with comments that contain potential filter keywords
+                self.content = [
+                    {
+                        'type': 'html', 
+                        'value': '&lt;!-- TEST_OFF --&gt;&lt;div class=&quot;content&quot;&gt;&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.&lt;/p&gt;&lt;/div&gt;&lt;!-- TEST_ON --&gt;'
+                    }
+                ]
+        
+        entry = MockHtmlEntry()
+        
+        # Create filter group with test keywords that appear in HTML comments
+        test_filter_group = FilterGroup.objects.create(
+            processed_feed=self.processed_feed,
+            usage='feed_filter',
+            relational_operator='any'
+        )
+        
+        # Create filters for keywords that could appear in HTML comments/markup
+        test_keywords = ['test', 'off', 'on', 'div', 'content']
+        for keyword in test_keywords:
+            Filter.objects.create(
+                filter_group=test_filter_group,
+                field='title_or_content',
+                match_type='contains',
+                value=keyword
+            )
+        
+        # Import clean_html to analyze the difference
+        from .utils import clean_html
+        
+        # Build content strings for comparison
+        raw_content = entry.title + ' ' + entry.content[0]['value']
+        cleaned_content = entry.title + ' ' + clean_html(entry.content[0]['value'])
+        
+        # Check if problematic keywords exist in raw vs cleaned content
+        raw_has_keywords = any(keyword in raw_content.lower() for keyword in ['off', 'test', 'div'])
+        cleaned_has_keywords = any(keyword in cleaned_content.lower() for keyword in ['off', 'test', 'div'])
+        
+        # Test the filter result
+        result = passes_filters(entry, self.processed_feed, 'feed_filter')
+        
+        # Verify the fix: raw content should have HTML keywords but cleaned shouldn't
+        self.assertTrue(raw_has_keywords, "Raw HTML content should contain markup keywords")
+        self.assertFalse(cleaned_has_keywords, "Cleaned content should not contain HTML markup keywords")
+        
+        # The entry should NOT be included since it only matches HTML markup, not actual content
+        self.assertFalse(result, 
+                        "Entry should NOT pass filters when keywords only exist in HTML markup")
