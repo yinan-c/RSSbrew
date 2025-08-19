@@ -36,8 +36,8 @@ INTERNAL_IPS = [
 allowed_hosts.append("localhost")
 allowed_hosts += INTERNAL_IPS
 
-#ALLOWED_HOSTS = allowed_hosts
-ALLOWED_HOSTS = ['*']
+# Use specific hosts from DEPLOYMENT_URL, fallback to localhost for development
+ALLOWED_HOSTS = allowed_hosts if allowed_hosts and allowed_hosts != [''] else ['localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in allowed_hosts if not host.startswith('https')]
 CSRF_TRUSTED_ORIGINS += [f"https://{host}" for host in allowed_hosts if not host.startswith('http')]
 

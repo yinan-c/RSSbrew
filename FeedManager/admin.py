@@ -132,6 +132,7 @@ class ArticleInline(admin.TabularInline):
     form = ReadOnlyArticleForm
     extra = 0
     readonly_fields = [field.name for field in Article._meta.fields if field.name != 'content']
+    classes = ['collapse']  # Make the inline collapsed by default
 
     def has_add_permission(self, request, obj=None):
         return False

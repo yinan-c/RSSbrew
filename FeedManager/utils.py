@@ -5,11 +5,14 @@ from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 import os
 from openai import OpenAI
 import tiktoken
+from django.conf import settings
+import httpx
 
 logger = logging.getLogger('feed_logger')
-OPENAI_PROXY = os.environ.get('OPENAI_PROXY')
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL') or 'https://api.openai.com/v1'
+# Use Django settings for configuration
+OPENAI_PROXY = getattr(settings, 'OPENAI_PROXY', os.environ.get('OPENAI_PROXY'))
+OPENAI_API_KEY = getattr(settings, 'OPENAI_API_KEY', os.environ.get('OPENAI_API_KEY'))
+OPENAI_BASE_URL = getattr(settings, 'OPENAI_BASE_URL', os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com/v1'))
 
 def remove_control_characters(s):
     control_chars = ''.join(map(chr, range(0, 32))) + chr(127)
@@ -19,26 +22,26 @@ def remove_control_characters(s):
 def clean_url(url):
     parsed_url = urlparse(url)
     
-    # 解析查询字符串
+    # Parse query string
     query_params = parse_qs(parsed_url.query)
     
-    # 移除 'hl' 参数（如果存在）
+    # Remove 'hl' parameter if present
     query_params.pop('hl', None)
     
-    # 重新构建查询字符串
+    # Rebuild query string
     new_query = urlencode(query_params, doseq=True)
     
-    # 重建 URL，只将域名部分转为小写，保持路径的原始大小写
+    # Rebuild URL - lowercase domain only, preserve path case
     clean_url = urlunparse((
         parsed_url.scheme,
-        parsed_url.netloc.lower(),  # 只对域名部分转小写
-        parsed_url.path.rstrip('/'),  # 保持路径大小写
+        parsed_url.netloc.lower(),  # Lowercase domain only
+        parsed_url.path.rstrip('/'),  # Preserve path case
         '',
         new_query,
         ''
     ))
     
-    # 如果清理后的 URL 以 '?' 结尾，则移除它
+    # Remove trailing '?' if present
     if clean_url.endswith('?'):
         clean_url = clean_url[:-1]
     
@@ -53,29 +56,11 @@ def clean_html(html_content):
     """
     soup = BeautifulSoup(html_content, "html.parser")
 
-    for script in soup.find_all("script"):
-        script.decompose()
-
-    for style in soup.find_all("style"):
-        style.decompose()
-
-    for img in soup.find_all("img"):
-        img.decompose()
-
-    for a in soup.find_all("a"):
-        a.decompose()
-
-    for video in soup.find_all("video"):
-        video.decompose()
-
-    for audio in soup.find_all("audio"):
-        audio.decompose()
-    
-    for iframe in soup.find_all("iframe"):
-        iframe.decompose()
-    
-    for input in soup.find_all("input"):
-        input.decompose()
+    # Remove all unwanted tags in a single loop
+    tags_to_remove = ['script', 'style', 'img', 'a', 'video', 'audio', 'iframe', 'input']
+    for tag in tags_to_remove:
+        for element in soup.find_all(tag):
+            element.decompose()
 
     return soup.get_text()
 
@@ -85,7 +70,7 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
         cleaned_article = clean_html(query)
     try:
         encoding = tiktoken.encoding_for_model(model)
-    except:
+    except (KeyError, ValueError):
         encoding = tiktoken.encoding_for_model('gpt-4o')
     token_length = len(encoding.encode(cleaned_article))
 
@@ -107,10 +92,14 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
         return cleaned_article
 
 def generate_untitled(entry):
-    try: return entry.title
-    except: 
-        try: return entry.article[:50]
-        except: return entry.link
+    """Generate a title for an entry if it doesn't have one."""
+    if hasattr(entry, 'title') and entry.title:
+        return entry.title
+    if hasattr(entry, 'article') and entry.article:
+        return entry.article[:50]
+    if hasattr(entry, 'link') and entry.link:
+        return entry.link
+    return "Untitled"
 
 def passes_filters(entry, processed_feed, filter_type):
     groups = processed_feed.filter_groups.filter(usage=filter_type)
@@ -237,6 +226,7 @@ def generate_summary(article, model, output_mode='HTML', prompt=None, other_mode
         return completion.choices[0].message.content
     except Exception as e:
         logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')
+        return None
     
 def parse_cron(cron_string):
     parts = cron_string.split()
