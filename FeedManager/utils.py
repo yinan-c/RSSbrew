@@ -145,14 +145,21 @@ def match_content(entry, filter, case_sensitive=False):
     if filter.field in ['title', 'title_or_content']:
         content += generate_untitled(entry) + ' '
     if filter.field in ['content', 'title_or_content']:
-        try:
-            content += entry.content[0].value + ' '
-        except:
-            pass
-        try:
-            content += entry.description + ' '
-        except:
-            pass
+        # Check if this is an Article object from database
+        if hasattr(entry, 'content') and isinstance(entry.content, str):
+            # This is an Article object with a simple content field
+            if entry.content:
+                content += entry.content + ' '
+        else:
+            # This is a feedparser entry object
+            try:
+                content += entry.content[0].value + ' '
+            except:
+                pass
+            try:
+                content += entry.description + ' '
+            except:
+                pass
     elif filter.field == 'link':
         content = entry.link
     if not content.strip():  # Strip is necessary for removing leading and trailing spaces
