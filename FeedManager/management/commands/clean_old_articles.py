@@ -1,6 +1,8 @@
-from django.core.management.base import BaseCommand
 from django.core.management import CommandError
-from FeedManager.models import OriginalFeed, Article
+from django.core.management.base import BaseCommand
+
+from FeedManager.models import Article, OriginalFeed
+
 
 class Command(BaseCommand):
     help = 'Cleans up old articles from the database to maintain a maximum limit per feed.'

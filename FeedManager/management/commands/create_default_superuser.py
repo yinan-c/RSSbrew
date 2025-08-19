@@ -1,6 +1,8 @@
-from django.core.management.base import BaseCommand
-from django.contrib.auth import get_user_model
 import os
+
+from django.contrib.auth import get_user_model
+from django.core.management.base import BaseCommand
+
 
 class Command(BaseCommand):
     help = 'Create default superuser'
@@ -12,7 +14,7 @@ class Command(BaseCommand):
             username = os.environ.get('ADMIN_USERNAME', 'admin')
             email = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
             password = os.environ.get('ADMIN_PASSWORD', 'changeme')
-            
+
             User.objects.create_superuser(username, email, password)
             self.stdout.write(self.style.SUCCESS(f'Successfully created a new superuser: {username}, please change the password immediately after login.'))
 

@@ -1,9 +1,11 @@
+import logging
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
-from FeedManager.models import ProcessedFeed, Article, Digest
-from datetime import timedelta
-import logging
-from FeedManager.utils import generate_summary, clean_txt_and_truncate
+
+from FeedManager.models import Article, Digest, ProcessedFeed
+from FeedManager.utils import clean_txt_and_truncate, generate_summary
 
 logger = logging.getLogger('feed_logger')
 

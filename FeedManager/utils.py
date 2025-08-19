@@ -1,12 +1,14 @@
-import re
-from bs4 import BeautifulSoup
 import logging
-from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 import os
-from openai import OpenAI
-import tiktoken
+import re
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+
 from django.conf import settings
+
 import httpx
+import tiktoken
+from bs4 import BeautifulSoup
+from openai import OpenAI
 
 logger = logging.getLogger('feed_logger')
 # Use Django settings for configuration
@@ -21,16 +23,16 @@ def remove_control_characters(s):
 
 def clean_url(url):
     parsed_url = urlparse(url)
-    
+
     # Parse query string
     query_params = parse_qs(parsed_url.query)
-    
+
     # Remove 'hl' parameter if present
     query_params.pop('hl', None)
-    
+
     # Rebuild query string
     new_query = urlencode(query_params, doseq=True)
-    
+
     # Rebuild URL - lowercase domain only, preserve path case
     clean_url = urlunparse((
         parsed_url.scheme,
@@ -40,11 +42,11 @@ def clean_url(url):
         new_query,
         ''
     ))
-    
+
     # Remove trailing '?' if present
     if clean_url.endswith('?'):
         clean_url = clean_url[:-1]
-    
+
     return clean_url
 
 def clean_html(html_content):
@@ -56,10 +58,10 @@ def clean_html(html_content):
         Cleaned text for summarization
     """
     import html
-    
+
     # First decode HTML entities (&lt; becomes <, &gt; becomes >, etc.)
     decoded_content = html.unescape(html_content)
-    
+
     soup = BeautifulSoup(decoded_content, "html.parser")
 
     # Remove HTML comments (like <!-- SC_OFF --> and <!-- SC_ON -->)
@@ -166,7 +168,7 @@ def match_content(entry, filter, case_sensitive=False):
 
     # Get the filter value for comparison
     filter_value = filter.value
-    
+
     # If not case sensitive, convert both content and filter value to lowercase
     if not case_sensitive:
         content = content.lower()
@@ -193,7 +195,7 @@ def generate_summary(article, model, output_mode='HTML', prompt=None, other_mode
         model = other_model
     if not model or not OPENAI_API_KEY:
         logger.warning('  OpenAI API key or model not set, skipping summary generation')
-        return 
+        return
     try:
         client_params = {
             "api_key": OPENAI_API_KEY,
@@ -235,9 +237,9 @@ def generate_summary(article, model, output_mode='HTML', prompt=None, other_mode
         logger.debug(f"prompt is {prompt}")
         return completion.choices[0].message.content
     except Exception as e:
-        logger.error(f'Failed to generate summary for article {article.title}: {str(e)}')
+        logger.error(f'Failed to generate summary for article {article.title}: {e!s}')
         return None
-    
+
 def parse_cron(cron_string):
     parts = cron_string.split()
     if len(parts) != 5:

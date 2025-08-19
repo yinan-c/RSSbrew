@@ -1,10 +1,13 @@
-from huey.contrib.djhuey import periodic_task, task
-from huey import crontab
-from django.core.management import call_command
-from django.conf import settings
-import os
 import logging
+import os
+
+from django.core.management import call_command
+
+from huey import crontab
+from huey.contrib.djhuey import periodic_task, task
+
 from FeedManager.utils import parse_cron
+
 logger = logging.getLogger('feed_logger')
 
 CRON = os.getenv('CRON', '0 * * * *')  # default to every hour
@@ -22,13 +25,13 @@ def update_feeds_task():
     try:
         call_command('update_feeds')
     except Exception as e:
-        logger.error(f"Error in update_feeds_task: {str(e)}")
+        logger.error(f"Error in update_feeds_task: {e!s}")
         raise
-    
+
     try:
         call_command('clean_old_articles')
     except Exception as e:
-        logger.error(f"Error in clean_old_articles: {str(e)}")
+        logger.error(f"Error in clean_old_articles: {e!s}")
         raise
 
 # TODO Maybe add time of the day to generate digest after digest_frequency

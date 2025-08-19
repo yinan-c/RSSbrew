@@ -1,6 +1,7 @@
 from django import forms
-from .models import Filter, Article, ProcessedFeed
-from django.contrib import admin
+
+from .models import Article, Filter, ProcessedFeed
+
 
 class FilterForm(forms.ModelForm):
     class Meta:

@@ -1,13 +1,12 @@
+
 from django.contrib.syndication.views import Feed
-from django.utils.feedgenerator import Rss201rev2Feed
-from django.shortcuts import get_object_or_404, Http404
-from django.http import HttpResponseForbidden
-from .models import ProcessedFeed, Article, Filter, AppSetting
-from django.utils import timezone
-import re
+from django.shortcuts import Http404, get_object_or_404
 from django.urls import reverse
-from .models import AppSetting
-from .utils import passes_filters, match_content, generate_untitled, remove_control_characters
+from django.utils.feedgenerator import Rss201rev2Feed
+
+from .models import AppSetting, Article, ProcessedFeed
+from .utils import passes_filters, remove_control_characters
+
 
 class ProcessedAtomFeed(Feed):
     feed_type = Rss201rev2Feed
@@ -35,7 +34,7 @@ class ProcessedAtomFeed(Feed):
         if not auth_code:
             return url
         return f"{url}?key={auth_code}"
-    
+
     def feed_url(self, obj):
         return self.link(obj)
 
@@ -81,7 +80,7 @@ class ProcessedAtomFeed(Feed):
 
     def item_title(self, item):
         return remove_control_characters(item.title)
-    
+
     def item_pubdate(self, item):
         return item.published_date
 

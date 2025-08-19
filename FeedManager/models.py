@@ -1,11 +1,12 @@
-from django.db import models
-from django.contrib.auth.models import User
+import re
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
-from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-import re
+
 from .tasks import async_update_feeds_and_digest
 
 DEFAULT_MODEL = getattr(settings, 'OPENAI_DEFAULT_MODEL', 'gpt-4.1-mini')
@@ -27,9 +28,9 @@ if DEFAULT_MODEL not in [choice[0] for choice in MODEL_CHOICES]:
 
 class AppSetting(models.Model):
     auth_code = models.CharField(
-        max_length=64, 
-        blank=True, 
-        null=True, 
+        max_length=64,
+        blank=True,
+        null=True,
         verbose_name=_('Auth Code'),
         help_text=_('Optional authentication code to access RSS feeds')
     )
@@ -93,7 +94,7 @@ class ProcessedFeed(models.Model):
 
     # Digest related fields
     toggle_digest = models.BooleanField(default=False, help_text=_("Generate periodic digest of the feed"), verbose_name=_('Enable Digest'))
-    toggle_entries = models.BooleanField(default=True, help_text=_("Include individual entries in feed. Disable to only generate digest"), verbose_name=_('Include Entries')) 
+    toggle_entries = models.BooleanField(default=True, help_text=_("Include individual entries in feed. Disable to only generate digest"), verbose_name=_('Include Entries'))
     digest_frequency = models.CharField(max_length=20, default='daily', choices=[('daily', _('Daily')), ('weekly', _('Weekly'))], verbose_name=_('Digest Frequency'))
     last_digest = models.DateTimeField(default=None, blank=True, null=True, editable=True, help_text=_("Last digest generation time. Modify to reset timer or force new digest"), verbose_name=_('Last Digest'))
     include_toc = models.BooleanField(default=True, verbose_name=_('Include Table of Contents'))
@@ -117,11 +118,11 @@ class ProcessedFeed(models.Model):
     feed_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("Logic between filter groups for feed inclusion: match All/Any/None of the filter groups"), verbose_name=_('Logic Between Feed Filter Groups'))
     summary_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("Logic between filter groups for summarization: match All/Any/None of the filter groups"), verbose_name=_('Logic Between Summary Filter Groups'))
     case_sensitive = models.BooleanField(default=False, help_text=_("Enable case-sensitive filter matching. Default is case-insensitive"), verbose_name=_('Case Sensitive'))
-    
+
     class Meta:
         verbose_name = _('Processed Feed')
         verbose_name_plural = _('Processed Feeds')
-    
+
     def __str__(self):
         return self.name
 

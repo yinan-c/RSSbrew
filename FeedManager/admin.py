@@ -1,21 +1,23 @@
-from django.contrib import admin
-from .models import ProcessedFeed, OriginalFeed, Filter, Article, AppSetting, Digest, FilterGroup, Tag
-from django.utils.html import format_html
-from django.urls import reverse
-from django.db.models import Count
-from .forms import FilterForm, ReadOnlyArticleForm, ProcessedFeedAdminForm
-from django.contrib.auth.models import User, Group
-from django.core.management import call_command
-from huey.contrib.djhuey import task
-from nested_admin.nested import NestedModelAdmin, NestedTabularInline
-from .tasks import async_update_feeds_and_digest, clean_old_articles
-from django.utils.translation import gettext_lazy as _
-from django.http import HttpResponse
-from xml.etree.ElementTree import Element, SubElement, tostring
-from xml.dom import minidom
 from datetime import datetime
-import pytz
+from xml.dom import minidom
+from xml.etree.ElementTree import Element, SubElement, tostring
+
 from django.conf import settings
+from django.contrib import admin
+from django.contrib.auth.models import Group, User
+from django.db.models import Count
+from django.http import HttpResponse
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
+
+import pytz
+from nested_admin.nested import NestedModelAdmin, NestedTabularInline
+
+from .forms import FilterForm, ProcessedFeedAdminForm, ReadOnlyArticleForm
+from .models import AppSetting, Article, Digest, Filter, FilterGroup, OriginalFeed, ProcessedFeed, Tag
+from .tasks import async_update_feeds_and_digest, clean_old_articles
+
 
 def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
@@ -36,7 +38,7 @@ def export_original_feeds_as_opml(modeladmin, request, queryset):
     # Create OPML structure
     opml = Element('opml')
     opml.set('version', '2.0')
-    
+
     # Create head section
     head = SubElement(opml, 'head')
     title = SubElement(head, 'title')
@@ -44,10 +46,10 @@ def export_original_feeds_as_opml(modeladmin, request, queryset):
     date_created = SubElement(head, 'dateCreated')
     tz = pytz.timezone(getattr(settings, 'TIME_ZONE', 'UTC'))
     date_created.text = datetime.now(tz).strftime('%a, %d %b %Y %H:%M:%S %z')
-    
+
     # Create body section
     body = SubElement(opml, 'body')
-    
+
     # Add each selected feed as an outline
     for feed in queryset:
         outline = SubElement(body, 'outline')
@@ -56,20 +58,20 @@ def export_original_feeds_as_opml(modeladmin, request, queryset):
         outline.set('type', 'rss')
         outline.set('xmlUrl', feed.url)
         outline.set('htmlUrl', feed.url)  # Using feed URL as HTML URL since we don't track website URL
-        
+
         # Add tags as categories if present
         tags = feed.tags.all()
         if tags:
             categories = ', '.join([tag.name for tag in tags])
             outline.set('category', categories)
-    
+
     # Convert to pretty XML string
     xml_string = minidom.parseString(tostring(opml, encoding='unicode')).toprettyxml(indent='  ')
-    
+
     # Create HTTP response with OPML content
     response = HttpResponse(xml_string, content_type='text/xml; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="rssbrew_original_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
-    
+
     return response
 
 export_original_feeds_as_opml.short_description = _("Export selected feeds as OPML")
@@ -79,7 +81,7 @@ def export_processed_feeds_as_opml(modeladmin, request, queryset):
     # Create OPML structure
     opml = Element('opml')
     opml.set('version', '2.0')
-    
+
     # Create head section
     head = SubElement(opml, 'head')
     title = SubElement(head, 'title')
@@ -87,17 +89,17 @@ def export_processed_feeds_as_opml(modeladmin, request, queryset):
     date_created = SubElement(head, 'dateCreated')
     tz = pytz.timezone(getattr(settings, 'TIME_ZONE', 'UTC'))
     date_created.text = datetime.now(tz).strftime('%a, %d %b %Y %H:%M:%S %z')
-    
+
     # Create body section
     body = SubElement(opml, 'body')
-    
+
     # Add each processed feed as an outline
     for processed_feed in queryset:
         outline = SubElement(body, 'outline')
         outline.set('text', processed_feed.name)
         outline.set('title', processed_feed.name)
         outline.set('type', 'rss')
-        
+
         # Generate the processed feed URL (same as Subscribe link)
         processed_url = request.build_absolute_uri(reverse('processed_feed_by_name', args=[processed_feed.name]))
         auth_code = AppSetting.get_auth_code()
@@ -105,14 +107,14 @@ def export_processed_feeds_as_opml(modeladmin, request, queryset):
             processed_url += f'?key={auth_code}'
         outline.set('xmlUrl', processed_url)
         outline.set('htmlUrl', processed_url)
-    
+
     # Convert to pretty XML string
     xml_string = minidom.parseString(tostring(opml, encoding='unicode')).toprettyxml(indent='  ')
-    
+
     # Create HTTP response with OPML content
     response = HttpResponse(xml_string, content_type='text/xml; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="rssbrew_processed_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
-    
+
     return response
 
 export_processed_feeds_as_opml.short_description = _("Export selected feeds as OPML")
@@ -220,7 +222,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         if not auth_code:
             return format_html('<a href="{}">Subscribe</a>', url)
         return format_html('<a href="{}?key={}">Subscribe</a>', url, auth_code)
-    
+
     subscription_link.short_description = _("Subscribe Link")
 
     # Including JavaScript for dynamic form behavior
@@ -246,7 +248,7 @@ class IncludedInProcessedFeedListFilter(admin.SimpleListFilter):
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
     list_display = ('title', 'valid', 'url', 'processed_feeds_count')
-    search_fields = ('title', 'url') 
+    search_fields = ('title', 'url')
 
     def get_queryset(self, request):
         # Annotate each OriginalFeed object with the count of related ProcessedFeeds
@@ -304,7 +306,7 @@ class TagAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(_original_feed_count=Count('original_feeds'))
         return queryset
-    
+
     def original_feed_count(self, obj):
         # Use the annotated count of related OriginalFeeds
         return obj._original_feed_count

@@ -1,20 +1,17 @@
-from django.core.management.base import BaseCommand, CommandError
-from FeedManager.models import ProcessedFeed, OriginalFeed, Article
-import feedparser
-from datetime import datetime
-import pytz
-import re
-import os
-from django.conf import settings
-from django.utils import timezone
-from FeedManager.utils import passes_filters, match_content, generate_untitled, clean_url, generate_summary
+import json
 import logging
-from django.db import transaction
+from datetime import datetime
+
+from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
+
+import feedparser
+import pytz
 import requests
 from fake_useragent import UserAgent
-import httpx
-import time
-import json
+
+from FeedManager.models import Article, ProcessedFeed
+from FeedManager.utils import clean_url, generate_summary, generate_untitled, passes_filters
 
 logger = logging.getLogger('feed_logger')
 
@@ -42,7 +39,7 @@ def fetch_feed(url: str, last_modified: datetime):
             return {'feed': None, 'status': 'failed'}
 
     except Exception as e:
-        logger.error(f'Failed to fetch feed {url}: {str(e)}')
+        logger.error(f'Failed to fetch feed {url}: {e!s}')
         return {'feed': None, 'status': 'failed'}
 
 class Command(BaseCommand):
@@ -61,7 +58,7 @@ class Command(BaseCommand):
             except ProcessedFeed.DoesNotExist:
                 raise CommandError('ProcessedFeed "%s" does not exist' % feed_name)
             except Exception as e:
-                logger.error(f'Error processing feed {feed_name}: {str(e)}')
+                logger.error(f'Error processing feed {feed_name}: {e!s}')
         else:
             processed_feeds = ProcessedFeed.objects.all()
             for feed in processed_feeds:
@@ -69,7 +66,7 @@ class Command(BaseCommand):
                     logger.info(f'Processing feed: {feed.name} at {timezone.now()}')
                     self.update_feed(feed)
                 except Exception as e:
-                    logger.error(f'Error processing feed {feed.name}: {str(e)}')
+                    logger.error(f'Error processing feed {feed.name}: {e!s}')
                     continue  # make sure to continue to the next feed
 
     def update_feed(self, feed):
@@ -88,10 +85,10 @@ class Command(BaseCommand):
                 new_modified = datetime.strptime(feed_data['last_modified'], '%a, %d %b %Y %H:%M:%S GMT').replace(tzinfo=pytz.UTC) if feed_data['last_modified'] else None
                 if new_modified and (not min_new_modified or new_modified < min_new_modified):
                     min_new_modified = new_modified
-                
+
                 parsed_feed = feed_data['feed']
-                # first sort by published date, then only process the most recent max_articles_to_keep articles 
-                if parsed_feed.entries: 
+                # first sort by published date, then only process the most recent max_articles_to_keep articles
+                if parsed_feed.entries:
                     parsed_feed.entries.sort(key=lambda x: x.get('published_parsed', []), reverse=True)
 #                    self.stdout.write(f'  Found {len(parsed_feed.entries)} entries in feed {original_feed.url}')
                     entries.extend((entry, original_feed) for entry in parsed_feed.entries[:original_feed.max_articles_to_keep])
@@ -114,7 +111,7 @@ class Command(BaseCommand):
             try:
                 self.process_entry(entry, feed, original_feed)
             except Exception as e:
-                logger.error(f'Failed to process entry: {str(e)}')
+                logger.error(f'Failed to process entry: {e!s}')
 
     def process_entry(self, entry, feed, original_feed):
         # 先检查 filter 再检查数据库

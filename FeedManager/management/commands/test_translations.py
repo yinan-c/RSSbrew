@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.utils import translation
-from django.utils.translation import gettext as _
-from FeedManager.models import ProcessedFeed, OriginalFeed, Filter
+
+from FeedManager.models import Filter, OriginalFeed, ProcessedFeed
+
 
 class Command(BaseCommand):
     help = 'Test Chinese translations'
@@ -15,7 +16,7 @@ class Command(BaseCommand):
             self.stdout.write(f"Filter: {Filter._meta.verbose_name}")
             self.stdout.write(f"Model field 'URL': {OriginalFeed._meta.get_field('url').verbose_name}")
             self.stdout.write(f"Help text: {OriginalFeed._meta.get_field('url').help_text}")
-            
+
         # Test Chinese
         with translation.override('zh-hans'):
             self.stdout.write("\n=== 简体中文 ===")
@@ -24,5 +25,5 @@ class Command(BaseCommand):
             self.stdout.write(f"Filter: {Filter._meta.verbose_name}")
             self.stdout.write(f"Model field 'URL': {OriginalFeed._meta.get_field('url').verbose_name}")
             self.stdout.write(f"Help text: {OriginalFeed._meta.get_field('url').help_text}")
-            
+
         self.stdout.write("\n" + self.style.SUCCESS('Translation test completed!'))
