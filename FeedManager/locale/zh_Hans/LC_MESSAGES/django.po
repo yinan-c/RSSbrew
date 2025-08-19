@@ -181,8 +181,8 @@ msgstr "摘要模型"
 msgid "Other Digest Model"
 msgstr "其他摘要模型"
 
-msgid "(Optional) Prompt for Digest"
-msgstr "（可选）摘要提示词"
+msgid "Digest Prompt"
+msgstr "摘要提示词"
 
 msgid "Feed Filter Logic"
 msgstr "订阅源过滤逻辑"
@@ -236,89 +236,81 @@ msgid "Created At"
 msgstr "创建时间"
 
 # Help texts
-msgid "Optional authentication code required to access RSS feeds."
-msgstr "访问 RSS 订阅源所需的可选身份验证码。"
+msgid "Optional authentication code to access RSS feeds"
+msgstr "访问 RSS 订阅源的可选身份验证码"
 
-msgid "URL of the Atom or RSS feed"
-msgstr "Atom 或 RSS 订阅源的网址"
+msgid "RSS or Atom feed URL"
+msgstr "RSS 或 Atom 订阅源网址"
 
-msgid "Optional title for the original feed"
-msgstr "原始订阅源的可选标题"
+msgid "Display name for this feed"
+msgstr "此订阅源的显示名称"
 
-msgid "Older articles will be removed when the limit is reached."
-msgstr "达到限制时将删除较旧的文章。"
+msgid "Older articles will be removed when limit is reached"
+msgstr "达到限制时将删除较旧的文章"
 
-msgid "Tags associated with this feed"
-msgstr "与此订阅源关联的标签"
+# Removed - no help text needed for tags field
 
-msgid "Whether the feed is valid."
-msgstr "订阅源是否有效。"
+# Removed - no help text needed for valid field
 
-msgid "All selected original feeds will be aggregated into this feed."
-msgstr "所有选中的原始订阅源将被聚合到此订阅源中。"
+msgid "Original feeds to aggregate into this processed feed"
+msgstr "要聚合到此处理后订阅源的原始订阅源"
 
-msgid "All articles will be included in the feed, but only the set number of articles will be summarized per update, set to 0 to disable summarization."
-msgstr "所有文章都将包含在订阅源中，但每次更新只会对设定数量的文章生成总结，设置为 0 以禁用总结功能。"
+msgid "Number of articles to summarize per update. All articles included in feed, set to 0 to disable summarization"
+msgstr "每次更新总结的文章数量。所有文章都包含在订阅源中，设置为 0 禁用总结功能"
 
-msgid "Language for summarization, will be ignored if summarization is disabled or using custom prompt."
-msgstr "总结目标语言，如果禁用总结或使用自定义提示词，此设置将被忽略。"
+msgid "Target language for summarization. Ignored if using custom prompt"
+msgstr "总结目标语言。使用自定义提示词时将忽略此设置"
 
-msgid "This prompt will override the default prompt for summarization, you can use it for translation or other detailed instructions."
-msgstr "此提示词将覆盖默认的总结用提示词，您可以修改提示词来完成翻译等其他操作。"
+msgid "Override default summarization prompt. Can be used for translation or custom instructions"
+msgstr "覆盖默认总结提示词。可用于翻译或自定义指令"
 
-msgid "If this option is true, Article title is translated to summary language."
-msgstr "如果启用此选项，文章标题将被翻译为总结目标语言。"
+msgid "Translate article titles to summary language"
+msgstr "将文章标题翻译为总结目标语言"
 
-msgid "Please specify the model if 'Other' is selected above, e.g. 'gemini-1.5-pro' in OneAPI."
-msgstr "如果上面选择了\"其他\"，请指定模型，例如 OneAPI 中的 'gemini-1.5-pro'。"
+msgid "Specify model name if 'Other' is selected above, e.g. 'grok-3' in xAI"
+msgstr "如果上面选择了\"其他\"，请指定模型名称，例如 xAI 中的 'grok-3'"
 
-msgid "Send a digest of the feed regularly."
-msgstr "定期发送订阅源摘要。"
+msgid "Generate periodic digest of the feed"
+msgstr "定期生成订阅源摘要"
 
-msgid "Include entries in the feed, disable to only send digest regularly."
-msgstr "在订阅源中包含条目，禁用后将只定期发送摘要。"
+msgid "Include individual entries in feed. Disable to only generate digest"
+msgstr "在订阅源中包含单独条目。禁用后仅生成摘要"
 
-msgid "Frequency of the digest."
-msgstr "摘要频率。"
+# Removed - no help text needed for digest frequency field
 
-msgid "Last time the digest was generated, change if you want to reset the digest timer or force a new digest."
-msgstr "上次生成摘要的时间，如果要重置摘要计时器或强制生成新摘要，可以修改此项。"
+msgid "Last digest generation time. Modify to reset timer or force new digest"
+msgstr "上次摘要生成时间。修改此项可重置计时器或强制生成新摘要"
 
-msgid "Include table of contents in digest."
-msgstr "在摘要中包含目录。"
+# Removed - no help text needed for include_toc field
 
-msgid "Include one line summary in digest, only works for default summarization."
-msgstr "在摘要中包含单行总结，仅适用于在默认总结设置（不自定义总结用提示词）。"
+msgid "Only works with default summarization (no custom prompt)"
+msgstr "仅适用于默认总结设置（无自定义提示词）"
 
-msgid "Include full summary in digest."
-msgstr "在摘要中包含完整 AI 总结。"
+# Removed - no help text needed for include_summary field
 
-msgid "Include full content in digest."
-msgstr "在摘要中包含文章内容。"
+# Removed - no help text needed for include_content field
 
-msgid "Use AI to process digest content."
-msgstr "使用 AI 处理摘要内容。"
+# Removed - no help text needed for use_ai_digest field
 
-msgid "(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent."
-msgstr "（无提示词时忽略）为 AI 摘要发送完整文章内容，默认只发送链接、标题和总结。"
+msgid "Send full article content to AI. Ignored without digest prompt. Default sends only link, title, and summary"
+msgstr "向 AI 发送完整文章内容。无摘要提示词时忽略。默认只发送链接、标题和总结"
 
-msgid "Model for digest generation."
-msgstr "摘要生成模型。"
+# Removed - no help text needed for digest_model field
 
-msgid "Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3' in xAI."
-msgstr "如果上面选择了\"其他\"，请指定与 OpenAI 兼容的模型，例如使用 xAI 接口的 'grok-3' 模型。"
+msgid "Specify OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3' in xAI"
+msgstr "如果上面选择了\"其他\"，请指定与 OpenAI 兼容的模型，例如 xAI 中的 'grok-3'"
 
-msgid "Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest."
-msgstr "使用 AI 生成摘要，否则摘要中只包含数据库中的标题、链接和总结。"
+msgid "Custom prompt for AI digest generation. Without this, only title, link and summary are included"
+msgstr "AI 摘要生成的自定义提示词。没有此项时，只包含标题、链接和总结"
 
-msgid "The included articles must match All/Any/None of the filters."
-msgstr "包含的文章必须匹配所有/任一/不符合任何过滤条件。"
+msgid "Articles must match All/Any/None of the filters to be included"
+msgstr "文章必须匹配所有/任一/不符合任何过滤条件才能被包含"
 
-msgid "The included articles must match All/Any/None of the filters for summarization."
-msgstr "文章必须匹配所有/任一/不符合任何过滤条件，才能生成总结。"
+msgid "Articles must match All/Any/None of the filters to be summarized"
+msgstr "文章必须匹配所有/任一/不符合任何过滤条件才能生成总结"
 
-msgid "For filter keyword, default to unchecked for ignoring case."
-msgstr "对于过滤关键词，默认不勾选以忽略大小写。"
+msgid "Enable case-sensitive filter matching. Default is case-insensitive"
+msgstr "启用区分大小写的过滤匹配。默认不区分大小写"
 
 msgid "At least one of 'toggle digest' or 'toggle entries' must be enabled."
 msgstr "必须至少启用\"启用摘要\"或\"包含条目\"中的一项。"

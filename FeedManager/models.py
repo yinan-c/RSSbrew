@@ -31,7 +31,7 @@ class AppSetting(models.Model):
         blank=True, 
         null=True, 
         verbose_name=_('Auth Code'),
-        help_text=_('Optional authentication code required to access RSS feeds.')
+        help_text=_('Optional authentication code to access RSS feeds')
     )
 
     class Meta:
@@ -44,12 +44,12 @@ class AppSetting(models.Model):
         return instance.auth_code if instance else None
 
 class OriginalFeed(models.Model):
-    url = models.URLField(unique=True, help_text=_("URL of the Atom or RSS feed"), max_length=2048, verbose_name=_('URL'))
-    title = models.CharField(max_length=255, blank=True, default='', help_text=_("Optional title for the original feed"), verbose_name=_('Title'))
-    max_articles_to_keep = models.PositiveIntegerField(default=1000, help_text=_("Older articles will be removed when the limit is reached."), verbose_name=_('Max Articles to Keep'))
+    url = models.URLField(unique=True, help_text=_("RSS or Atom feed URL"), max_length=2048, verbose_name=_('URL'))
+    title = models.CharField(max_length=255, blank=True, default='', help_text=_("Display name for this feed"), verbose_name=_('Title'))
+    max_articles_to_keep = models.PositiveIntegerField(default=1000, help_text=_("Older articles will be removed when limit is reached"), verbose_name=_('Max Articles to Keep'))
     #tag = models.CharField(max_length=255, blank=True, default='', help_text="Optional tag for the original feed")
-    tags = models.ManyToManyField('Tag', related_name='original_feeds', blank=True, help_text=_("Tags associated with this feed"), verbose_name=_('Tags'))
-    valid = models.BooleanField(default=None, blank=True, null=True, editable=False, help_text=_("Whether the feed is valid."), verbose_name=_('Valid'))
+    tags = models.ManyToManyField('Tag', related_name='original_feeds', blank=True, verbose_name=_('Tags'))
+    valid = models.BooleanField(default=None, blank=True, null=True, editable=False, verbose_name=_('Valid'))
 
     def save(self, *args, **kwargs):
         if not self.title:
@@ -76,48 +76,47 @@ class Tag(models.Model):
 class ProcessedFeed(models.Model):
     name = models.CharField(max_length=255, unique=True, verbose_name=_('Name')) # Ensure subscription name is unique
     last_modified = models.DateTimeField(default=None, blank=True, null=True, editable=False, verbose_name=_('Last Modified'))
-    feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds', help_text=_("All selected original feeds will be aggregated into this feed."), verbose_name=_('Original Feeds'))
+    feeds = models.ManyToManyField('OriginalFeed', related_name='processed_feeds', help_text=_("Original feeds to aggregate into this processed feed"), verbose_name=_('Original Feeds'))
 
     # Summarization related fields
-    articles_to_summarize_per_interval = models.PositiveIntegerField(default=0, help_text=_("All articles will be included in the feed, but only the set number of articles will be summarized per update, set to 0 to disable summarization."), verbose_name=_("Articles to summarize per update"))
-    summary_language = models.CharField(max_length=20, default='English', help_text=_("Language for summarization, will be ignored if summarization is disabled or using custom prompt."), verbose_name=_('Summary Language'))
-    additional_prompt = models.TextField(blank=True, default='', verbose_name=_('Custom Prompt'), help_text=_("This prompt will override the default prompt for summarization, you can use it for translation or other detailed instructions."))
-    translate_title = models.BooleanField(default=False, verbose_name=_("Article Title Translation"), help_text=_("If this option is true, Article title is translated to summary language."))
+    articles_to_summarize_per_interval = models.PositiveIntegerField(default=0, help_text=_("Number of articles to summarize per update. All articles included in feed, set to 0 to disable summarization"), verbose_name=_("Articles to summarize per update"))
+    summary_language = models.CharField(max_length=20, default='English', help_text=_("Target language for summarization. Ignored if using custom prompt"), verbose_name=_('Summary Language'))
+    additional_prompt = models.TextField(blank=True, default='', verbose_name=_('Custom Prompt'), help_text=_("Override default summarization prompt. Can be used for translation or custom instructions"))
+    translate_title = models.BooleanField(default=False, verbose_name=_("Article Title Translation"), help_text=_("Translate article titles to summary language"))
     model = models.CharField(
         max_length=255,
         default=DEFAULT_MODEL,
         choices=MODEL_CHOICES,
         verbose_name=_('Model')
     )
-    other_model = models.CharField(max_length=255, blank=True, default='', help_text=_("Please specify the model if 'Other' is selected above, e.g. 'grok-3' in xAI."), verbose_name=_('Other Model'))
+    other_model = models.CharField(max_length=255, blank=True, default='', help_text=_("Specify model name if 'Other' is selected above, e.g. 'grok-3' in xAI"), verbose_name=_('Other Model'))
 
     # Digest related fields
-    toggle_digest = models.BooleanField(default=False, help_text=_("Send a digest of the feed regularly."), verbose_name=_('Enable Digest'))
-    toggle_entries = models.BooleanField(default=True, help_text=_("Include entries in the feed, disable to only send digest regularly."), verbose_name=_('Include Entries')) 
-    digest_frequency = models.CharField(max_length=20, default='daily', choices=[('daily', _('Daily')), ('weekly', _('Weekly'))], help_text=_("Frequency of the digest."), verbose_name=_('Digest Frequency'))
-    last_digest = models.DateTimeField(default=None, blank=True, null=True, editable=True, help_text=_("Last time the digest was generated, change if you want to reset the digest timer or force a new digest."), verbose_name=_('Last Digest'))
-    include_toc = models.BooleanField(default=True, help_text=_("Include table of contents in digest."), verbose_name=_('Include Table of Contents'))
-    include_one_line_summary = models.BooleanField(default=True, help_text=_("Include one line summary in digest, only works for default summarization."), verbose_name=_('Include One Line Summary'))
-    include_summary = models.BooleanField(default=False, help_text=_("Include full summary in digest."), verbose_name=_('Include Full Summary'))
-    include_content = models.BooleanField(default=False, help_text=_("Include full content in digest."), verbose_name=_('Include Full Content'))
+    toggle_digest = models.BooleanField(default=False, help_text=_("Generate periodic digest of the feed"), verbose_name=_('Enable Digest'))
+    toggle_entries = models.BooleanField(default=True, help_text=_("Include individual entries in feed. Disable to only generate digest"), verbose_name=_('Include Entries')) 
+    digest_frequency = models.CharField(max_length=20, default='daily', choices=[('daily', _('Daily')), ('weekly', _('Weekly'))], verbose_name=_('Digest Frequency'))
+    last_digest = models.DateTimeField(default=None, blank=True, null=True, editable=True, help_text=_("Last digest generation time. Modify to reset timer or force new digest"), verbose_name=_('Last Digest'))
+    include_toc = models.BooleanField(default=True, verbose_name=_('Include Table of Contents'))
+    include_one_line_summary = models.BooleanField(default=True, help_text=_("Only works with default summarization (no custom prompt)"), verbose_name=_('Include One Line Summary'))
+    include_summary = models.BooleanField(default=False, verbose_name=_('Include Full Summary'))
+    include_content = models.BooleanField(default=False, verbose_name=_('Include Full Content'))
 
     # AI-digest related fields
-    use_ai_digest = models.BooleanField(default=False, help_text=_("Use AI to process digest content."), verbose_name=_('Use AI Digest'))
-    send_full_article = models.BooleanField(default=False, help_text=_("(Ignored without prompt) Send full article content for AI digest, by default only link, title, and summary are sent."), verbose_name=_('Send Full Article'))
+    use_ai_digest = models.BooleanField(default=False, verbose_name=_('Use AI Digest'))
+    send_full_article = models.BooleanField(default=False, help_text=_("Send full article content to AI. Ignored without digest prompt. Default sends only link, title, and summary"), verbose_name=_('Send Full Article'))
     digest_model = models.CharField(
         max_length=255,
         default=DEFAULT_MODEL,
         choices=MODEL_CHOICES,
-        help_text=_("Model for digest generation."),
         verbose_name=_('Digest Model')
     )
-    other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text=_("Please specify the OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3' in xAI."), verbose_name=_('Other Digest Model'))
-    additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name=_('(Optional) Prompt for Digest'), help_text=_("Using AI to generate digest, otherwise only the title, link and summary from the database will be included in the digest."))
+    other_digest_model = models.CharField(max_length=255, blank=True, default='', help_text=_("Specify OpenAI-compatible model if 'Other' is selected above, e.g. 'grok-3' in xAI"), verbose_name=_('Other Digest Model'))
+    additional_prompt_for_digest = models.TextField(blank=True, default='', verbose_name=_('Digest Prompt'), help_text=_("Custom prompt for AI digest generation. Without this, only title, link and summary are included"))
 
     # Filter related fields
-    feed_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("The included articles must match All/Any/None of the filters."), verbose_name=_('Feed Filter Logic'))
-    summary_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("The included articles must match All/Any/None of the filters for summarization."), verbose_name=_('Summary Filter Logic'))
-    case_sensitive = models.BooleanField(default=False, help_text=_("For filter keyword, default to unchecked for ignoring case."), verbose_name=_('Case Sensitive'))
+    feed_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("Articles must match All/Any/None of the filters to be included"), verbose_name=_('Feed Filter Logic'))
+    summary_group_relational_operator = models.CharField(max_length=20, choices=[('all', _('All')), ('any', _('Any')), ('none', _('None'))], default='any', help_text=_("Articles must match All/Any/None of the filters to be summarized"), verbose_name=_('Summary Filter Logic'))
+    case_sensitive = models.BooleanField(default=False, help_text=_("Enable case-sensitive filter matching. Default is case-insensitive"), verbose_name=_('Case Sensitive'))
     
     class Meta:
         verbose_name = _('Processed Feed')
