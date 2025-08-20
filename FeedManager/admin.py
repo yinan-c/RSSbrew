@@ -177,21 +177,17 @@ class ProcessedFeedAdmin(NestedModelAdmin):
     inlines = [FilterGroupInline]
 
     # rename articles_to_summarize_per_interval to Summarize per Update in list display
-    @admin.display(description=_("Summarize per Update"))
+    @admin.display(description=_("Summarize per Update"), ordering="articles_to_summarize_per_interval")
     def summarize_per_update(self, obj):
         return obj.articles_to_summarize_per_interval
 
     @admin.display(description=_("Digest/Entries"))
     def toggle_digest_and_update(self, obj):
         # An emoji description to show if the digest/entries are enabled
-        if obj.toggle_digest and obj.toggle_entries:
-            return "✅/✅"
-        elif obj.toggle_digest and not obj.toggle_entries:
-            return "✅/❌"
-        elif not obj.toggle_digest and obj.toggle_entries:
-            return "❌/✅"
-        else:
-            return "❌/❌"
+        # Use 🤖 robot emoji when AI digest is enabled, otherwise ✅
+        digest_emoji = "🤖" if obj.toggle_digest and obj.use_ai_digest else ("✅" if obj.toggle_digest else "❌")
+        entries_emoji = "✅" if obj.toggle_entries else "❌"
+        return f"{digest_emoji}/{entries_emoji}"
 
     list_display = (
         "name",
