@@ -30,8 +30,8 @@ BASE_MODEL_CHOICES = [
     ("other", _("Other (specify below)")),
 ]
 
-# Global model choices (for AppSetting)
-GLOBAL_MODEL_CHOICES = BASE_MODEL_CHOICES.copy()
+# Global model choices (for AppSetting) - includes "None" option
+GLOBAL_MODEL_CHOICES = [("none", _("None - Disable AI Features Globally")), *BASE_MODEL_CHOICES]
 
 # Feed model choices (for ProcessedFeed) - includes "Use Global Setting"
 MODEL_CHOICES = [("use_global", _("Use Global Setting")), *BASE_MODEL_CHOICES]
@@ -49,10 +49,14 @@ class AppSetting(models.Model):
     # Global AI model settings
     global_summary_model = models.CharField(
         max_length=255,
-        default=DEFAULT_MODEL,
+        default="none",
         choices=GLOBAL_MODEL_CHOICES,
         verbose_name=_("Global Summary Model"),
-        help_text=_("Default AI model for article summarization across all feeds"),
+        help_text=_(
+            "Master switch for AI summarization. "
+            "When set to 'None', ALL AI summaries are disabled system-wide, regardless of individual feed settings. "
+            "When set to a model, it enables AI features and serves as the default for feeds using 'Use Global Setting'."
+        ),
     )
     global_other_summary_model = models.CharField(
         max_length=255,
@@ -63,10 +67,14 @@ class AppSetting(models.Model):
     )
     global_digest_model = models.CharField(
         max_length=255,
-        default=DEFAULT_MODEL,
+        default="none",
         choices=GLOBAL_MODEL_CHOICES,
         verbose_name=_("Global Digest Model"),
-        help_text=_("Default AI model for digest generation across all feeds"),
+        help_text=_(
+            "Master switch for AI digest generation. "
+            "When set to 'None', ALL AI digests are disabled system-wide, regardless of individual feed settings. "
+            "When set to a model, it enables AI features and serves as the default for feeds using 'Use Global Setting'."
+        ),
     )
     global_other_digest_model = models.CharField(
         max_length=255,
@@ -90,22 +98,28 @@ class AppSetting(models.Model):
 
     @classmethod
     def get_global_summary_model(cls):
-        """Get the effective global summary model, handling 'other' selection"""
+        """Get the effective global summary model, handling 'none' and 'other' selections.
+        Returns None if 'none' is selected, indicating AI features should be disabled."""
         instance = cls.objects.first()
         if not instance:
-            return DEFAULT_MODEL
+            return None  # No AppSetting configured, disable AI
+        if instance.global_summary_model == "none":
+            return None  # Explicitly disabled
         if instance.global_summary_model == "other":
-            return instance.global_other_summary_model or DEFAULT_MODEL
+            return instance.global_other_summary_model or None
         return instance.global_summary_model
 
     @classmethod
     def get_global_digest_model(cls):
-        """Get the effective global digest model, handling 'other' selection"""
+        """Get the effective global digest model, handling 'none' and 'other' selections.
+        Returns None if 'none' is selected, indicating AI features should be disabled."""
         instance = cls.objects.first()
         if not instance:
-            return DEFAULT_MODEL
+            return None  # No AppSetting configured, disable AI
+        if instance.global_digest_model == "none":
+            return None  # Explicitly disabled
         if instance.global_digest_model == "other":
-            return instance.global_other_digest_model or DEFAULT_MODEL
+            return instance.global_other_digest_model or None
         return instance.global_digest_model
 
 
@@ -186,7 +200,16 @@ class ProcessedFeed(models.Model):
         verbose_name=_("Article Title Translation"),
         help_text=_("Translate article titles to summary language"),
     )
-    model = models.CharField(max_length=255, default="use_global", choices=MODEL_CHOICES, verbose_name=_("Model"))
+    model = models.CharField(
+        max_length=255,
+        default="use_global",
+        choices=MODEL_CHOICES,
+        verbose_name=_("Summary Model"),
+        help_text=_(
+            "AI model for summarization. Note: Requires global AI to be enabled in App Settings. "
+            "If global AI is disabled (set to 'None'), this setting will have no effect."
+        ),
+    )
     other_model = models.CharField(
         max_length=255,
         blank=True,
@@ -237,7 +260,14 @@ class ProcessedFeed(models.Model):
         verbose_name=_("Send Full Article"),
     )
     digest_model = models.CharField(
-        max_length=255, default="use_global", choices=MODEL_CHOICES, verbose_name=_("Digest Model")
+        max_length=255,
+        default="use_global",
+        choices=MODEL_CHOICES,
+        verbose_name=_("Digest Model"),
+        help_text=_(
+            "AI model for digest generation. Note: Requires global AI to be enabled in App Settings. "
+            "If global AI is disabled (set to 'None'), this setting will have no effect."
+        ),
     )
     other_digest_model = models.CharField(
         max_length=255,
@@ -290,19 +320,35 @@ class ProcessedFeed(models.Model):
             raise ValidationError(_("At least one of 'Enable Digest' or 'Include Entries' must be enabled."))
 
     def get_effective_summary_model(self):
-        """Get the effective summary model, considering global settings and 'other' selection"""
+        """Get the effective summary model, considering global settings as master switch.
+        Returns None if global is disabled, indicating AI features should be disabled."""
+        # First check if global AI is enabled at all
+        global_model = AppSetting.get_global_summary_model()
+        if global_model is None:
+            # Global AI is disabled - no AI features work regardless of individual settings
+            return None
+
+        # Global AI is enabled, now check what model to use
         if self.model == "use_global":
-            return AppSetting.get_global_summary_model()
+            return global_model
         elif self.model == "other":
-            return self.other_model or DEFAULT_MODEL
+            return self.other_model if self.other_model else None
         return self.model
 
     def get_effective_digest_model(self):
-        """Get the effective digest model, considering global settings and 'other' selection"""
+        """Get the effective digest model, considering global settings as master switch.
+        Returns None if global is disabled, indicating AI features should be disabled."""
+        # First check if global AI is enabled at all
+        global_model = AppSetting.get_global_digest_model()
+        if global_model is None:
+            # Global AI is disabled - no AI features work regardless of individual settings
+            return None
+
+        # Global AI is enabled, now check what model to use
         if self.digest_model == "use_global":
-            return AppSetting.get_global_digest_model()
+            return global_model
         elif self.digest_model == "other":
-            return self.other_digest_model or DEFAULT_MODEL
+            return self.other_digest_model if self.other_digest_model else None
         return self.digest_model
 
 

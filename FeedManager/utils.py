@@ -90,6 +90,11 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
     cleaned_article = query
     if clean_bool:
         cleaned_article = clean_html(query)
+
+    # If no model is specified, return the cleaned text without truncation
+    if not model:
+        return cleaned_article
+
     try:
         encoding = tiktoken.encoding_for_model(model)
     except (KeyError, ValueError):
