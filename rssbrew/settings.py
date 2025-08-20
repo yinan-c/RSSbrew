@@ -130,6 +130,14 @@ DATABASES = {
         "NAME": DATA_FOLDER / "db.sqlite3",
         "OPTIONS": {
             "timeout": 20,
+            "check_same_thread": False,
+            # SQLite optimizations - applied on every connection
+            "init_command": """
+                PRAGMA cache_size = -64000;
+                PRAGMA temp_store = MEMORY;
+                PRAGMA journal_mode = WAL;
+                PRAGMA synchronous = NORMAL;
+            """,
         },
     }
 }
