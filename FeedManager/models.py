@@ -1,7 +1,6 @@
 import re
 from typing import TYPE_CHECKING
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import m2m_changed
@@ -13,7 +12,8 @@ from .tasks import async_update_feeds_and_digest
 if TYPE_CHECKING:
     from django.db.models import ManyToManyField
 
-DEFAULT_MODEL = getattr(settings, "OPENAI_DEFAULT_MODEL", "gpt-4.1-mini")
+# Hardcoded fallback model when nothing is configured
+DEFAULT_MODEL = "gpt-5-nano"
 
 # Base model choices without "Use Global Setting"
 BASE_MODEL_CHOICES = [
@@ -29,10 +29,6 @@ BASE_MODEL_CHOICES = [
     ("gpt-3.5-turbo", "GPT-3.5 Turbo"),
     ("other", _("Other (specify below)")),
 ]
-
-# Add default model if not in list
-if DEFAULT_MODEL not in [choice[0] for choice in BASE_MODEL_CHOICES]:
-    BASE_MODEL_CHOICES.insert(0, (DEFAULT_MODEL, f"{DEFAULT_MODEL} (Default)"))
 
 # Global model choices (for AppSetting)
 GLOBAL_MODEL_CHOICES = BASE_MODEL_CHOICES.copy()
