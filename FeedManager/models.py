@@ -337,6 +337,10 @@ class ProcessedFeed(models.Model):
     class Meta:
         verbose_name = _("Processed Feed")
         verbose_name_plural = _("Processed Feeds")
+        indexes = [
+            models.Index(fields=["name"], name="feed_name_idx"),
+            models.Index(fields=["-last_modified"], name="feed_modified_idx"),
+        ]
 
     def __str__(self):
         return self.name
@@ -483,6 +487,11 @@ class Article(models.Model):
         unique_together = ("link", "original_feed")
         verbose_name = _("Article")
         verbose_name_plural = _("Articles")
+        indexes = [
+            models.Index(fields=["-published_date"], name="article_pub_date_idx"),
+            models.Index(fields=["summarized"], name="article_summarized_idx"),
+            models.Index(fields=["original_feed", "-published_date"], name="article_feed_date_idx"),
+        ]
 
     def __str__(self):
         return self.title
