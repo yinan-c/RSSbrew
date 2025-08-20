@@ -32,3 +32,4 @@ debug*
 .DS_Store
 Thumbs.db
 temp/
+*.bak
