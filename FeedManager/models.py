@@ -96,8 +96,9 @@ class AppSetting(models.Model):
         if not self.pk and AppSetting.objects.exists():
             # If creating new instance and one already exists, update the existing one instead
             existing = AppSetting.objects.first()
-            self.pk = existing.pk
-            self.id = existing.id
+            if existing:  # Type guard for mypy
+                self.pk = existing.pk
+                self.id = existing.id
         super().save(*args, **kwargs)
 
     @classmethod

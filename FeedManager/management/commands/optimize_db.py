@@ -5,6 +5,8 @@ Management command to optimize database performance with automatic backup
 import os
 import shutil
 from datetime import datetime
+from pathlib import Path
+from typing import cast
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -103,7 +105,7 @@ class Command(BaseCommand):
                 self.stdout.write(f"  Could not remove old backup: {e}")
 
     def handle(self, *args, **options):
-        db_engine = settings.DATABASES["default"]["ENGINE"]
+        db_engine = cast(str, settings.DATABASES["default"]["ENGINE"])
         is_sqlite = "sqlite" in db_engine
 
         if not is_sqlite and (options["vacuum"] or options["pragma"]):
@@ -119,7 +121,7 @@ class Command(BaseCommand):
         # Create backup for SQLite before optimization (unless --no-backup is specified)
         backup_path = None
         if is_sqlite and not options["no_backup"]:
-            db_path = settings.DATABASES["default"]["NAME"]
+            db_path = cast(Path, settings.DATABASES["default"]["NAME"])
             self.stdout.write("\n" + "=" * 50)
             self.stdout.write("STEP 1: Creating database backup")
             self.stdout.write("=" * 50)
@@ -178,7 +180,7 @@ class Command(BaseCommand):
                 if options["vacuum"] and is_sqlite:
                     self.stdout.write("Running VACUUM to reclaim space (this may take a while)...")
                     # Get current database size
-                    db_path = settings.DATABASES["default"]["NAME"]
+                    db_path = cast(Path, settings.DATABASES["default"]["NAME"])
                     if os.path.exists(db_path):
                         size_before = os.path.getsize(db_path) / (1024 * 1024)  # MB
 

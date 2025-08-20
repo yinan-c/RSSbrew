@@ -662,9 +662,11 @@ class TestGlobalModelSettings(TestCase):
 
         # The existing instance should have been updated with new values
         updated_setting = AppSetting.objects.first()
-        self.assertEqual(updated_setting.global_summary_model, "gpt-4o")
-        self.assertEqual(updated_setting.global_digest_model, "gpt-4o-mini")
-        self.assertEqual(updated_setting.auth_code, "second")
+        self.assertIsNotNone(updated_setting)
+        if updated_setting:  # Type guard for mypy
+            self.assertEqual(updated_setting.global_summary_model, "gpt-4o")
+            self.assertEqual(updated_setting.global_digest_model, "gpt-4o-mini")
+            self.assertEqual(updated_setting.auth_code, "second")
 
         # Updating existing instance should work normally
         first_setting.refresh_from_db()

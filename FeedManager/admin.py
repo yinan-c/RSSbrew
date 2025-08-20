@@ -376,17 +376,15 @@ class AppSettingAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         """Redirect to change view if an instance exists, otherwise to add view"""
+        from django.shortcuts import redirect
+        from django.urls import reverse
+
         if AppSetting.objects.exists():
             instance = AppSetting.objects.first()
-            from django.shortcuts import redirect
-            from django.urls import reverse
+            if instance:  # Type guard for mypy
+                return redirect(reverse("admin:FeedManager_appsetting_change", args=[instance.pk]))
 
-            return redirect(reverse("admin:FeedManager_appsetting_change", args=[instance.pk]))
-        else:
-            from django.shortcuts import redirect
-            from django.urls import reverse
-
-            return redirect(reverse("admin:FeedManager_appsetting_add"))
+        return redirect(reverse("admin:FeedManager_appsetting_add"))
 
     def response_add(self, request, obj, post_url_continue=None):
         """After adding, redirect to change view (since only one instance allowed)"""

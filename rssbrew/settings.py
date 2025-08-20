@@ -132,12 +132,14 @@ DATABASES = {
             "timeout": 20,
             "check_same_thread": False,
             # SQLite optimizations - applied on every connection
-            "init_command": """
-                PRAGMA cache_size = -64000;
-                PRAGMA temp_store = MEMORY;
-                PRAGMA journal_mode = WAL;
-                PRAGMA synchronous = NORMAL;
-            """,
+            # Note: init_command is not supported in SQLite backend
+            # These should be set via management command or on connection
+            # "init_command": """
+            #     PRAGMA cache_size = -64000;
+            #     PRAGMA temp_store = MEMORY;
+            #     PRAGMA journal_mode = WAL;
+            #     PRAGMA synchronous = NORMAL;
+            # """,
         },
     }
 }
