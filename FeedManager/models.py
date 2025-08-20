@@ -16,10 +16,12 @@ if TYPE_CHECKING:
 DEFAULT_MODEL = getattr(settings, "OPENAI_DEFAULT_MODEL", "gpt-4.1-mini")
 
 MODEL_CHOICES = [
+    ("gpt-5-mini", "GPT-5 Mini"),
+    ("gpt-5-nano", "GPT-5 Nano"),
+    ("gpt-5", "GPT-5"),
     ("gpt-4.1-mini", "GPT-4.1 Mini"),
     ("gpt-4.1-nano", "GPT-4.1 Nano"),
     ("gpt-4.1", "GPT-4.1"),
-    ("gpt-4.5-preview", "GPT-4.5 Preview"),
     ("gpt-4o-mini", "GPT-4o Mini"),
     ("gpt-4o", "GPT-4o"),
     ("gpt-4-turbo", "GPT-4 Turbo"),
