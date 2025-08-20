@@ -91,6 +91,34 @@ class AppSetting(models.Model):
     def __str__(self):
         return "App Settings"
 
+    def save(self, *args, **kwargs):
+        """Enforce singleton pattern - only one AppSetting instance allowed"""
+        if not self.pk and AppSetting.objects.exists():
+            # If creating new instance and one already exists, raise error
+            raise ValidationError(_("Only one App Settings instance is allowed. Please edit the existing one."))
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_instance(cls):
+        """Get the singleton AppSetting instance if it exists, None otherwise.
+        Does NOT auto-create to avoid unintended side effects."""
+        try:
+            return cls.objects.get(pk=1)
+        except cls.DoesNotExist:
+            return None
+
+    @classmethod
+    def get_or_create_instance(cls):
+        """Get or create the singleton AppSetting instance with safe defaults"""
+        instance, created = cls.objects.get_or_create(
+            pk=1,  # Always use pk=1 for singleton
+            defaults={
+                "global_summary_model": "none",
+                "global_digest_model": "none",
+            },
+        )
+        return instance
+
     @classmethod
     def get_auth_code(cls):
         instance = cls.objects.first()
