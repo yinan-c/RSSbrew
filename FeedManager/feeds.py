@@ -1,5 +1,6 @@
 from django.contrib.syndication.views import Feed
-from django.shortcuts import Http404, get_object_or_404
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.feedgenerator import Rss201rev2Feed
 

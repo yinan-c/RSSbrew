@@ -71,7 +71,7 @@ class Command(BaseCommand):
             if "use_ai_digest" in what_to_include:
                 # Convert digest to article for AI processing
                 Article(
-                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
                     link=f"/admin/FeedManager/digest/{digest.id}/change/",
                     published_date=digest.created_at,
                     content=digest.content,
@@ -91,7 +91,7 @@ class Command(BaseCommand):
                 query = clean_txt_and_truncate(query, model=feed.digest_model, clean_bool=True)
                 # Generate a pseudo article for AI digest
                 for_summary_only_article = Article(
-                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
                     link=f"/admin/FeedManager/digest/{digest.id}/change/",
                     published_date=digest.created_at,
                     content=query,

@@ -73,7 +73,7 @@ class Command(BaseCommand):
 
     def update_feed(self, feed):
         self.current_n_processed = 0
-        entries = []
+        entries: list[dict] = []
         current_modified = feed.last_modified
         min_new_modified = None
         logger.debug(f"  Current last modified: {current_modified} for feed {feed.name}")
@@ -100,7 +100,8 @@ class Command(BaseCommand):
                     parsed_feed.entries.sort(key=lambda x: x.get("published_parsed", []), reverse=True)
                     #                    self.stdout.write(f'  Found {len(parsed_feed.entries)} entries in feed {original_feed.url}')
                     entries.extend(
-                        (entry, original_feed) for entry in parsed_feed.entries[: original_feed.max_articles_to_keep]
+                        {"entry": entry, "original_feed": original_feed}
+                        for entry in parsed_feed.entries[: original_feed.max_articles_to_keep]
                     )
             elif feed_data["status"] == "not_modified":
                 original_feed.valid = True
@@ -118,10 +119,10 @@ class Command(BaseCommand):
         if min_new_modified:
             feed.last_modified = min_new_modified
             feed.save()
-        entries.sort(key=lambda x: x[0].get("published_parsed", timezone.now().timetuple()), reverse=True)
-        for entry, original_feed in entries:
+        entries.sort(key=lambda x: x["entry"].get("published_parsed", timezone.now().timetuple()), reverse=True)
+        for item in entries:
             try:
-                self.process_entry(entry, feed, original_feed)
+                self.process_entry(item["entry"], feed, item["original_feed"])
             except Exception as e:
                 logger.error(f"Failed to process entry: {e!s}")
 
@@ -138,7 +139,7 @@ class Command(BaseCommand):
                     original_feed=original_feed,
                     title=generate_untitled(entry),
                     link=clean_url(entry.link),
-                    published_date=datetime(*entry.published_parsed[:6], tzinfo=pytz.UTC)
+                    published_date=datetime(*entry.published_parsed[:6]).replace(tzinfo=pytz.UTC)
                     if "published_parsed" in entry
                     else timezone.now(),
                     content=(

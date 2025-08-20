@@ -1,4 +1,5 @@
 import re
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -8,6 +9,9 @@ from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from .tasks import async_update_feeds_and_digest
+
+if TYPE_CHECKING:
+    from django.db.models import ManyToManyField
 
 DEFAULT_MODEL = getattr(settings, "OPENAI_DEFAULT_MODEL", "gpt-4.1-mini")
 
@@ -60,7 +64,9 @@ class OriginalFeed(models.Model):
         verbose_name=_("Max Articles to Keep"),
     )
     # tag = models.CharField(max_length=255, blank=True, default='', help_text="Optional tag for the original feed")
-    tags = models.ManyToManyField("Tag", related_name="original_feeds", blank=True, verbose_name=_("Tags"))
+    tags: "ManyToManyField[Tag, OriginalFeed]" = models.ManyToManyField(
+        "Tag", related_name="original_feeds", blank=True, verbose_name=_("Tags")
+    )
     valid = models.BooleanField(default=None, blank=True, null=True, editable=False, verbose_name=_("Valid"))
 
     class Meta:
@@ -92,7 +98,7 @@ class ProcessedFeed(models.Model):
     last_modified = models.DateTimeField(
         default=None, blank=True, null=True, editable=False, verbose_name=_("Last Modified")
     )
-    feeds = models.ManyToManyField(
+    feeds: "ManyToManyField[OriginalFeed, ProcessedFeed]" = models.ManyToManyField(
         "OriginalFeed",
         related_name="processed_feeds",
         help_text=_("Original feeds to aggregate into this processed feed"),

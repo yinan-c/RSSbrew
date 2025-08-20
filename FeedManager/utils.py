@@ -2,6 +2,7 @@ import contextlib
 import logging
 import os
 import re
+from typing import Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from django.conf import settings
@@ -207,7 +208,9 @@ def generate_summary(article, model, output_mode="HTML", prompt=None, other_mode
         logger.warning("  OpenAI API key or model not set, skipping summary generation")
         return
     try:
-        client_params = {"api_key": OPENAI_API_KEY, "base_url": OPENAI_BASE_URL}
+        client_params: dict[str, Any] = {"api_key": OPENAI_API_KEY}
+        if OPENAI_BASE_URL:
+            client_params["base_url"] = OPENAI_BASE_URL
         completion_params = {
             "model": model,
         }
