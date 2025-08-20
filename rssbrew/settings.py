@@ -16,6 +16,8 @@ from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 from django.utils.translation import gettext_lazy as _
 
+from huey import RedisHuey
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,12 +27,12 @@ OPENAI_DEFAULT_MODEL = os.environ.get("OPENAI_DEFAULT_MODEL", "gpt-4.1-mini")
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', get_random_secret_key())
+SECRET_KEY = os.environ.get("SECRET_KEY", get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG') == '1'
+DEBUG = os.environ.get("DEBUG") == "1"
 
-allowed_hosts = os.environ.get('DEPLOYMENT_URL', '').split(',')
+allowed_hosts = os.environ.get("DEPLOYMENT_URL", "").split(",")
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
@@ -38,13 +40,13 @@ allowed_hosts.append("localhost")
 allowed_hosts += INTERNAL_IPS
 
 # Use specific hosts from DEPLOYMENT_URL, fallback to localhost for development
-ALLOWED_HOSTS = allowed_hosts if allowed_hosts and allowed_hosts != [''] else ['localhost', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in allowed_hosts if not host.startswith('https')]
-CSRF_TRUSTED_ORIGINS += [f"https://{host}" for host in allowed_hosts if not host.startswith('http')]
+ALLOWED_HOSTS = allowed_hosts if allowed_hosts and allowed_hosts != [""] else ["localhost", "127.0.0.1"]
+CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in allowed_hosts if not host.startswith("https")]
+CSRF_TRUSTED_ORIGINS += [f"https://{host}" for host in allowed_hosts if not host.startswith("http")]
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 # django-admin-interface settings
 X_FRAME_OPTIONS = "SAMEORIGIN"
@@ -61,29 +63,29 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"
 # Application definition
 
 INSTALLED_APPS = [
-    'admin_interface',
-    'colorfield',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'huey.contrib.djhuey',
-    'FeedManager',
-    'nested_admin',
+    "admin_interface",
+    "colorfield",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "huey.contrib.djhuey",
+    "FeedManager",
+    "nested_admin",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
 ]
 
 DEBUG_PLUGINS = [
@@ -97,25 +99,25 @@ if DEBUG:
     INSTALLED_APPS += DEBUG_PLUGINS
     MIDDLEWARE += DEBUG_MIDDLEWARE
 
-ROOT_URLCONF = 'rssbrew.urls'
+ROOT_URLCONF = "rssbrew.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'rssbrew.wsgi.application'
+WSGI_APPLICATION = "rssbrew.wsgi.application"
 
 
 # Database
@@ -139,16 +141,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -156,11 +158,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
 LANGUAGES = [
-    ('en', _('English')),
-    ('zh-hans', _('Simplified Chinese')),
+    ("en", _("English")),
+    ("zh-hans", _("Simplified Chinese")),
     # Other languages commented out until translations are ready
     # ('zh-hant', _('Traditional Chinese')),
     # ('ja', _('Japanese')),
@@ -183,11 +185,11 @@ LANGUAGES = [
 ]
 
 LOCALE_PATHS = [
-    BASE_DIR / 'locale',
-    BASE_DIR / 'FeedManager' / 'locale',
+    BASE_DIR / "locale",
+    BASE_DIR / "FeedManager" / "locale",
 ]
 
-TIME_ZONE = os.getenv('TIME_ZONE', 'UTC')
+TIME_ZONE = os.getenv("TIME_ZONE", "UTC")
 
 USE_I18N = True
 
@@ -197,60 +199,58 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "static"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', 'INFO')
+LOGGING_LEVEL = os.environ.get("LOGGING_LEVEL", "INFO")
 LOGGING_FOLDER = BASE_DIR / "logs"
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': LOGGING_LEVEL,
-            'class': 'logging.StreamHandler',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "level": LOGGING_LEVEL,
+            "class": "logging.StreamHandler",
         },
-        'file': {
-            'level': LOGGING_LEVEL,
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': LOGGING_FOLDER / 'feed_processing.log',
-            'maxBytes': 1024 * 1024 * 200,  # 200 MB
-            'backupCount': 20,
+        "file": {
+            "level": LOGGING_LEVEL,
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGGING_FOLDER / "feed_processing.log",
+            "maxBytes": 1024 * 1024 * 200,  # 200 MB
+            "backupCount": 20,
         },
-        'huey_file': {
-            'level': LOGGING_LEVEL,
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': LOGGING_FOLDER / 'huey.log',
-            'maxBytes': 1024 * 1024 * 50,  # 50 MB
-            'backupCount': 5,
+        "huey_file": {
+            "level": LOGGING_LEVEL,
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGGING_FOLDER / "huey.log",
+            "maxBytes": 1024 * 1024 * 50,  # 50 MB
+            "backupCount": 5,
         },
     },
-    'loggers': {
-        'feed_logger': {
-            'handlers': ['console', 'file'],
-            'level': LOGGING_LEVEL,
-            'propagate': True,
+    "loggers": {
+        "feed_logger": {
+            "handlers": ["console", "file"],
+            "level": LOGGING_LEVEL,
+            "propagate": True,
         },
-        'huey': {
-            'handlers': ['huey_file', 'console'],
-            'level': LOGGING_LEVEL,
-            'propagate': True,
+        "huey": {
+            "handlers": ["huey_file", "console"],
+            "level": LOGGING_LEVEL,
+            "propagate": True,
         },
     },
 }
 
-from huey import RedisHuey
-
 HUEY = RedisHuey(
-    'rssbrew-huey',
-    host=os.environ.get('REDIS_HOST', 'redis'),
-    port=int(os.environ.get('REDIS_PORT', 6379)),
-    db=int(os.environ.get('REDIS_DB', 0)),
+    "rssbrew-huey",
+    host=os.environ.get("REDIS_HOST", "redis"),
+    port=int(os.environ.get("REDIS_PORT", 6379)),
+    db=int(os.environ.get("REDIS_DB", 0)),
     result_store=True,
     events=True,
     store_none=False,

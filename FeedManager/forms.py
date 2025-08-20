@@ -6,26 +6,65 @@ from .models import Article, Filter, ProcessedFeed
 class FilterForm(forms.ModelForm):
     class Meta:
         model = Filter
-        fields = '__all__'
+        fields = ["filter_group", "field", "match_type", "value"]
         widgets = {
-            'value': forms.Textarea(attrs={'cols': 20, 'rows': 1}),
+            "value": forms.Textarea(attrs={"cols": 20, "rows": 1}),
         }
+
 
 class ReadOnlyArticleForm(forms.ModelForm):
     class Meta:
         model = Article
-        fields = '__all__'
+        fields = [
+            "original_feed",
+            "title",
+            "link",
+            "published_date",
+            "content",
+            "summary",
+            "summarized",
+            "summary_one_line",
+            "custom_prompt",
+        ]
         widgets = {
-            'content': forms.HiddenInput(),
+            "content": forms.HiddenInput(),
         }
+
 
 class ProcessedFeedAdminForm(forms.ModelForm):
     class Meta:
         model = ProcessedFeed
-        fields = '__all__'
+        fields = [
+            "name",
+            "feeds",
+            "articles_to_summarize_per_interval",
+            "summary_language",
+            "additional_prompt",
+            "translate_title",
+            "model",
+            "other_model",
+            "toggle_digest",
+            "toggle_entries",
+            "digest_frequency",
+            "last_digest",
+            "include_toc",
+            "include_one_line_summary",
+            "include_summary",
+            "include_content",
+            "use_ai_digest",
+            "send_full_article",
+            "additional_prompt_for_digest",
+            "digest_model",
+            "other_digest_model",
+            "feed_group_relational_operator",
+            "summary_group_relational_operator",
+            "case_sensitive",
+        ]
 
     def __init__(self, *args, **kwargs):
-        super(ProcessedFeedAdminForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+
+
 #        toggle_digest_initial = self.initial.get('toggle_digest', self.instance.toggle_digest if self.instance else False)
 #        if not toggle_digest_initial:
 #            self.fields['digest_frequency'].widget = forms.HiddenInput()

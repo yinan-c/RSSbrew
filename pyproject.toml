@@ -36,6 +36,7 @@ ignore = [
     "S106",  # Possible hardcoded password (false positives)
     "DJ001", # Avoid using null=True on string fields
     "RUF012", # Mutable class attributes should be annotated
+    "N999",  # Invalid module name (FeedManager is a Django app name)
 ]
 
 [tool.ruff.lint.per-file-ignores]

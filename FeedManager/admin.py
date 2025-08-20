@@ -1,5 +1,4 @@
 from datetime import datetime
-from xml.dom import minidom
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 from django.conf import settings
@@ -12,6 +11,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 import pytz
+from defusedxml import minidom
 from nested_admin.nested import NestedModelAdmin, NestedTabularInline
 
 from .forms import FilterForm, ProcessedFeedAdminForm, ReadOnlyArticleForm
@@ -19,122 +19,129 @@ from .models import AppSetting, Article, Digest, Filter, FilterGroup, OriginalFe
 from .tasks import async_update_feeds_and_digest, clean_old_articles
 
 
+@admin.action(description=_("Update selected feeds"))
 def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
         async_update_feeds_and_digest(feed.name)
         # If you select a feed to update, you are forcely generating a digest for it
         modeladmin.message_user(request, f"Feed update tasks have been queued for feed: {feed.name}")
 
+
+@admin.action(description=_("Clean old articles for selected feeds"))
 def clean_selected_feeds_articles(modeladmin, request, queryset):
     for feed in queryset:
         clean_old_articles(feed.id)
         modeladmin.message_user(request, f"Cleaned old articles from feed: {feed.title}")
 
-clean_selected_feeds_articles.short_description = _("Clean old articles for selected feeds")
-update_selected_feeds.short_description = _("Update selected feeds")
 
+@admin.action(description=_("Export selected feeds as OPML"))
 def export_original_feeds_as_opml(modeladmin, request, queryset):
     """Export selected original feeds as OPML"""
     # Create OPML structure
-    opml = Element('opml')
-    opml.set('version', '2.0')
+    opml = Element("opml")
+    opml.set("version", "2.0")
 
     # Create head section
-    head = SubElement(opml, 'head')
-    title = SubElement(head, 'title')
-    title.text = 'RSSBrew Original Feeds Export'
-    date_created = SubElement(head, 'dateCreated')
-    tz = pytz.timezone(getattr(settings, 'TIME_ZONE', 'UTC'))
-    date_created.text = datetime.now(tz).strftime('%a, %d %b %Y %H:%M:%S %z')
+    head = SubElement(opml, "head")
+    title = SubElement(head, "title")
+    title.text = "RSSBrew Original Feeds Export"
+    date_created = SubElement(head, "dateCreated")
+    tz = pytz.timezone(getattr(settings, "TIME_ZONE", "UTC"))
+    date_created.text = datetime.now(tz).strftime("%a, %d %b %Y %H:%M:%S %z")
 
     # Create body section
-    body = SubElement(opml, 'body')
+    body = SubElement(opml, "body")
 
     # Add each selected feed as an outline
     for feed in queryset:
-        outline = SubElement(body, 'outline')
-        outline.set('text', feed.title or feed.url)
-        outline.set('title', feed.title or feed.url)
-        outline.set('type', 'rss')
-        outline.set('xmlUrl', feed.url)
-        outline.set('htmlUrl', feed.url)  # Using feed URL as HTML URL since we don't track website URL
+        outline = SubElement(body, "outline")
+        outline.set("text", feed.title or feed.url)
+        outline.set("title", feed.title or feed.url)
+        outline.set("type", "rss")
+        outline.set("xmlUrl", feed.url)
+        outline.set("htmlUrl", feed.url)  # Using feed URL as HTML URL since we don't track website URL
 
         # Add tags as categories if present
         tags = feed.tags.all()
         if tags:
-            categories = ', '.join([tag.name for tag in tags])
-            outline.set('category', categories)
+            categories = ", ".join([tag.name for tag in tags])
+            outline.set("category", categories)
 
     # Convert to pretty XML string
-    xml_string = minidom.parseString(tostring(opml, encoding='unicode')).toprettyxml(indent='  ')
+    xml_string = minidom.parseString(tostring(opml, encoding="unicode")).toprettyxml(indent="  ")
 
     # Create HTTP response with OPML content
-    response = HttpResponse(xml_string, content_type='text/xml; charset=utf-8')
-    response['Content-Disposition'] = f'attachment; filename="rssbrew_original_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
+    response = HttpResponse(xml_string, content_type="text/xml; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="rssbrew_original_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
+    )
 
     return response
 
-export_original_feeds_as_opml.short_description = _("Export selected feeds as OPML")
 
+@admin.action(description=_("Export selected feeds as OPML"))
 def export_processed_feeds_as_opml(modeladmin, request, queryset):
     """Export selected processed feeds as OPML"""
     # Create OPML structure
-    opml = Element('opml')
-    opml.set('version', '2.0')
+    opml = Element("opml")
+    opml.set("version", "2.0")
 
     # Create head section
-    head = SubElement(opml, 'head')
-    title = SubElement(head, 'title')
-    title.text = 'RSSBrew Processed Feeds Export'
-    date_created = SubElement(head, 'dateCreated')
-    tz = pytz.timezone(getattr(settings, 'TIME_ZONE', 'UTC'))
-    date_created.text = datetime.now(tz).strftime('%a, %d %b %Y %H:%M:%S %z')
+    head = SubElement(opml, "head")
+    title = SubElement(head, "title")
+    title.text = "RSSBrew Processed Feeds Export"
+    date_created = SubElement(head, "dateCreated")
+    tz = pytz.timezone(getattr(settings, "TIME_ZONE", "UTC"))
+    date_created.text = datetime.now(tz).strftime("%a, %d %b %Y %H:%M:%S %z")
 
     # Create body section
-    body = SubElement(opml, 'body')
+    body = SubElement(opml, "body")
 
     # Add each processed feed as an outline
     for processed_feed in queryset:
-        outline = SubElement(body, 'outline')
-        outline.set('text', processed_feed.name)
-        outline.set('title', processed_feed.name)
-        outline.set('type', 'rss')
+        outline = SubElement(body, "outline")
+        outline.set("text", processed_feed.name)
+        outline.set("title", processed_feed.name)
+        outline.set("type", "rss")
 
         # Generate the processed feed URL (same as Subscribe link)
-        processed_url = request.build_absolute_uri(reverse('processed_feed_by_name', args=[processed_feed.name]))
+        processed_url = request.build_absolute_uri(reverse("processed_feed_by_name", args=[processed_feed.name]))
         auth_code = AppSetting.get_auth_code()
         if auth_code:
-            processed_url += f'?key={auth_code}'
-        outline.set('xmlUrl', processed_url)
-        outline.set('htmlUrl', processed_url)
+            processed_url += f"?key={auth_code}"
+        outline.set("xmlUrl", processed_url)
+        outline.set("htmlUrl", processed_url)
 
     # Convert to pretty XML string
-    xml_string = minidom.parseString(tostring(opml, encoding='unicode')).toprettyxml(indent='  ')
+    xml_string = minidom.parseString(tostring(opml, encoding="unicode")).toprettyxml(indent="  ")
 
     # Create HTTP response with OPML content
-    response = HttpResponse(xml_string, content_type='text/xml; charset=utf-8')
-    response['Content-Disposition'] = f'attachment; filename="rssbrew_processed_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
+    response = HttpResponse(xml_string, content_type="text/xml; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="rssbrew_processed_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
+    )
 
     return response
 
-export_processed_feeds_as_opml.short_description = _("Export selected feeds as OPML")
 
 class FilterInline(NestedTabularInline):
     model = Filter
     form = FilterForm
     extra = 0
 
+
 class FilterGroupInline(NestedTabularInline):
     model = FilterGroup
     inlines = [FilterInline]
     extra = 0
 
+
 class ArticleInline(admin.TabularInline):
     model = Article
     form = ReadOnlyArticleForm
     extra = 0
-    readonly_fields = [field.name for field in Article._meta.fields if field.name != 'content']
-    classes = ['collapse']  # Make the inline collapsed by default
+    readonly_fields = [field.name for field in Article._meta.fields if field.name != "content"]
+    classes = ["collapse"]  # Make the inline collapsed by default
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -142,181 +149,250 @@ class ArticleInline(admin.TabularInline):
     def has_change_permission(self, request, obj=None):
         return False
 
+
 class HasAnyOriginalFeedListFilter(admin.SimpleListFilter):
-    title = _('Has any original feed')
-    parameter_name = 'has_any_original_feed'
+    title = _("Has any original feed")
+    parameter_name = "has_any_original_feed"
 
     def lookups(self, request, model_admin):
         return (
-            ('yes', _('Yes')),
-            ('no', _('No')),
+            ("yes", _("Yes")),
+            ("no", _("No")),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'yes':
+        if self.value() == "yes":
             return queryset.exclude(feeds=None)
-        if self.value() == 'no':
+        if self.value() == "no":
             return queryset.filter(feeds=None)
 
+
+@admin.register(ProcessedFeed)
 class ProcessedFeedAdmin(NestedModelAdmin):
     form = ProcessedFeedAdminForm
     inlines = [FilterGroupInline]
+
     # rename articles_to_summarize_per_interval to Summarize per Update in list display
+    @admin.display(description=_("Summarize per Update"))
     def summarize_per_update(self, obj):
         return obj.articles_to_summarize_per_interval
-    summarize_per_update.short_description = _('Summarize per Update')
 
+    @admin.display(description=_("Digest/Entries"))
     def toggle_digest_and_update(self, obj):
         # An emoji description to show if the digest/entries are enabled
         if obj.toggle_digest and obj.toggle_entries:
-            return '✅/✅'
+            return "✅/✅"
         elif obj.toggle_digest and not obj.toggle_entries:
-            return '✅/❌'
+            return "✅/❌"
         elif not obj.toggle_digest and obj.toggle_entries:
-            return '❌/✅'
+            return "❌/✅"
         else:
-            return '❌/❌'
-    toggle_digest_and_update.short_description = _('Digest/Entries')
+            return "❌/❌"
 
-    list_display = ('name', 'summarize_per_update', 'subscription_link', 'original_feed_count', 'toggle_digest_and_update')
-#    filter_horizontal = ('feeds',)
-    search_fields = ('name', 'feeds__title', 'feeds__url')
-    list_filter = ('articles_to_summarize_per_interval', 'summary_language', 'model', HasAnyOriginalFeedListFilter, 'toggle_digest', 'toggle_entries', 'digest_frequency', 'use_ai_digest', 'digest_model')
+    list_display = (
+        "name",
+        "summarize_per_update",
+        "subscription_link",
+        "original_feed_count",
+        "toggle_digest_and_update",
+    )
+    #    filter_horizontal = ('feeds',)
+    search_fields = ("name", "feeds__title", "feeds__url")
+    list_filter = (
+        "articles_to_summarize_per_interval",
+        "summary_language",
+        "model",
+        HasAnyOriginalFeedListFilter,
+        "toggle_digest",
+        "toggle_entries",
+        "digest_frequency",
+        "use_ai_digest",
+        "digest_model",
+    )
     actions = [update_selected_feeds, export_processed_feeds_as_opml]
-    autocomplete_fields = ['feeds']
+    autocomplete_fields = ["feeds"]
 
     def get_queryset(self, request):
         # Annotate each ProcessedFeed object with the count of related OriginalFeeds
         queryset = super().get_queryset(request)
-        queryset = queryset.annotate(_original_feed_count=Count('feeds'))
+        queryset = queryset.annotate(_original_feed_count=Count("feeds"))
         return queryset
 
+    @admin.display(
+        description=_("Original Feeds"),
+        ordering="_original_feed_count",
+    )
     def original_feed_count(self, obj):
         # Use the annotated count of related OriginalFeeds
         return obj._original_feed_count
-    original_feed_count.admin_order_field = '_original_feed_count'  # Allows column to be sortable
-    original_feed_count.short_description = _('Original Feeds')
 
     fieldsets = (
-        (None, {
-            'fields': ('name', 'feeds'),
-        }),
-        (_('Filter Settings'), {
-            'fields': ('feed_group_relational_operator', 'case_sensitive'),
-            'description': _('Configure filter groups at the end. The logic operator determines how multiple filter groups are combined.')
-        }),
-        (_('Summarization Options'), {
-            'fields': ('summary_group_relational_operator', 'articles_to_summarize_per_interval', 'summary_language', 'translate_title', 'model', 'other_model', 'additional_prompt'),
-        }),
-        (_('Digest Options'), {
-            'fields': ('toggle_entries', 'toggle_digest', 'digest_frequency',  'last_digest'),#, 'include_one_line_summary', 'include_summary', 'include_content',  'use_ai_digest', 'digest_model', 'additional_prompt_for_digest','send_full_article'),
-        }),
-        (_('What to include in digest'), {
-            'fields': ('include_toc', 'include_one_line_summary', 'include_summary', 'include_content', 'use_ai_digest', 'digest_model', 'other_digest_model', 'additional_prompt_for_digest', 'send_full_article'),
-        }),
+        (
+            None,
+            {
+                "fields": ("name", "feeds"),
+            },
+        ),
+        (
+            _("Filter Settings"),
+            {
+                "fields": ("feed_group_relational_operator", "case_sensitive"),
+                "description": _(
+                    "Configure filter groups at the end. The logic operator determines how multiple filter groups are combined."
+                ),
+            },
+        ),
+        (
+            _("Summarization Options"),
+            {
+                "fields": (
+                    "summary_group_relational_operator",
+                    "articles_to_summarize_per_interval",
+                    "summary_language",
+                    "translate_title",
+                    "model",
+                    "other_model",
+                    "additional_prompt",
+                ),
+            },
+        ),
+        (
+            _("Digest Options"),
+            {
+                "fields": (
+                    "toggle_entries",
+                    "toggle_digest",
+                    "digest_frequency",
+                    "last_digest",
+                ),  # , 'include_one_line_summary', 'include_summary', 'include_content',  'use_ai_digest', 'digest_model', 'additional_prompt_for_digest','send_full_article'),
+            },
+        ),
+        (
+            _("What to include in digest"),
+            {
+                "fields": (
+                    "include_toc",
+                    "include_one_line_summary",
+                    "include_summary",
+                    "include_content",
+                    "use_ai_digest",
+                    "digest_model",
+                    "other_digest_model",
+                    "additional_prompt_for_digest",
+                    "send_full_article",
+                ),
+            },
+        ),
     )
 
+    @admin.display(description=_("Subscribe Link"))
     def subscription_link(self, obj):
-        url = reverse('processed_feed_by_name', args=[obj.name])
+        url = reverse("processed_feed_by_name", args=[obj.name])
         auth_code = AppSetting.get_auth_code()  # Get the universal auth code
         if not auth_code:
             return format_html('<a href="{}">Subscribe</a>', url)
         return format_html('<a href="{}?key={}">Subscribe</a>', url, auth_code)
 
-    subscription_link.short_description = _("Subscribe Link")
-
     # Including JavaScript for dynamic form behavior
     class Media:
-        js = ('js/admin/toggle_digest_fields.js', 'js/admin/toggle_ai_digest_fields.js')
+        js = ("js/admin/toggle_digest_fields.js", "js/admin/toggle_ai_digest_fields.js")
+
 
 class IncludedInProcessedFeedListFilter(admin.SimpleListFilter):
-    title = _('Included in processed feeds')
-    parameter_name = 'included_in_processed_feed'
+    title = _("Included in processed feeds")
+    parameter_name = "included_in_processed_feed"
 
     def lookups(self, request, model_admin):
         return (
-            ('yes', _('Yes')),
-            ('no', _('No')),
+            ("yes", _("Yes")),
+            ("no", _("No")),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'yes':
+        if self.value() == "yes":
             return queryset.filter(processed_feeds__isnull=False).distinct()
-        if self.value() == 'no':
+        if self.value() == "no":
             return queryset.filter(processed_feeds__isnull=True)
 
+
+@admin.register(OriginalFeed)
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
-    list_display = ('title', 'valid', 'url', 'processed_feeds_count')
-    search_fields = ('title', 'url')
+    list_display = ("title", "valid", "url", "processed_feeds_count")
+    search_fields = ("title", "url")
 
     def get_queryset(self, request):
         # Annotate each OriginalFeed object with the count of related ProcessedFeeds
         queryset = super().get_queryset(request)
-        queryset = queryset.annotate(_processed_feeds_count=Count('processed_feeds'))
+        queryset = queryset.annotate(_processed_feeds_count=Count("processed_feeds"))
         return queryset
 
+    @admin.display(
+        description=_("Processed Feeds"),
+        ordering="_processed_feeds_count",
+    )
     def processed_feeds_count(self, obj):
         # Use the annotated count of related ProcessedFeeds
         return obj._processed_feeds_count
-    processed_feeds_count.admin_order_field = '_processed_feeds_count'  # Allows column to be sortable
-    processed_feeds_count.short_description = _('Processed Feeds')
 
     # Filter if the original feed is included in the processed feed
-    list_filter = ('valid', 'processed_feeds__name', IncludedInProcessedFeedListFilter, 'tags')
+    list_filter = ("valid", "processed_feeds__name", IncludedInProcessedFeedListFilter, "tags")
     actions = [clean_selected_feeds_articles, export_original_feeds_as_opml]
-    autocomplete_fields = ['tags']
+    autocomplete_fields = ["tags"]
 
-admin.site.register(ProcessedFeed, ProcessedFeedAdmin)
-admin.site.register(OriginalFeed, OriginalFeedAdmin)
 
 @admin.register(AppSetting)
 class AppSettingAdmin(admin.ModelAdmin):
-    list_display = ['auth_code']
-    fields = ['auth_code']
+    list_display = ["auth_code"]
+    fields = ["auth_code"]
+
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
+
 
 class OriginalFeedInline(admin.TabularInline):
     model = OriginalFeed.tags.through
     extra = 0
 
 
-class HasAnyOriginalFeedListFilter_Tag(admin.SimpleListFilter):
-    title = _('Has any original feed')
-    parameter_name = 'has_any_original_feed'
+class HasAnyOriginalFeedListFilterTag(admin.SimpleListFilter):
+    title = _("Has any original feed")
+    parameter_name = "has_any_original_feed"
 
     def lookups(self, request, model_admin):
         return (
-            ('yes', _('Yes')),
-            ('no', _('No')),
+            ("yes", _("Yes")),
+            ("no", _("No")),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'yes':
+        if self.value() == "yes":
             return queryset.exclude(original_feeds=None)
-        if self.value() == 'no':
+        if self.value() == "no":
             return queryset.filter(original_feeds=None)
+
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         # Annotate each Tag object with the count of related OriginalFeeds
         queryset = super().get_queryset(request)
-        queryset = queryset.annotate(_original_feed_count=Count('original_feeds'))
+        queryset = queryset.annotate(_original_feed_count=Count("original_feeds"))
         return queryset
 
+    @admin.display(ordering="_original_feed_count")
     def original_feed_count(self, obj):
         # Use the annotated count of related OriginalFeeds
         return obj._original_feed_count
-    original_feed_count.admin_order_field = '_original_feed_count'
-    list_display = ['name', 'original_feed_count']
-    list_filter = [HasAnyOriginalFeedListFilter_Tag]
+
+    list_display = ["name", "original_feed_count"]
+    list_filter = [HasAnyOriginalFeedListFilterTag]
     inlines = [OriginalFeedInline]
-    search_fields = ['name']
+    search_fields = ["name"]
+
 
 @admin.register(Digest)
 class DigestAdmin(admin.ModelAdmin):
-    list_display = ['processed_feed', 'created_at', 'start_time']
-    search_fields = ['processed_feed__name']
+    list_display = ["processed_feed", "created_at", "start_time"]
+    search_fields = ["processed_feed__name"]
