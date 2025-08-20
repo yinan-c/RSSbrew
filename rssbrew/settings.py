@@ -230,15 +230,15 @@ LOGGING = {
             "level": LOGGING_LEVEL,
             "class": "logging.handlers.RotatingFileHandler",
             "filename": LOGGING_FOLDER / "feed_processing.log",
-            "maxBytes": 1024 * 1024 * 200,  # 200 MB
-            "backupCount": 20,
+            "maxBytes": 1024 * 1024 * 10,  # 10 MB
+            "backupCount": 3,  # Keep only 3 backups (30MB total)
         },
         "huey_file": {
             "level": LOGGING_LEVEL,
             "class": "logging.handlers.RotatingFileHandler",
             "filename": LOGGING_FOLDER / "huey.log",
-            "maxBytes": 1024 * 1024 * 50,  # 50 MB
-            "backupCount": 5,
+            "maxBytes": 1024 * 1024 * 10,  # 10 MB
+            "backupCount": 3,  # Keep only 3 backups (30MB total)
         },
     },
     "loggers": {

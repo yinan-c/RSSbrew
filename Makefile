@@ -88,6 +88,17 @@ generate-digest: ## Generate digest for all feeds
 clean-articles: ## Clean old articles
 	python manage.py clean_old_articles
 
+clean-admin-logs: ## Clean old admin log entries (keep last 90 days)
+	python manage.py clean_admin_logs
+
+clean-sessions: ## Clean expired Django sessions
+	python manage.py clearsessions
+
+clean-maintenance: ## Run all cleanup tasks (articles, logs, sessions)
+	python manage.py clean_old_articles
+	python manage.py clean_admin_logs
+	python manage.py clearsessions
+
 translate-make: ## Generate translation files
 	python manage.py makemessages -l zh_Hans --no-location
 
