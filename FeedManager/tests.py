@@ -646,26 +646,30 @@ class TestGlobalModelSettings(TestCase):
         first_setting = AppSetting.objects.create(
             global_summary_model="gpt-5-nano",
             global_digest_model="gpt-5-mini",
+            auth_code="first",
         )
 
-        # Attempt to create second instance should raise ValidationError
-        from django.core.exceptions import ValidationError
-
-        with self.assertRaises(ValidationError) as context:
-            second_setting = AppSetting(
-                global_summary_model="gpt-4o",
-                global_digest_model="gpt-4o-mini",
-            )
-            second_setting.save()
-
-        self.assertIn("Only one App Settings instance is allowed", str(context.exception))
+        # Attempt to create second instance should update the existing one
+        second_setting = AppSetting(
+            global_summary_model="gpt-4o",
+            global_digest_model="gpt-4o-mini",
+            auth_code="second",
+        )
+        second_setting.save()
 
         # Verify only one instance exists
         self.assertEqual(AppSetting.objects.count(), 1)
 
-        # Updating existing instance should work
-        first_setting.global_summary_model = "gpt-4o"
-        first_setting.save()  # Should not raise error
+        # The existing instance should have been updated with new values
+        updated_setting = AppSetting.objects.first()
+        self.assertEqual(updated_setting.global_summary_model, "gpt-4o")
+        self.assertEqual(updated_setting.global_digest_model, "gpt-4o-mini")
+        self.assertEqual(updated_setting.auth_code, "second")
+
+        # Updating existing instance should work normally
+        first_setting.refresh_from_db()
+        first_setting.global_summary_model = "gpt-5"
+        first_setting.save()
         self.assertEqual(AppSetting.objects.count(), 1)
 
     def test_app_setting_get_instance(self):

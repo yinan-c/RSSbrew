@@ -94,8 +94,10 @@ class AppSetting(models.Model):
     def save(self, *args, **kwargs):
         """Enforce singleton pattern - only one AppSetting instance allowed"""
         if not self.pk and AppSetting.objects.exists():
-            # If creating new instance and one already exists, raise error
-            raise ValidationError(_("Only one App Settings instance is allowed. Please edit the existing one."))
+            # If creating new instance and one already exists, update the existing one instead
+            existing = AppSetting.objects.first()
+            self.pk = existing.pk
+            self.id = existing.id
         super().save(*args, **kwargs)
 
     @classmethod

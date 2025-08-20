@@ -370,6 +370,31 @@ class AppSettingAdmin(admin.ModelAdmin):
         ),
     )
 
+    def has_add_permission(self, request):
+        """Only allow adding if no AppSetting exists"""
+        return not AppSetting.objects.exists()
+
+    def changelist_view(self, request, extra_context=None):
+        """Redirect to change view if an instance exists, otherwise to add view"""
+        if AppSetting.objects.exists():
+            instance = AppSetting.objects.first()
+            from django.shortcuts import redirect
+            from django.urls import reverse
+
+            return redirect(reverse("admin:FeedManager_appsetting_change", args=[instance.pk]))
+        else:
+            from django.shortcuts import redirect
+            from django.urls import reverse
+
+            return redirect(reverse("admin:FeedManager_appsetting_add"))
+
+    def response_add(self, request, obj, post_url_continue=None):
+        """After adding, redirect to change view (since only one instance allowed)"""
+        from django.shortcuts import redirect
+        from django.urls import reverse
+
+        return redirect(reverse("admin:FeedManager_appsetting_change", args=[obj.pk]))
+
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
