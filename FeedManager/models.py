@@ -160,7 +160,7 @@ class OriginalFeed(models.Model):
         max_length=255, blank=True, default="", help_text=_("Display name for this feed"), verbose_name=_("Title")
     )
     max_articles_to_keep = models.PositiveIntegerField(
-        default=1000,
+        default=500,
         help_text=_("Older articles will be removed when limit is reached"),
         verbose_name=_("Max Articles to Keep"),
     )

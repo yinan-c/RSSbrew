@@ -88,6 +88,9 @@ generate-digest: ## Generate digest for all feeds
 clean-articles: ## Clean old articles
 	python manage.py clean_old_articles
 
+set-article-limit: ## Set max articles limit for all feeds (default: 500)
+	python manage.py set_article_limits --limit 500
+
 clean-admin-logs: ## Clean old admin log entries (keep last 90 days)
 	python manage.py clean_admin_logs
 
