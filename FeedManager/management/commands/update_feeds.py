@@ -84,7 +84,7 @@ class Command(BaseCommand):
                 original_feed.valid = True
                 original_feed.save()
                 logger.debug(
-                    f'  Feed {original_feed.url} updated, the new modified time is {feed_data["last_modified"]}'
+                    f"  Feed {original_feed.url} updated, the new modified time is {feed_data['last_modified']}"
                 )
                 new_modified = (
                     datetime.strptime(feed_data["last_modified"], "%a, %d %b %Y %H:%M:%S GMT").replace(tzinfo=pytz.UTC)
@@ -107,7 +107,7 @@ class Command(BaseCommand):
                 original_feed.save()
                 logger.debug(f"  Feed {original_feed.url} not modified")
                 logger.debug(
-                    f'  Feed {original_feed.url} modified time is {feed_data["last_modified"]} and the current feed modified time is {current_modified}'
+                    f"  Feed {original_feed.url} modified time is {feed_data['last_modified']} and the current feed modified time is {current_modified}"
                 )
                 continue
             elif feed_data["status"] == "failed":

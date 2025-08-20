@@ -8,9 +8,9 @@ wget https://raw.githubusercontent.com/yinan-c/rssbrew/main/.env.example
 ```
 
 2. **Modify Environment Variables**
-   
+
    Copy the `.env.example` file to create a `.env` file. Modify the `.env` file to set necessary environment variables such as `OPENAI_API_KEY`, `SECRET_KEY`, and `DEPLOYMENT_URL`.
-   
+
    ```bash
    cp .env.example .env
    # Edit .env to include necessary environment variables

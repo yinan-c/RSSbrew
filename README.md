@@ -31,13 +31,13 @@ Besides:
 - Various match types including contains, does not contain, matches regex or not.
 - Multiple filters can be grouped together with relationship operators: AND, OR, NOT, relationships between groups can also be set.
 - You can set the filter scope to apply to filter out matched entries entirely or filter for summary generation only.
-  
+
 ### 2. Aggregate Multiple Feeds
 Easily combine multiple RSS feeds into a single processed feed, even more powerful when used with custom filters.
 
 ### 3. Article Summarization
 Using AI (currently supports all OpenAI compatible models via user configuration) to generate and prepend a summary to the article. The default summaries include a one-line summary and a slightly longer summary. You can also customize your prompt to use AI for other purposes.
-  
+
 ### 4. Digests with AI
 
 If you are overwhelmed by the number of articles, you can set up digests aggregating articles into one entry on a daily or weekly basis.
