@@ -88,7 +88,8 @@ class Command(BaseCommand):
                         query += f"Summary Long: {article.summary}\n"
                     if feed.send_full_article and article.content:
                         query += f"Full Content: {article.content}\n"
-                query = clean_txt_and_truncate(query, model=feed.digest_model, clean_bool=True)
+                effective_digest_model = feed.get_effective_digest_model()
+                query = clean_txt_and_truncate(query, model=effective_digest_model, clean_bool=True)
                 # Generate a pseudo article for AI digest
                 for_summary_only_article = Article(
                     title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
@@ -100,13 +101,12 @@ class Command(BaseCommand):
                 logger.debug(f"  Query for AI digest: {query}")
                 if feed.additional_prompt_for_digest:
                     prompt = feed.additional_prompt_for_digest
-                logger.info(f"  Using AI model {feed.digest_model} to generate digest.")
+                logger.info(f"  Using AI model {effective_digest_model} to generate digest.")
                 digest_ai_result = generate_summary(
                     for_summary_only_article,
-                    feed.digest_model,
+                    effective_digest_model,
                     output_mode="HTML",
                     prompt=prompt,
-                    other_model=feed.other_digest_model,
                 )
                 logger.debug(f"  AI digest result: {digest_ai_result}")
                 # prepend the AI digest result to the digest content

@@ -204,9 +204,7 @@ def match_content(entry, filter_obj, case_sensitive=False):
         return len(content) > int(filter_value)
 
 
-def generate_summary(article, model, output_mode="HTML", prompt=None, other_model=""):
-    if model == "other":
-        model = other_model
+def generate_summary(article, model, output_mode="HTML", prompt=None):
     if not model or not OPENAI_API_KEY:
         logger.warning("  OpenAI API key or model not set, skipping summary generation")
         return

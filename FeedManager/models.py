@@ -15,7 +15,8 @@ if TYPE_CHECKING:
 
 DEFAULT_MODEL = getattr(settings, "OPENAI_DEFAULT_MODEL", "gpt-4.1-mini")
 
-MODEL_CHOICES = [
+# Base model choices without "Use Global Setting"
+BASE_MODEL_CHOICES = [
     ("gpt-5-mini", "GPT-5 Mini"),
     ("gpt-5-nano", "GPT-5 Nano"),
     ("gpt-5", "GPT-5"),
@@ -29,8 +30,15 @@ MODEL_CHOICES = [
     ("other", _("Other (specify below)")),
 ]
 
-if DEFAULT_MODEL not in [choice[0] for choice in MODEL_CHOICES]:
-    MODEL_CHOICES.insert(0, (DEFAULT_MODEL, f"{DEFAULT_MODEL} (Default)"))
+# Add default model if not in list
+if DEFAULT_MODEL not in [choice[0] for choice in BASE_MODEL_CHOICES]:
+    BASE_MODEL_CHOICES.insert(0, (DEFAULT_MODEL, f"{DEFAULT_MODEL} (Default)"))
+
+# Global model choices (for AppSetting)
+GLOBAL_MODEL_CHOICES = BASE_MODEL_CHOICES.copy()
+
+# Feed model choices (for ProcessedFeed) - includes "Use Global Setting"
+MODEL_CHOICES = [("use_global", _("Use Global Setting")), *BASE_MODEL_CHOICES]
 
 
 class AppSetting(models.Model):
@@ -40,6 +48,36 @@ class AppSetting(models.Model):
         null=True,
         verbose_name=_("Auth Code"),
         help_text=_("Optional authentication code to access RSS feeds"),
+    )
+
+    # Global AI model settings
+    global_summary_model = models.CharField(
+        max_length=255,
+        default=DEFAULT_MODEL,
+        choices=GLOBAL_MODEL_CHOICES,
+        verbose_name=_("Global Summary Model"),
+        help_text=_("Default AI model for article summarization across all feeds"),
+    )
+    global_other_summary_model = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text=_("Specify model name if 'Other' is selected above, e.g. 'grok-3' in xAI"),
+        verbose_name=_("Global Other Summary Model"),
+    )
+    global_digest_model = models.CharField(
+        max_length=255,
+        default=DEFAULT_MODEL,
+        choices=GLOBAL_MODEL_CHOICES,
+        verbose_name=_("Global Digest Model"),
+        help_text=_("Default AI model for digest generation across all feeds"),
+    )
+    global_other_digest_model = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text=_("Specify model name if 'Other' is selected above, e.g. 'grok-3' in xAI"),
+        verbose_name=_("Global Other Digest Model"),
     )
 
     class Meta:
@@ -53,6 +91,26 @@ class AppSetting(models.Model):
     def get_auth_code(cls):
         instance = cls.objects.first()
         return instance.auth_code if instance else None
+
+    @classmethod
+    def get_global_summary_model(cls):
+        """Get the effective global summary model, handling 'other' selection"""
+        instance = cls.objects.first()
+        if not instance:
+            return DEFAULT_MODEL
+        if instance.global_summary_model == "other":
+            return instance.global_other_summary_model or DEFAULT_MODEL
+        return instance.global_summary_model
+
+    @classmethod
+    def get_global_digest_model(cls):
+        """Get the effective global digest model, handling 'other' selection"""
+        instance = cls.objects.first()
+        if not instance:
+            return DEFAULT_MODEL
+        if instance.global_digest_model == "other":
+            return instance.global_other_digest_model or DEFAULT_MODEL
+        return instance.global_digest_model
 
 
 class OriginalFeed(models.Model):
@@ -132,7 +190,7 @@ class ProcessedFeed(models.Model):
         verbose_name=_("Article Title Translation"),
         help_text=_("Translate article titles to summary language"),
     )
-    model = models.CharField(max_length=255, default=DEFAULT_MODEL, choices=MODEL_CHOICES, verbose_name=_("Model"))
+    model = models.CharField(max_length=255, default="use_global", choices=MODEL_CHOICES, verbose_name=_("Model"))
     other_model = models.CharField(
         max_length=255,
         blank=True,
@@ -183,7 +241,7 @@ class ProcessedFeed(models.Model):
         verbose_name=_("Send Full Article"),
     )
     digest_model = models.CharField(
-        max_length=255, default=DEFAULT_MODEL, choices=MODEL_CHOICES, verbose_name=_("Digest Model")
+        max_length=255, default="use_global", choices=MODEL_CHOICES, verbose_name=_("Digest Model")
     )
     other_digest_model = models.CharField(
         max_length=255,
@@ -234,6 +292,22 @@ class ProcessedFeed(models.Model):
     def clean(self):
         if not self.toggle_digest and not self.toggle_entries:
             raise ValidationError(_("At least one of 'Enable Digest' or 'Include Entries' must be enabled."))
+
+    def get_effective_summary_model(self):
+        """Get the effective summary model, considering global settings and 'other' selection"""
+        if self.model == "use_global":
+            return AppSetting.get_global_summary_model()
+        elif self.model == "other":
+            return self.other_model or DEFAULT_MODEL
+        return self.model
+
+    def get_effective_digest_model(self):
+        """Get the effective digest model, considering global settings and 'other' selection"""
+        if self.digest_model == "use_global":
+            return AppSetting.get_global_digest_model()
+        elif self.digest_model == "other":
+            return self.other_digest_model or DEFAULT_MODEL
+        return self.digest_model
 
 
 @receiver(m2m_changed, sender=ProcessedFeed.feeds.through)

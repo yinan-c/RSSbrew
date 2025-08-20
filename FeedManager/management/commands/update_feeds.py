@@ -157,20 +157,20 @@ class Command(BaseCommand):
                 ):  # and not article.summarized:
                     prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {feed.summary_language} language."
                     output_mode = "json"
+                    effective_model = feed.get_effective_summary_model()
                     if feed.translate_title:
                         translate_prompt = f"Please translate the article title to {feed.summary_language} language, and output plain text only."
                         article.title = generate_summary(
                             article,
-                            feed.model,
+                            effective_model,
                             output_mode="translate",
                             prompt=translate_prompt,
-                            other_model=feed.other_model,
                         )
                     if feed.additional_prompt:
                         prompt = feed.additional_prompt
                         output_mode = "HTML"
 
-                    summary_results = generate_summary(article, feed.model, output_mode, prompt, feed.other_model)
+                    summary_results = generate_summary(article, effective_model, output_mode, prompt)
                     # TODO the JSON mode parse is hard-coded as is the default prompt, maybe support automatic json parsing in the future
                     try:
                         json_result = json.loads(summary_results)

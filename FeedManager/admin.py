@@ -295,7 +295,10 @@ class ProcessedFeedAdmin(NestedModelAdmin):
 
     # Including JavaScript for dynamic form behavior
     class Media:
-        js = ("js/admin/toggle_digest_fields.js", "js/admin/toggle_ai_digest_fields.js")
+        js = (
+            "js/admin/toggle_digest_fields.js",
+            "js/admin/toggle_ai_digest_fields.js",
+        )
 
 
 class IncludedInProcessedFeedListFilter(admin.SimpleListFilter):
@@ -343,8 +346,29 @@ class OriginalFeedAdmin(admin.ModelAdmin):
 
 @admin.register(AppSetting)
 class AppSettingAdmin(admin.ModelAdmin):
-    list_display = ["auth_code"]
-    fields = ["auth_code"]
+    list_display = ["auth_code", "global_summary_model", "global_digest_model"]
+    fieldsets = (
+        (
+            _("Authentication"),
+            {
+                "fields": ("auth_code",),
+            },
+        ),
+        (
+            _("Global AI Model Settings"),
+            {
+                "fields": (
+                    "global_summary_model",
+                    "global_other_summary_model",
+                    "global_digest_model",
+                    "global_other_digest_model",
+                ),
+                "description": _(
+                    "These settings will be used as defaults for all feeds unless overridden individually"
+                ),
+            },
+        ),
+    )
 
 
 admin.site.unregister(User)
