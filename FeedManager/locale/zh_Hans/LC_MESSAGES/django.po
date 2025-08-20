@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RSSBrew 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-19 01:11+0000\n"
+"POT-Creation-Date: 2025-08-20 09:20+0000\n"
 "PO-Revision-Date: 2025-08-18 21:00+0000\n"
 "Last-Translator: RSSBrew Team\n"
 "Language-Team: Chinese (Simplified)\n"
@@ -16,12 +16,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+msgid "Update selected feeds"
+msgstr "更新选中的订阅源"
+
+#, python-format
+msgid "Feed update tasks have been queued for feed: %(feed_name)s"
+msgstr "订阅源 %(feed_name)s 的更新任务已加入队列"
+
 # Admin actions
 msgid "Clean old articles for selected feeds"
 msgstr "清理选中订阅源的旧文章"
 
-msgid "Update selected feeds"
-msgstr "更新选中的订阅源"
+# Admin actions
+#, python-format
+msgid "Cleaned old articles from feed: %(feed_title)s"
+msgstr "已清理订阅源 %(feed_title)s 的旧文章"
 
 msgid "Export selected feeds as OPML"
 msgstr "导出选中的订阅源为 OPML"
@@ -46,6 +55,14 @@ msgstr "摘要/条目"
 msgid "Original Feeds"
 msgstr "原始订阅源"
 
+msgid "Filter Settings"
+msgstr "过滤设置"
+
+msgid ""
+"Configure filter groups at the end. The logic operator determines how "
+"multiple filter groups are combined."
+msgstr "在页面最后配置过滤组。逻辑运算符决定多个过滤组如何组合。"
+
 # Admin fieldsets
 msgid "Summarization Options"
 msgstr "总结选项"
@@ -55,12 +72,6 @@ msgstr "摘要选项"
 
 msgid "What to include in digest"
 msgstr "摘要包含内容"
-
-msgid "Filter Settings"
-msgstr "过滤设置"
-
-msgid "Configure filter groups at the end. The logic operator determines how multiple filter groups are combined."
-msgstr "在页面最后配置过滤组。逻辑运算符决定多个过滤组如何组合。"
 
 msgid "Subscribe Link"
 msgstr "订阅链接"
@@ -261,13 +272,17 @@ msgstr "任一"
 msgid "None"
 msgstr "无一"
 
-msgid "Logic between filter groups for feed inclusion: match All/Any/None of the filter groups"
+msgid ""
+"Logic between filter groups for feed inclusion: match All/Any/None of the "
+"filter groups"
 msgstr "订阅源包含的过滤组间逻辑：匹配所有/任一/不符合任何过滤组"
 
 msgid "Logic Between Feed Filter Groups"
 msgstr "订阅源过滤组间逻辑"
 
-msgid "Logic between filter groups for summarization: match All/Any/None of the filter groups"
+msgid ""
+"Logic between filter groups for summarization: match All/Any/None of the "
+"filter groups"
 msgstr "生成总结的过滤组间逻辑：匹配所有/任一/不符合任何过滤组"
 
 msgid "Logic Between Summary Filter Groups"
@@ -386,3 +401,7 @@ msgstr "摘要"
 
 msgid "Digests"
 msgstr "摘要"
+
+#, python-format
+msgid "Digest for %(feed_name)s from %(created_at)s"
+msgstr "%(feed_name)s 的摘要 - 创建于 %(created_at)s"

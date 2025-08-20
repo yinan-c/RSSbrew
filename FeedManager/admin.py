@@ -24,14 +24,18 @@ def update_selected_feeds(modeladmin, request, queryset):
     for feed in queryset:
         async_update_feeds_and_digest(feed.name)
         # If you select a feed to update, you are forcely generating a digest for it
-        modeladmin.message_user(request, f"Feed update tasks have been queued for feed: {feed.name}")
+        modeladmin.message_user(
+            request, _("Feed update tasks have been queued for feed: %(feed_name)s") % {"feed_name": feed.name}
+        )
 
 
 @admin.action(description=_("Clean old articles for selected feeds"))
 def clean_selected_feeds_articles(modeladmin, request, queryset):
     for feed in queryset:
         clean_old_articles(feed.id)
-        modeladmin.message_user(request, f"Cleaned old articles from feed: {feed.title}")
+        modeladmin.message_user(
+            request, _("Cleaned old articles from feed: %(feed_title)s") % {"feed_title": feed.title}
+        )
 
 
 @admin.action(description=_("Export selected feeds as OPML"))

@@ -353,4 +353,7 @@ class Digest(models.Model):
         verbose_name_plural = _("Digests")
 
     def __str__(self):
-        return f"Digest for {self.processed_feed.name} from {self.created_at}"
+        return _("Digest for %(feed_name)s from %(created_at)s") % {
+            "feed_name": self.processed_feed.name,
+            "created_at": self.created_at,
+        }
