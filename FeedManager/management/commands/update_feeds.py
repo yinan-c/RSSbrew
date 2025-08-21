@@ -155,7 +155,7 @@ class Command(BaseCommand):
                 if self.current_n_processed < feed.articles_to_summarize_per_interval and passes_filters(
                     entry, feed, "summary_filter"
                 ):  # and not article.summarized:
-                    prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {feed.summary_language} language."
+                    prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words or 30 characters (depending on the output language is word-based or character-based) named as 'summary_one_line', second item is the 150-words/characters summary named as 'summary_long'. Output result in {feed.summary_language} language."
                     output_mode = "json"
                     effective_model = feed.get_effective_summary_model()
                     if feed.translate_title:
@@ -172,18 +172,28 @@ class Command(BaseCommand):
 
                     summary_results = generate_summary(article, effective_model, output_mode, prompt)
                     # TODO the JSON mode parse is hard-coded as is the default prompt, maybe support automatic json parsing in the future
-                    try:
-                        json_result = json.loads(summary_results)
-                        article.summary = json_result["summary_long"]
-                        article.summary_one_line = json_result["summary_one_line"]
-                        article.summarized = True
-                        article.custom_prompt = False
-                        logger.info(f"  Summary generated for article: {article.title}")
-                        article.save()
-                    except Exception:
-                        article.summary = summary_results
-                        article.summarized = True
-                        article.custom_prompt = True
-                        logger.info(f"  Summary generated for article: {article.title}")
-                        article.save()
-                    self.current_n_processed += 1
+                    if summary_results:
+                        try:
+                            if output_mode == "json":
+                                json_result = json.loads(summary_results)
+                                article.summary = json_result["summary_long"]
+                                article.summary_one_line = json_result["summary_one_line"]
+                                article.summarized = True
+                                article.custom_prompt = False
+                                logger.info(f"  Summary generated for article: {article.title} (JSON mode)")
+                            else:
+                                # HTML or custom prompt response
+                                article.summary = summary_results
+                                article.summarized = True
+                                article.custom_prompt = True
+                                logger.info(f"  Summary generated for article: {article.title} (custom prompt)")
+                            article.save()
+                        except (json.JSONDecodeError, KeyError) as e:
+                            logger.warning(f"  Failed to parse summary JSON for {article.title}: {e!s}")
+                            article.summary = str(summary_results) if summary_results else ""
+                            article.summarized = True
+                            article.custom_prompt = True
+                            article.save()
+                        self.current_n_processed += 1
+                    else:
+                        logger.warning(f"  No summary generated for article: {article.title}")

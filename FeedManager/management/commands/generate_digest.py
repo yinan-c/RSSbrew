@@ -77,17 +77,18 @@ class Command(BaseCommand):
                     content=digest.content,
                     summarized=True,
                 )
-                prompt = "These are the recent articles from the feed, please summarize important points in a paragragh, with summarized details, do not just make a list of the titles; when you mention a point, please reference to the original article url using HTML tag, please output result in {feed.summary_language} language."
+                prompt = f"These are the recent articles from the feed, please summarize important points in a paragraph, with summarized details, do not just make a list of the titles; when you mention a point, please reference to the original article url using HTML anchor tags. Please output result in {feed.summary_language} language."
                 # Build up query for AI digest, by default includes title, link, and summaries
                 query = ""
                 for article in articles:
-                    query += f"Title: {article.title}{article.link}\n"
+                    query += f"Title: {article.title} - {article.link}\n"
                     if article.summary_one_line:
-                        query += f"{article.summary_one_line}\n"
+                        query += f"One-line summary: {article.summary_one_line}\n"
                     if article.summary:
-                        query += f"Summary Long: {article.summary}\n"
+                        query += f"Summary: {article.summary}\n"
                     if feed.send_full_article and article.content:
                         query += f"Full Content: {article.content}\n"
+                    query += "\n"  # Add spacing between articles
                 effective_digest_model = feed.get_effective_digest_model()
                 query = clean_txt_and_truncate(query, model=effective_digest_model, clean_bool=True)
                 # Generate a pseudo article for AI digest
@@ -98,7 +99,7 @@ class Command(BaseCommand):
                     content=query,
                     summarized=True,
                 )
-                logger.debug(f"  Query for AI digest: {query}")
+                logger.debug(f"  Query for AI digest: {query[:500]}...")  # Log first 500 chars
                 if feed.additional_prompt_for_digest:
                     prompt = feed.additional_prompt_for_digest
                 logger.info(f"  Using AI model {effective_digest_model} to generate digest.")
@@ -108,7 +109,10 @@ class Command(BaseCommand):
                     output_mode="HTML",
                     prompt=prompt,
                 )
-                logger.debug(f"  AI digest result: {digest_ai_result}")
+                if digest_ai_result:
+                    logger.debug(f"  AI digest result preview: {digest_ai_result[:200]}...")
+                else:
+                    logger.warning(f"  No AI digest result generated for {feed.name}")
                 # prepend the AI digest result to the digest content
                 if digest_ai_result:
                     format_digest_result = "" + digest_ai_result + "<br/>"
