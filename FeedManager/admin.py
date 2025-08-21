@@ -346,7 +346,7 @@ class OriginalFeedAdmin(admin.ModelAdmin):
 
 @admin.register(AppSetting)
 class AppSettingAdmin(admin.ModelAdmin):
-    list_display = ["auth_code", "global_summary_model", "global_digest_model"]
+    list_display = ["auth_code", "global_summary_model", "global_digest_model", "max_articles_per_feed"]
     fieldsets = (
         (
             _("Authentication"),
@@ -366,6 +366,13 @@ class AppSettingAdmin(admin.ModelAdmin):
                 "description": _(
                     "These settings will be used as defaults for all feeds unless overridden individually"
                 ),
+            },
+        ),
+        (
+            _("Performance Settings"),
+            {
+                "fields": ("max_articles_per_feed",),
+                "description": _("Performance optimization settings for feed generation"),
             },
         ),
     )

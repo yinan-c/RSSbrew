@@ -84,6 +84,16 @@ class AppSetting(models.Model):
         verbose_name=_("Global Other Digest Model"),
     )
 
+    max_articles_per_feed = models.PositiveIntegerField(
+        default=100,
+        verbose_name=_("Max Articles Per Processed Feed"),
+        help_text=_(
+            "Maximum number of articles to include in each processed feed. "
+            "This limit helps improve performance by reducing database queries and filter processing time. "
+            "Articles are sorted by publication date (newest first)."
+        ),
+    )
+
     class Meta:
         verbose_name = _("App Setting")
         verbose_name_plural = _("App Settings")
@@ -152,6 +162,15 @@ class AppSetting(models.Model):
         if instance.global_digest_model == "other":
             return instance.global_other_digest_model or None
         return instance.global_digest_model
+
+    @classmethod
+    def get_max_articles_per_feed(cls):
+        """Get the maximum number of articles per processed feed.
+        Returns 100 as default if no AppSetting is configured."""
+        instance = cls.objects.first()
+        if not instance:
+            return 100  # Default value
+        return instance.max_articles_per_feed
 
 
 class OriginalFeed(models.Model):

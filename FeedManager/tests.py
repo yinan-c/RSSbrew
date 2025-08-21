@@ -707,3 +707,331 @@ class TestGlobalModelSettings(TestCase):
         instance1.save()
         instance3 = AppSetting.get_or_create_instance()
         self.assertEqual(instance3.auth_code, "test456")
+
+
+class TestMaxArticlesPerFeed(TestCase):
+    """Test the max_articles_per_feed setting and its effect on feed generation"""
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def setUp(self, mock_async_update):
+        """Set up test data for max articles testing"""
+        # Create original feeds
+        self.original_feed1 = OriginalFeed.objects.create(
+            url="https://example.com/feed1", title="Test Feed 1", max_articles_to_keep=100
+        )
+        self.original_feed2 = OriginalFeed.objects.create(
+            url="https://example.com/feed2", title="Test Feed 2", max_articles_to_keep=100
+        )
+
+        # Create processed feed
+        self.processed_feed = ProcessedFeed.objects.create(
+            name="test_max_articles_feed",
+            toggle_entries=True,
+            toggle_digest=False,
+            feed_group_relational_operator="any",  # Need this for filters to work
+        )
+        self.processed_feed.feeds.add(self.original_feed1, self.original_feed2)
+
+        # Create many articles for testing (150 total)
+        self.articles = []
+        base_time = timezone.now()
+        for i in range(150):
+            # Alternate between feeds
+            original_feed = self.original_feed1 if i % 2 == 0 else self.original_feed2
+            article = Article.objects.create(
+                original_feed=original_feed,
+                title=f"Article {i}",
+                link=f"https://example.com/article/{i}",
+                published_date=base_time - timezone.timedelta(hours=i),
+                content=f"Content for article {i}",
+            )
+            self.articles.append(article)
+
+    def test_default_max_articles_limit(self):
+        """Test that default limit of 100 articles is applied when no AppSetting exists"""
+        from django.test import RequestFactory
+
+        from .feeds import ProcessedAtomFeed
+
+        # Create a request
+        factory = RequestFactory()
+        request = factory.get(f"/feeds/{self.processed_feed.name}/")
+
+        # Create feed view instance
+        feed_view = ProcessedAtomFeed()
+        feed_obj = feed_view.get_object(request, feed_name=self.processed_feed.name)
+
+        # Get items
+        items = feed_view.items(feed_obj)
+
+        # Should return 100 articles (default limit)
+        self.assertEqual(len(items), 100)
+
+        # Verify they are the most recent articles
+        self.assertEqual(items[0].title, "Article 0")
+        self.assertEqual(items[99].title, "Article 99")
+
+    def test_custom_max_articles_limit(self):
+        """Test that custom max_articles_per_feed setting is respected"""
+        from django.test import RequestFactory
+
+        from .feeds import ProcessedAtomFeed
+
+        # Create AppSetting with custom limit
+        AppSetting.objects.create(max_articles_per_feed=50)
+
+        # Create a request
+        factory = RequestFactory()
+        request = factory.get(f"/feeds/{self.processed_feed.name}/")
+
+        # Create feed view instance
+        feed_view = ProcessedAtomFeed()
+        feed_obj = feed_view.get_object(request, feed_name=self.processed_feed.name)
+
+        # Get items
+        items = feed_view.items(feed_obj)
+
+        # Should return 50 articles (custom limit)
+        self.assertEqual(len(items), 50)
+
+        # Verify they are the most recent articles
+        self.assertEqual(items[0].title, "Article 0")
+        self.assertEqual(items[49].title, "Article 49")
+
+    def test_max_articles_with_filters_simple(self):
+        """Test with a simple contains filter first"""
+        from django.test import RequestFactory
+
+        from .feeds import ProcessedAtomFeed
+
+        # Set a limit
+        AppSetting.objects.create(max_articles_per_feed=30)
+
+        # Create a simple filter that matches articles with "0" in title
+        filter_group = FilterGroup.objects.create(
+            processed_feed=self.processed_feed, usage="feed_filter", relational_operator="any"
+        )
+        Filter.objects.create(filter_group=filter_group, field="title", match_type="contains", value="0")
+
+        # Create a request
+        factory = RequestFactory()
+        request = factory.get(f"/feeds/{self.processed_feed.name}/")
+
+        # Create feed view instance
+        feed_view = ProcessedAtomFeed()
+        feed_obj = feed_view.get_object(request, feed_name=self.processed_feed.name)
+
+        # Get items
+        items = feed_view.items(feed_obj)
+
+        # There are 24 articles with "0" in title (0, 10, 20, ..., 140)
+        self.assertEqual(len(items), 24)
+
+    def test_max_articles_with_filters(self):
+        """Test that max_articles works correctly with filters applied"""
+        from django.test import RequestFactory
+
+        from .feeds import ProcessedAtomFeed
+
+        # Set a limit
+        AppSetting.objects.create(max_articles_per_feed=25)
+
+        # Create a simple filter that matches articles with "1" in the title
+        # This will match: 1, 10-19, 21, 31, 41, 51, 61, 71, 81, 91, 100-119, 120-129, 130-139, 140-149
+        # Total matching: 1 + 10 + 9*1 + 20 + 10 = 50 articles
+        filter_group = FilterGroup.objects.create(
+            processed_feed=self.processed_feed, usage="feed_filter", relational_operator="any"
+        )
+        Filter.objects.create(filter_group=filter_group, field="title", match_type="contains", value="1")
+
+        # Create a request
+        factory = RequestFactory()
+        request = factory.get(f"/feeds/{self.processed_feed.name}/")
+
+        # Create feed view instance
+        feed_view = ProcessedAtomFeed()
+        feed_obj = feed_view.get_object(request, feed_name=self.processed_feed.name)
+
+        # Get items
+        items = feed_view.items(feed_obj)
+
+        # Should return 25 articles (limited by max_articles_per_feed)
+        self.assertEqual(len(items), 25)
+
+        # All articles should contain "1" in their titles
+        for item in items:
+            self.assertIn("1", item.title, f"Article {item.title} should contain '1'")
+
+    def test_max_articles_with_regex_filters(self):
+        """Test that max_articles works correctly with regex filters"""
+        from django.test import RequestFactory
+
+        from .feeds import ProcessedAtomFeed
+
+        # Set a limit
+        AppSetting.objects.create(max_articles_per_feed=30)
+
+        # Create a regex filter for even-numbered articles
+        filter_group = FilterGroup.objects.create(
+            processed_feed=self.processed_feed, usage="feed_filter", relational_operator="any"
+        )
+        Filter.objects.create(
+            filter_group=filter_group,
+            field="title",
+            match_type="matches_regex",
+            value="Article [0-9]*[02468]\\s*$",  # Matches even articles, allows trailing whitespace
+        )
+
+        # Create a request
+        factory = RequestFactory()
+        request = factory.get(f"/feeds/{self.processed_feed.name}/")
+
+        # Create feed view instance
+        feed_view = ProcessedAtomFeed()
+        feed_obj = feed_view.get_object(request, feed_name=self.processed_feed.name)
+
+        # Get items
+        items = feed_view.items(feed_obj)
+
+        # We have 75 even-numbered articles (0, 2, 4, ..., 148)
+        # Should return 30 due to max_articles_per_feed limit
+        self.assertEqual(len(items), 30)
+
+        # Verify all returned articles are even-numbered
+        for item in items:
+            article_num = int(item.title.split()[1])
+            self.assertEqual(article_num % 2, 0, f"Article {article_num} should be even")
+
+        # Verify they are the most recent even articles
+        self.assertEqual(items[0].title, "Article 0")
+        self.assertEqual(items[1].title, "Article 2")
+        self.assertEqual(items[29].title, "Article 58")
+
+    def test_max_articles_with_duplicates(self):
+        """Test that duplicate URLs are filtered out before applying max_articles limit"""
+        from django.test import RequestFactory
+
+        from .feeds import ProcessedAtomFeed
+
+        # Create duplicate articles with same URL but from different feeds
+        # (since there's a unique constraint on link+original_feed)
+        duplicate_url = "https://example.com/duplicate"
+        Article.objects.create(
+            original_feed=self.original_feed1,
+            title="Duplicate from Feed 1",
+            link=duplicate_url,
+            published_date=timezone.now() + timezone.timedelta(hours=1),
+            content="Duplicate content from feed 1",
+        )
+        Article.objects.create(
+            original_feed=self.original_feed2,
+            title="Duplicate from Feed 2",
+            link=duplicate_url,
+            published_date=timezone.now() + timezone.timedelta(hours=2),
+            content="Duplicate content from feed 2",
+        )
+
+        # Set a limit
+        AppSetting.objects.create(max_articles_per_feed=100)
+
+        # Create a request
+        factory = RequestFactory()
+        request = factory.get(f"/feeds/{self.processed_feed.name}/")
+
+        # Create feed view instance
+        feed_view = ProcessedAtomFeed()
+        feed_obj = feed_view.get_object(request, feed_name=self.processed_feed.name)
+
+        # Get items
+        items = feed_view.items(feed_obj)
+
+        # Should return 100 unique articles (the duplicate URL should appear only once)
+        self.assertEqual(len(items), 100)
+
+        # Count how many times the duplicate URL appears
+        duplicate_count = sum(1 for item in items if item.link == "https://example.com/duplicate")
+        self.assertEqual(duplicate_count, 1, "Duplicate URL should appear only once")
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_max_articles_with_digest_enabled(self, mock_async_update):
+        """Test that digest entry doesn't count toward max_articles limit"""
+        from django.test import RequestFactory
+
+        from .feeds import ProcessedAtomFeed
+        from .models import Digest
+
+        # Enable digest
+        self.processed_feed.toggle_digest = True
+        self.processed_feed.save()
+
+        # Create a digest
+        Digest.objects.create(
+            processed_feed=self.processed_feed,
+            content="Test digest content",
+            start_time=timezone.now() - timezone.timedelta(days=1),
+        )
+
+        # Set a limit
+        AppSetting.objects.create(max_articles_per_feed=50)
+
+        # Create a request
+        factory = RequestFactory()
+        request = factory.get(f"/feeds/{self.processed_feed.name}/")
+
+        # Create feed view instance
+        feed_view = ProcessedAtomFeed()
+        feed_obj = feed_view.get_object(request, feed_name=self.processed_feed.name)
+
+        # Get items
+        items = feed_view.items(feed_obj)
+
+        # Should return 51 items (1 digest + 50 articles)
+        self.assertEqual(len(items), 51)
+
+        # First item should be the digest
+        self.assertIn("Digest for", items[0].title)
+
+        # Rest should be articles
+        self.assertEqual(items[1].title, "Article 0")
+        self.assertEqual(items[50].title, "Article 49")
+
+    def test_get_max_articles_per_feed_method(self):
+        """Test the AppSetting.get_max_articles_per_feed() method"""
+        # Test default when no AppSetting exists
+        self.assertEqual(AppSetting.get_max_articles_per_feed(), 100)
+
+        # Create AppSetting with custom value
+        AppSetting.objects.create(max_articles_per_feed=200)
+        self.assertEqual(AppSetting.get_max_articles_per_feed(), 200)
+
+        # Update the value
+        app_setting = AppSetting.objects.first()
+        app_setting.max_articles_per_feed = 75
+        app_setting.save()
+        self.assertEqual(AppSetting.get_max_articles_per_feed(), 75)
+
+    def test_max_articles_with_insufficient_articles(self):
+        """Test behavior when there are fewer articles than the max limit"""
+        from django.test import RequestFactory
+
+        from .feeds import ProcessedAtomFeed
+
+        # Delete most articles, keep only 20
+        Article.objects.filter(id__in=[a.id for a in self.articles[20:]]).delete()
+
+        # Set a high limit
+        AppSetting.objects.create(max_articles_per_feed=200)
+
+        # Create a request
+        factory = RequestFactory()
+        request = factory.get(f"/feeds/{self.processed_feed.name}/")
+
+        # Create feed view instance
+        feed_view = ProcessedAtomFeed()
+        feed_obj = feed_view.get_object(request, feed_name=self.processed_feed.name)
+
+        # Get items
+        items = feed_view.items(feed_obj)
+
+        # Should return all 20 available articles
+        self.assertEqual(len(items), 20)
