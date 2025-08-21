@@ -1,3 +1,4 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -809,7 +810,7 @@ class TestMaxArticlesPerFeed(TestCase):
                 original_feed=original_feed,
                 title=f"Article {i}",
                 link=f"https://example.com/article/{i}",
-                published_date=base_time - timezone.timedelta(hours=i),
+                published_date=base_time - timedelta(hours=i),
                 content=f"Content for article {i}",
             )
             self.articles.append(article)
@@ -987,14 +988,14 @@ class TestMaxArticlesPerFeed(TestCase):
             original_feed=self.original_feed1,
             title="Duplicate from Feed 1",
             link=duplicate_url,
-            published_date=timezone.now() + timezone.timedelta(hours=1),
+            published_date=timezone.now() + timedelta(hours=1),
             content="Duplicate content from feed 1",
         )
         Article.objects.create(
             original_feed=self.original_feed2,
             title="Duplicate from Feed 2",
             link=duplicate_url,
-            published_date=timezone.now() + timezone.timedelta(hours=2),
+            published_date=timezone.now() + timedelta(hours=2),
             content="Duplicate content from feed 2",
         )
 
@@ -1035,7 +1036,7 @@ class TestMaxArticlesPerFeed(TestCase):
         Digest.objects.create(
             processed_feed=self.processed_feed,
             content="Test digest content",
-            start_time=timezone.now() - timezone.timedelta(days=1),
+            start_time=timezone.now() - timedelta(days=1),
         )
 
         # Set a limit
@@ -1073,8 +1074,9 @@ class TestMaxArticlesPerFeed(TestCase):
 
         # Update the value
         app_setting = AppSetting.objects.first()
-        app_setting.max_articles_per_feed = 75
-        app_setting.save()
+        if app_setting:
+            app_setting.max_articles_per_feed = 75
+            app_setting.save()
         self.assertEqual(AppSetting.get_max_articles_per_feed(), 75)
 
     def test_max_articles_with_insufficient_articles(self):
