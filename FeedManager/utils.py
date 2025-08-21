@@ -187,10 +187,13 @@ def match_content(entry, filter_obj, case_sensitive=False):
     # Get the filter value for comparison
     filter_value = filter_obj.value
 
-    # If not case sensitive, convert both content and filter value to lowercase
-    if not case_sensitive:
+    # For non-regex operations, handle case sensitivity by lowercasing both content and filter
+    # For regex operations, don't lowercase the pattern (it can break the regex),
+    # but we'll use the re.IGNORECASE flag instead
+    if not case_sensitive and filter_obj.match_type in ["contains", "does_not_contain", "shorter_than", "longer_than"]:
         content = content.lower()
         filter_value = filter_value.lower()
+    # For regex, we don't lowercase anything - we use re.IGNORECASE flag
 
     if filter_obj.match_type == "contains":
         return filter_value in content
