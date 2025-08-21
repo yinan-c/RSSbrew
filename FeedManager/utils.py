@@ -140,6 +140,10 @@ def passes_filters(entry, processed_feed, filter_type):
     group_results = []
     for group in groups:
         filters = group.filters.all()
+        # Skip empty filter groups - they shouldn't affect filtering
+        if not filters:
+            logger.debug(f"  Skipping empty filter group {group.usage} for {entry.title}")
+            continue
         results = [match_content(entry, f, processed_feed.case_sensitive) for f in filters]
         logger.debug(f"  Results for group {group.usage}: {results} for {entry.title} {entry.link}")
         if group.relational_operator == "all":
@@ -148,6 +152,10 @@ def passes_filters(entry, processed_feed, filter_type):
             group_results.append(any(results))
         elif group.relational_operator == "none":
             group_results.append(not any(results))
+    # If all filter groups were empty (skipped), treat as no filters
+    if not group_results:
+        return True
+
     if filter_type == "feed_filter":
         group_relational_operator = processed_feed.feed_group_relational_operator
     elif filter_type == "summary_filter":

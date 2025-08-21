@@ -709,6 +709,73 @@ class TestGlobalModelSettings(TestCase):
         self.assertEqual(instance3.auth_code, "test456")
 
 
+class TestEmptyFilterGroups(TestCase):
+    """Test that empty filter groups are handled correctly"""
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def setUp(self, mock_async_update):
+        """Set up test data"""
+        self.original_feed = OriginalFeed.objects.create(url="https://example.com/feed", title="Test Feed")
+
+        self.processed_feed = ProcessedFeed.objects.create(
+            name="test_empty_filters",
+            feed_group_relational_operator="all",  # ALL groups must pass
+        )
+        self.processed_feed.feeds.add(self.original_feed)
+
+        # Create test article
+        self.article = Article.objects.create(
+            original_feed=self.original_feed,
+            title="Test Article",
+            link="https://example.com/article",
+            content="Test content",
+            published_date=timezone.now(),
+        )
+
+    def test_empty_filter_group_with_any_operator(self):
+        """Test that empty filter group with 'any' operator doesn't block all articles"""
+        from .utils import passes_filters
+
+        # Create an empty filter group with "any" operator
+        # This used to block all articles because any([]) = False
+        FilterGroup.objects.create(processed_feed=self.processed_feed, usage="feed_filter", relational_operator="any")
+
+        # Article should still pass (empty filter groups are skipped)
+        result = passes_filters(self.article, self.processed_feed, "feed_filter")
+        self.assertTrue(result, "Empty filter group should not block articles")
+
+    def test_mixed_empty_and_populated_filter_groups(self):
+        """Test that empty filter groups are ignored when mixed with populated ones"""
+        from .utils import passes_filters
+
+        # Create an empty filter group
+        FilterGroup.objects.create(processed_feed=self.processed_feed, usage="feed_filter", relational_operator="any")
+
+        # Create a populated filter group that should pass
+        populated_group = FilterGroup.objects.create(
+            processed_feed=self.processed_feed, usage="feed_filter", relational_operator="any"
+        )
+        Filter.objects.create(filter_group=populated_group, field="title", match_type="contains", value="Test")
+
+        # Article should pass (empty group ignored, populated group passes)
+        result = passes_filters(self.article, self.processed_feed, "feed_filter")
+        self.assertTrue(result, "Empty filter groups should be ignored")
+
+    def test_all_filter_groups_empty(self):
+        """Test that all empty filter groups means no filtering"""
+        from .utils import passes_filters
+
+        # Create multiple empty filter groups
+        for _ in range(3):
+            FilterGroup.objects.create(
+                processed_feed=self.processed_feed, usage="feed_filter", relational_operator="any"
+            )
+
+        # Article should pass (all empty groups = no filtering)
+        result = passes_filters(self.article, self.processed_feed, "feed_filter")
+        self.assertTrue(result, "All empty filter groups should mean no filtering")
+
+
 class TestMaxArticlesPerFeed(TestCase):
     """Test the max_articles_per_feed setting and its effect on feed generation"""
 
