@@ -192,6 +192,9 @@ def match_content(entry, filter_obj, case_sensitive=False):
     if not content.strip():  # Strip is necessary for removing leading and trailing spaces
         return False
 
+    # Trim trailing/leading spaces from concatenated content before matching
+    content = content.strip()
+
     # Get the filter value for comparison
     filter_value = filter_obj.value
 
