@@ -70,17 +70,11 @@ class AppSetting(models.Model):
         default="none",
         choices=GLOBAL_MODEL_CHOICES,
         verbose_name=_("Global Digest Model"),
-        help_text=_(
-            "Master switch for AI digest generation. "
-            "When set to 'None', ALL AI digests are disabled system-wide, regardless of individual feed settings. "
-            "When set to a model, it enables AI features and serves as the default for feeds using 'Use Global Setting'."
-        ),
     )
     global_other_digest_model = models.CharField(
         max_length=255,
         blank=True,
         default="",
-        help_text=_("Specify model name if 'Other' is selected above, e.g. 'grok-3' in xAI"),
         verbose_name=_("Global Other Digest Model"),
     )
 
@@ -88,8 +82,8 @@ class AppSetting(models.Model):
         default=100,
         verbose_name=_("Max Articles Per Processed Feed"),
         help_text=_(
-            "Maximum number of articles to include in each processed feed. "
-            "This limit helps improve performance by reducing database queries and filter processing time. "
+            "Maximum number of articles to include in each processed feed "
+            "(does not affect the number of articles in the original feeds stored in database). "
             "Articles are sorted by publication date (newest first)."
         ),
     )

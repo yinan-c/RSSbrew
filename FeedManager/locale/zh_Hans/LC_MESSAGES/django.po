@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RSSBrew 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-20 20:33+0000\n"
+"POT-Creation-Date: 2025-08-21 21:54+0000\n"
 "PO-Revision-Date: 2025-08-18 21:00+0000\n"
 "Last-Translator: RSSBrew Team\n"
 "Language-Team: Chinese (Simplified)\n"
@@ -93,6 +93,9 @@ msgid ""
 "individually"
 msgstr "这些设置将作为所有订阅源的默认值，除非单独覆盖"
 
+msgid "Feed Settings"
+msgstr "订阅设置"
+
 # App name
 msgid "Feed Manager"
 msgstr "订阅源管理"
@@ -124,9 +127,9 @@ msgid ""
 "model, it enables AI features and serves as the default for feeds using 'Use "
 "Global Setting'."
 msgstr ""
-"AI 总结的总开关。设置为'无'时，将在全局禁用所有 AI 总结功能，"
-"无论单个订阅源的设置如何。设置为某个模型时，将启用 AI 功能并作为使用"
-"'使用全局设置'的订阅源的默认值。"
+"AI 总结的总开关。设置为'无'时，将在全局禁用所有 AI 总结功能，无论单个订阅源的"
+"设置如何。设置为某个模型时，将启用 AI 功能并作为使用'使用全局设置'的订阅源的"
+"默认值。"
 
 msgid "Specify model name if 'Other' is selected above, e.g. 'grok-3' in xAI"
 msgstr "如果上面选择了\"其他\"，请指定模型名称，例如 xAI 中的 'grok-3'"
@@ -134,25 +137,22 @@ msgstr "如果上面选择了\"其他\"，请指定模型名称，例如 xAI 中
 msgid "Global Other Summary Model"
 msgstr "全局其他总结模型"
 
-#, fuzzy
-#| msgid "Digest Model"
 msgid "Global Digest Model"
-msgstr "摘要模型"
+msgstr "全局摘要模型"
+
+msgid "Global Other Digest Model"
+msgstr "全局其他摘要模型"
+
+msgid "Max Articles Per Processed Feed"
+msgstr "处理后订阅源的最大文章数"
 
 msgid ""
-"Master switch for AI digest generation. When set to 'None', ALL AI digests "
-"are disabled system-wide, regardless of individual feed settings. When set "
-"to a model, it enables AI features and serves as the default for feeds using "
-"'Use Global Setting'."
+"Maximum number of articles to include in each processed feed (does not "
+"affect the number of articles in the original feeds stored in database). "
+"Articles are sorted by publication date (newest first)."
 msgstr ""
-"AI 摘要生成的总开关。设置为'无'时，将在全局禁用所有 AI 摘要功能，"
-"无论单个订阅源的设置如何。设置为某个模型时，将启用 AI 功能并作为使用"
-"'使用全局设置'的订阅源的默认值。"
-
-#, fuzzy
-#| msgid "Other Digest Model"
-msgid "Global Other Digest Model"
-msgstr "其他摘要模型"
+"每个处理后订阅源中包含的最大文章数（不会影响数据库中原始订阅源的文章数量）。"
+"文章按发布日期排序（最新的在前）。"
 
 # Model names
 msgid "App Setting"
@@ -231,18 +231,16 @@ msgstr "文章标题翻译"
 msgid "Translate article titles to summary language"
 msgstr "将文章标题翻译为总结目标语言"
 
-#, fuzzy
-#| msgid "Summary"
 msgid "Summary Model"
-msgstr "总结"
+msgstr "总结模型"
 
 msgid ""
 "AI model for summarization. Note: Requires global AI to be enabled in App "
 "Settings. If global AI is disabled (set to 'None'), this setting will have "
 "no effect."
 msgstr ""
-"用于总结的 AI 模型。注意：需要在应用设置中设置任意模型来启用 AI。"
-"如果全局 AI 被禁用（设置为'无'），此设置将不起作用。"
+"用于总结的 AI 模型。注意：需要在应用设置中设置任意模型来启用 AI。如果全局 AI "
+"被禁用（设置为'无'），此设置将不起作用。"
 
 msgid "Other Model"
 msgstr "其他模型"
@@ -313,8 +311,8 @@ msgid ""
 "App Settings. If global AI is disabled (set to 'None'), this setting will "
 "have no effect."
 msgstr ""
-"用于摘要生成的 AI 模型。注意：需要在应用设置中选择任意模型来启用 AI。"
-"如果全局 AI 被禁用（设置为'无'），此设置将不起作用。"
+"用于摘要生成的 AI 模型。注意：需要在应用设置中选择任意模型来启用 AI。如果全"
+"局 AI 被禁用（设置为'无'），此设置将不起作用。"
 
 # Removed - no help text needed for digest_model field
 msgid ""
@@ -476,6 +474,22 @@ msgstr "摘要"
 #, python-format
 msgid "Digest for %(feed_name)s from %(created_at)s"
 msgstr "%(feed_name)s 的摘要 - 创建于 %(created_at)s"
+
+#~ msgid ""
+#~ "Master switch for AI digest generation. When set to 'None', ALL AI "
+#~ "digests are disabled system-wide, regardless of individual feed settings. "
+#~ "When set to a model, it enables AI features and serves as the default for "
+#~ "feeds using 'Use Global Setting'."
+#~ msgstr ""
+#~ "AI 摘要生成的总开关。设置为'无'时，将在全局禁用所有 AI 摘要功能，无论单个"
+#~ "订阅源的设置如何。设置为某个模型时，将启用 AI 功能并作为使用'使用全局设"
+#~ "置'的订阅源的默认值。"
+
+#~ msgid "Performance Settings"
+#~ msgstr "性能设置"
+
+#~ msgid "Performance optimization settings for feed generation"
+#~ msgstr "订阅源生成的性能优化设置"
 
 #~ msgid "Model"
 #~ msgstr "模型"

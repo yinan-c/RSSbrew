@@ -369,10 +369,9 @@ class AppSettingAdmin(admin.ModelAdmin):
             },
         ),
         (
-            _("Performance Settings"),
+            _("Feed Settings"),
             {
                 "fields": ("max_articles_per_feed",),
-                "description": _("Performance optimization settings for feed generation"),
             },
         ),
     )
