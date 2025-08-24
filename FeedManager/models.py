@@ -299,7 +299,7 @@ class ProcessedFeed(models.Model):
     send_full_article = models.BooleanField(
         default=False,
         help_text=_(
-            "Send full article content to AI. Ignored without digest prompt. Default sends only link, title, and summary"
+            "Send FULL content of ALL articles during since last digest to AI for digest, in addtion to the default title, link, and summaries."
         ),
         verbose_name=_("Send Full Article"),
     )
