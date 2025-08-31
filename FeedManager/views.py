@@ -32,6 +32,7 @@ def digest_html_view(request, feed_name):
     context = {
         "digest": digest,
         "feed_name": digest.processed_feed.name,
+        "feed_id": digest.processed_feed.id,
         "date_range": date_range,
     }
 

@@ -92,12 +92,30 @@
             border-radius: 3px;
             font-family: 'Courier New', Courier, monospace;
         }
+
+        .admin-link {
+            float: right;
+            font-size: 14px;
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .admin-link:hover {
+            background-color: #2980b9;
+            text-decoration: none;
+        }
     </style>
   </head>
   <body>
     <div class="container">
       <h1>
 {{ feed_name }} - Digest
+        <a href="/admin/FeedManager/processedfeed/{{ feed_id }}/change/"
+           class="admin-link"
+           target="_blank">⚙️ Edit Settings</a>
       </h1>
       <div class="meta-info">
         <strong>Period:</strong> {{ date_range }}
