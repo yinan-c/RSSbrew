@@ -69,14 +69,6 @@ class Command(BaseCommand):
             # digest.save()
 
             if "use_ai_digest" in what_to_include:
-                # Convert digest to article for AI processing
-                Article(
-                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-                    link=f"/feeds/digest/{digest.id}/",
-                    published_date=digest.created_at,
-                    content=digest.content,
-                    summarized=True,
-                )
                 prompt = f"These are the recent articles from the feed, please summarize important points in a paragraph, with summarized details, do not just make a list of the titles; when you mention a point, please reference to the original article url using HTML anchor tags. Please output result in {feed.summary_language} language."
                 # Build up query for AI digest, by default includes title, link, and summaries
                 query = ""
