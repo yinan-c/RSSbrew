@@ -52,9 +52,15 @@ class ProcessedAtomFeed(Feed):
             # Get the most recent digest
             digest = obj.digests.order_by("-created_at").first()
             if digest:
+                # Include auth key in digest URL if authentication is configured
+                auth_code = AppSetting.get_auth_code()
+                digest_url = f"/feeds/digest/{digest.id}/"
+                if auth_code:
+                    digest_url += f"?key={auth_code}"
+
                 digest_article = Article(
                     title=f"Digest for {obj.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-                    link=f"/admin/FeedManager/digest/{digest.id}/change/",
+                    link=digest_url,
                     published_date=digest.created_at,
                     content=digest.content,
                     summarized=True,

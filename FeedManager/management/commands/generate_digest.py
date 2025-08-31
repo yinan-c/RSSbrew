@@ -72,7 +72,7 @@ class Command(BaseCommand):
                 # Convert digest to article for AI processing
                 Article(
                     title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-                    link=f"/admin/FeedManager/digest/{digest.id}/change/",
+                    link=f"/feeds/digest/{digest.id}/",
                     published_date=digest.created_at,
                     content=digest.content,
                     summarized=True,
@@ -94,7 +94,7 @@ class Command(BaseCommand):
                 # Generate a pseudo article for AI digest
                 for_summary_only_article = Article(
                     title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-                    link=f"/admin/FeedManager/digest/{digest.id}/change/",
+                    link=f"/feeds/digest/{digest.id}/",
                     published_date=digest.created_at,
                     content=query,
                     summarized=True,
