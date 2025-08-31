@@ -86,7 +86,7 @@ class Command(BaseCommand):
                 # Generate a pseudo article for AI digest
                 for_summary_only_article = Article(
                     title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
-                    link=f"/feeds/digest/{digest.id}/",
+                    link=f"/feeds/{feed.name}/digest/",
                     published_date=digest.created_at,
                     content=query,
                     summarized=True,

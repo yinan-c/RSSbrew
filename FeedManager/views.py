@@ -1,12 +1,19 @@
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 
-from .models import AppSetting, Digest
+from .models import AppSetting, Digest, ProcessedFeed
 
 
-def digest_html_view(request, digest_id):
+def digest_html_view(request, feed_name):
     """Serve digest content as an HTML page with optional authentication."""
-    digest = get_object_or_404(Digest, id=digest_id)
+    # Get the processed feed by name
+    processed_feed = get_object_or_404(ProcessedFeed, name=feed_name)
+
+    # Get the latest digest for this feed
+    digest = Digest.objects.filter(processed_feed=processed_feed).order_by("-created_at").first()
+
+    if not digest:
+        raise Http404("No digest found for this feed")
 
     # Check if authentication is required
     auth_code = AppSetting.get_auth_code()

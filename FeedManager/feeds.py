@@ -54,7 +54,7 @@ class ProcessedAtomFeed(Feed):
             if digest:
                 # Include auth key in digest URL if authentication is configured
                 auth_code = AppSetting.get_auth_code()
-                digest_url = f"/feeds/digest/{digest.id}/"
+                digest_url = f"/feeds/{obj.name}/digest/"
                 if auth_code:
                     digest_url += f"?key={auth_code}"
 
