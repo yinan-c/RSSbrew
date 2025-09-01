@@ -97,7 +97,7 @@ class Command(BaseCommand):
                 parsed_feed = feed_data["feed"]
                 # first sort by published date, then only process the most recent max_articles_to_keep articles
                 if parsed_feed.entries:
-                    parsed_feed.entries.sort(key=lambda x: x.get("published_parsed", []), reverse=True)
+                    parsed_feed.entries.sort(key=lambda x: x.get("published_parsed") or [], reverse=True)
                     #                    self.stdout.write(f'  Found {len(parsed_feed.entries)} entries in feed {original_feed.url}')
                     entries.extend(
                         {"entry": entry, "original_feed": original_feed}
@@ -119,7 +119,7 @@ class Command(BaseCommand):
         if min_new_modified:
             feed.last_modified = min_new_modified
             feed.save()
-        entries.sort(key=lambda x: x["entry"].get("published_parsed", timezone.now().timetuple()), reverse=True)
+        entries.sort(key=lambda x: x["entry"].get("published_parsed") or timezone.now().timetuple(), reverse=True)
         for item in entries:
             try:
                 self.process_entry(item["entry"], feed, item["original_feed"])
@@ -140,7 +140,7 @@ class Command(BaseCommand):
                     title=generate_untitled(entry),
                     link=clean_url(entry.link),
                     published_date=datetime(*entry.published_parsed[:6]).replace(tzinfo=pytz.UTC)
-                    if "published_parsed" in entry
+                    if entry.get("published_parsed") is not None
                     else timezone.now(),
                     content=(
                         entry.content[0].value
