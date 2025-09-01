@@ -16,6 +16,65 @@ from FeedManager.utils import clean_url, generate_summary, generate_untitled, pa
 logger = logging.getLogger("feed_logger")
 
 
+def parse_date_fallback(entry):
+    """
+    Fallback date parser for entries where feedparser couldn't parse the date.
+    Tries to parse common date formats that might be missing timezone info.
+    """
+    # First check if published_parsed exists and is valid
+    published_parsed = entry.get("published_parsed")
+    if published_parsed is not None:
+        return datetime(*published_parsed[:6]).replace(tzinfo=pytz.UTC)
+
+    # Try to parse from the raw published date string
+    published = entry.get("published")
+    if published:
+        date_str = published.strip()
+
+        # Common date formats that might be missing timezone
+        date_formats = [
+            # RFC 822 style without timezone
+            "%a, %d %b %Y %H:%M:%S",
+            "%a, %d %b %y %H:%M:%S",
+            "%d %b %Y %H:%M:%S",
+            "%d %b %y %H:%M:%S",
+            # ISO-like formats
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y/%m/%d %H:%M:%S",
+            # Just date, no time
+            "%Y-%m-%d",
+            "%Y/%m/%d",
+            "%d %b %Y",
+            "%d %b %y",
+        ]
+
+        for fmt in date_formats:
+            try:
+                # Parse the date and assume UTC if no timezone specified
+                parsed_date = datetime.strptime(date_str, fmt)
+                return parsed_date.replace(tzinfo=pytz.UTC)
+            except ValueError:
+                continue
+
+        # If the string ends with a timezone abbreviation we don't recognize,
+        # try removing it and parsing again
+        if len(date_str) > 3:
+            # Try removing last word (potential timezone)
+            parts = date_str.rsplit(None, 1)
+            if len(parts) == 2:
+                date_str_no_tz = parts[0]
+                for fmt in date_formats:
+                    try:
+                        parsed_date = datetime.strptime(date_str_no_tz, fmt)
+                        return parsed_date.replace(tzinfo=pytz.UTC)
+                    except ValueError:
+                        continue
+
+    # If all parsing attempts fail, return current time
+    return timezone.now()
+
+
 def fetch_feed(url: str, last_modified: datetime):
     headers = {}
     ua = UserAgent()
@@ -139,9 +198,7 @@ class Command(BaseCommand):
                     original_feed=original_feed,
                     title=generate_untitled(entry),
                     link=clean_url(entry.link),
-                    published_date=datetime(*entry.published_parsed[:6]).replace(tzinfo=pytz.UTC)
-                    if entry.get("published_parsed") is not None
-                    else timezone.now(),
+                    published_date=parse_date_fallback(entry),
                     content=(
                         entry.content[0].value
                         if "content" in entry
