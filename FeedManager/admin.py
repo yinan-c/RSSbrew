@@ -449,3 +449,31 @@ class TagAdmin(admin.ModelAdmin):
 class DigestAdmin(admin.ModelAdmin):
     list_display = ["processed_feed", "created_at", "start_time"]
     search_fields = ["processed_feed__name"]
+    readonly_fields = ["view_digest_button"]
+
+    @admin.display(description="View Digest")
+    def view_digest_button(self, obj):
+        """Add a button to view the digest HTML page"""
+        if obj.pk:
+            from django.utils.html import format_html
+
+            from .models import AppSetting
+
+            auth_code = AppSetting.get_auth_code()
+            url = f"/feeds/{obj.processed_feed.name}/digest/{obj.created_at.strftime('%Y-%m-%d')}/"
+            if auth_code:
+                url += f"?key={auth_code}"
+
+            return format_html(
+                '<a href="{}" target="_blank">View Digest Page</a>',
+                url,
+            )
+        return "-"
+
+    def get_fields(self, request, obj=None):
+        """Override to place the view button at the top of the form"""
+        fields = super().get_fields(request, obj)
+        if obj:  # Only show button when editing existing digest
+            # Place view_digest_button at the beginning
+            return ["view_digest_button"] + [f for f in fields if f != "view_digest_button"]
+        return fields
