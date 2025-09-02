@@ -401,8 +401,16 @@ class ProcessedFeed(models.Model):
 
 
 @receiver(m2m_changed, sender=ProcessedFeed.feeds.through)
-def reset_last_modified(sender, instance, action, **kwargs):
-    if action in ["post_add", "post_remove", "post_clear"]:
+def reset_last_modified(sender, instance, action, pk_set, **kwargs):
+    # Only reset if feeds were actually changed (not on every save)
+    if action == "post_add" and pk_set:
+        # Only reset if new feeds were actually added
+        ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
+    elif action == "post_remove" and pk_set:
+        # Only reset if feeds were actually removed
+        ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
+    elif action == "post_clear":
+        # Only reset if all feeds were cleared (this usually means a real change)
         ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
 
 
