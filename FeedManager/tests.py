@@ -1104,3 +1104,206 @@ class TestMaxArticlesPerFeed(TestCase):
 
         # Should return all 20 available articles
         self.assertEqual(len(items), 20)
+
+
+class TestProcessedFeedSaveAndResetBehavior(TestCase):
+    """Test ProcessedFeed save behavior and m2m signal reset functionality"""
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def setUp(self, mock_async_update):
+        """Set up test data"""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        # Create original feeds
+        self.feed1 = OriginalFeed.objects.create(
+            url="https://example1.com/feed.xml",
+            title="Test Feed 1",
+        )
+        self.feed2 = OriginalFeed.objects.create(
+            url="https://example2.com/feed.xml",
+            title="Test Feed 2",
+        )
+        self.feed3 = OriginalFeed.objects.create(
+            url="https://example3.com/feed.xml",
+            title="Test Feed 3",
+        )
+
+        # Create processed feed with initial feeds
+        self.processed_feed = ProcessedFeed.objects.create(
+            name="test-processed-feed",
+            toggle_digest=True,
+            toggle_entries=True,
+        )
+        self.processed_feed.feeds.set([self.feed1, self.feed2])
+
+        # Set initial timestamps
+        self.initial_modified = timezone.now() - timedelta(days=2)
+        self.initial_digest = timezone.now() - timedelta(days=1)
+        ProcessedFeed.objects.filter(pk=self.processed_feed.pk).update(
+            last_modified=self.initial_modified, last_digest=self.initial_digest
+        )
+        self.processed_feed.refresh_from_db()
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_save_without_m2m_changes_preserves_timestamps(self, mock_async_update):
+        """Test that saving without changing feeds preserves last_modified and last_digest"""
+        # Save the processed feed without changing feeds
+        self.processed_feed.toggle_entries = False
+        self.processed_feed.save()
+
+        # Refresh and check timestamps are preserved
+        self.processed_feed.refresh_from_db()
+        self.assertEqual(self.processed_feed.last_modified, self.initial_modified)
+        self.assertEqual(self.processed_feed.last_digest, self.initial_digest)
+        self.assertFalse(self.processed_feed.toggle_entries)
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_manual_timestamp_change_without_m2m_changes(self, mock_async_update):
+        """Test that manually changing timestamps works when not changing feeds"""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        new_digest_time = timezone.now() - timedelta(hours=6)
+        new_modified_time = timezone.now() - timedelta(hours=12)
+
+        # Update timestamps manually
+        self.processed_feed.last_digest = new_digest_time
+        self.processed_feed.last_modified = new_modified_time
+        self.processed_feed.save()
+
+        # Verify the manual changes persisted
+        self.processed_feed.refresh_from_db()
+        self.assertEqual(self.processed_feed.last_digest, new_digest_time)
+        self.assertEqual(self.processed_feed.last_modified, new_modified_time)
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_adding_feed_resets_timestamps(self, mock_async_update):
+        """Test that adding a feed resets last_modified and last_digest"""
+        # Add a new feed
+        self.processed_feed.feeds.add(self.feed3)
+
+        # Check that timestamps were reset
+        self.processed_feed.refresh_from_db()
+        self.assertIsNone(self.processed_feed.last_modified)
+        self.assertIsNone(self.processed_feed.last_digest)
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_removing_feed_resets_timestamps(self, mock_async_update):
+        """Test that removing a feed resets last_modified and last_digest"""
+        # Remove a feed
+        self.processed_feed.feeds.remove(self.feed1)
+
+        # Check that timestamps were reset
+        self.processed_feed.refresh_from_db()
+        self.assertIsNone(self.processed_feed.last_modified)
+        self.assertIsNone(self.processed_feed.last_digest)
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_clearing_feeds_resets_timestamps(self, mock_async_update):
+        """Test that clearing all feeds resets last_modified and last_digest"""
+        # Clear all feeds
+        self.processed_feed.feeds.clear()
+
+        # Check that timestamps were reset
+        self.processed_feed.refresh_from_db()
+        self.assertIsNone(self.processed_feed.last_modified)
+        self.assertIsNone(self.processed_feed.last_digest)
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_setting_same_feeds_preserves_timestamps(self, mock_async_update):
+        """Test that setting the same feeds doesn't reset timestamps"""
+        # Get current feeds
+        current_feeds = list(self.processed_feed.feeds.all())
+
+        # Set the same feeds again
+        self.processed_feed.feeds.set(current_feeds)
+
+        # Timestamps should be preserved (no actual change)
+        self.processed_feed.refresh_from_db()
+        self.assertEqual(self.processed_feed.last_modified, self.initial_modified)
+        self.assertEqual(self.processed_feed.last_digest, self.initial_digest)
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_multiple_saves_without_m2m_changes(self, mock_async_update):
+        """Test multiple saves in succession without m2m changes"""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        # First save with timestamp changes
+        time1 = timezone.now() - timedelta(hours=5)
+        self.processed_feed.last_digest = time1
+        self.processed_feed.save()
+
+        # Second save with different field change
+        self.processed_feed.refresh_from_db()
+        self.processed_feed.summary_language = "zh"
+        self.processed_feed.save()
+
+        # Third save with another timestamp change
+        self.processed_feed.refresh_from_db()
+        time2 = timezone.now() - timedelta(hours=3)
+        self.processed_feed.last_modified = time2
+        self.processed_feed.save()
+
+        # Verify all changes persisted
+        self.processed_feed.refresh_from_db()
+        self.assertEqual(self.processed_feed.last_digest, time1)
+        self.assertEqual(self.processed_feed.last_modified, time2)
+        self.assertEqual(self.processed_feed.summary_language, "zh")
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_admin_form_scenario_no_feed_change(self, mock_async_update):
+        """Simulate admin form save without feed changes"""
+        # Simulate what happens in admin when saving without changing feeds
+        # This tests the scenario where Django admin might trigger m2m signals
+        # even when feeds haven't actually changed
+
+        # Store original values
+        original_feeds = list(self.processed_feed.feeds.values_list("pk", flat=True))
+
+        # Simulate form save with same feeds
+        self.processed_feed.toggle_digest = False
+        self.processed_feed.save()
+
+        # Re-set the same feeds (simulating admin form behavior)
+        self.processed_feed.feeds.set(original_feeds)
+
+        # Timestamps should be preserved
+        self.processed_feed.refresh_from_db()
+        self.assertEqual(self.processed_feed.last_modified, self.initial_modified)
+        self.assertEqual(self.processed_feed.last_digest, self.initial_digest)
+        self.assertFalse(self.processed_feed.toggle_digest)
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_save_triggers_async_update(self, mock_async_update):
+        """Test that save() triggers async_update_feeds_and_digest"""
+        self.processed_feed.save()
+        mock_async_update.assert_called_once_with(self.processed_feed.name)
+
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def test_reset_only_on_actual_feed_changes(self, mock_async_update):
+        """Test that timestamps only reset when feeds actually change"""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        # Set custom timestamps
+        custom_time = timezone.now() - timedelta(hours=2)
+        self.processed_feed.last_digest = custom_time
+        self.processed_feed.save()
+
+        # Verify saved correctly
+        self.processed_feed.refresh_from_db()
+        self.assertEqual(self.processed_feed.last_digest, custom_time)
+
+        # Now actually change feeds
+        self.processed_feed.feeds.add(self.feed3)
+
+        # Now timestamps should be reset
+        self.processed_feed.refresh_from_db()
+        self.assertIsNone(self.processed_feed.last_digest)
+        self.assertIsNone(self.processed_feed.last_modified)
