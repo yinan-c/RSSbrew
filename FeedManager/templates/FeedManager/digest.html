@@ -11,6 +11,10 @@ Digest - {{ feed_name }}
 {% block content %}
   <div class="meta-info">
     <strong>Period:</strong> {{ date_range }}
+    <a href="/feeds/{{ feed_name }}/digest/{% if auth_key %}?key={{ auth_key }}{% endif %}"
+       class="nav-button">
+      📚 All Digests
+    </a>
   </div>
   <div class="digest-content">
     {{ digest.content|safe }}
