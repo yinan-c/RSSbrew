@@ -98,6 +98,27 @@
             text-decoration: none;
         }
 
+        /* Mobile responsive styles */
+        @media (max-width: 600px) {
+            .meta-info {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .nav-button {
+                float: none;
+                display: block;
+                text-align: center;
+                margin-left: 0;
+                margin-top: 10px;
+            }
+
+            .meta-info-text {
+                display: block;
+            }
+        }
+
         /* Styles for digest content */
         .digest-content {
             line-height: 1.8;
