@@ -1,19 +1,27 @@
+from datetime import datetime
+
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 
 from .models import AppSetting, Digest, ProcessedFeed
 
 
-def digest_html_view(request, feed_name):
+def digest_html_view(request, feed_name, date_str):
     """Serve digest content as an HTML page with optional authentication."""
     # Get the processed feed by name
     processed_feed = get_object_or_404(ProcessedFeed, name=feed_name)
 
-    # Get the latest digest for this feed
-    digest = Digest.objects.filter(processed_feed=processed_feed).order_by("-created_at").first()
+    # Parse the date string (format: YYYY-MM-DD)
+    try:
+        digest_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise Http404("Invalid date format") from None
+
+    # Get the digest for this feed and date
+    digest = Digest.objects.filter(processed_feed=processed_feed, created_at__date=digest_date).first()
 
     if not digest:
-        raise Http404("No digest found for this feed")
+        raise Http404("No digest found for this feed and date")
 
     # Check if authentication is required
     auth_code = AppSetting.get_auth_code()
