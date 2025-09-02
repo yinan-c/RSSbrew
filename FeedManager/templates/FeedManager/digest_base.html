@@ -31,6 +31,13 @@
             border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-text {
+            flex: 1;
         }
 
         h2 {
@@ -100,6 +107,21 @@
 
         /* Mobile responsive styles */
         @media (max-width: 600px) {
+            h1 {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+
+            .admin-link {
+                float: none;
+                display: block;
+                text-align: center;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
             .meta-info {
                 display: flex;
                 flex-direction: column;
@@ -112,6 +134,8 @@
                 text-align: center;
                 margin-left: 0;
                 margin-top: 10px;
+                width: 100%;
+                box-sizing: border-box;
             }
 
             .meta-info-text {
@@ -200,9 +224,11 @@
   <body>
     <div class="container">
       <h1>
-        {% block header %}
+        <span class="header-text">
+          {% block header %}
 {{ feed_name }}
-        {% endblock %}
+          {% endblock %}
+        </span>
         <a href="/admin/FeedManager/processedfeed/{{ feed_id }}/change/"
            class="admin-link"
            target="_blank">⚙️ Edit Settings</a>
