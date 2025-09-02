@@ -59,6 +59,9 @@
             padding: 10px;
             background-color: #f8f9fa;
             border-left: 3px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         a {
@@ -90,7 +93,6 @@
         }
 
         .nav-button {
-            float: right;
             background-color: #3498db;
             color: white;
             padding: 5px 10px;
@@ -98,6 +100,7 @@
             text-decoration: none;
             font-size: 14px;
             margin-left: 10px;
+            white-space: nowrap;
         }
 
         .nav-button:hover {
@@ -123,17 +126,15 @@
             }
 
             .meta-info {
-                display: flex;
                 flex-direction: column;
+                align-items: stretch;
                 gap: 10px;
             }
 
             .nav-button {
-                float: none;
                 display: block;
                 text-align: center;
                 margin-left: 0;
-                margin-top: 10px;
                 width: 100%;
                 box-sizing: border-box;
             }
