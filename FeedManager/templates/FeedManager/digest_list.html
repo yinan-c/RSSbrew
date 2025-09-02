@@ -1,0 +1,36 @@
+{% extends "FeedManager/digest_base.html" %}
+
+{% block title %}
+Digest Archive - {{ feed_name }}
+{% endblock %}
+
+{% block header %}
+{{ feed_name }} - Digest Archive
+{% endblock %}
+
+{% block content %}
+  <div class="meta-info">
+    This page shows all available digests for this feed. Click on any date to view the full digest.
+  </div>
+
+  {% if digest_list %}
+    <ul class="digest-list">
+      {% for item in digest_list %}
+        <li class="digest-item">
+          <div class="digest-date">
+            <a href="/feeds/{{ feed_name }}/digest/{{ item.date_str }}/{{ auth_key }}">
+            {{ item.date|date:"F j, Y" }}
+            </a>
+          </div>
+          <div class="digest-range">
+            <strong>Period:</strong> {{ item.date_range }}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="no-digests">
+      No digests have been generated for this feed yet.
+    </div>
+  {% endif %}
+{% endblock %}
