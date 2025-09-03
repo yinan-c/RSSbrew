@@ -24,7 +24,7 @@ format: ## Format code with ruff and djlint
 
 lint: ## Run all linters
 	ruff check .
-	djlint FeedManager/templates/ templates/ --extension html --lint || true
+	djlint FeedManager/templates/ templates/ --extension html --check || true
 	python manage.py check
 
 typecheck: ## Run type checking with mypy (requires mypy installation)

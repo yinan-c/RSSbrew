@@ -171,6 +171,23 @@ class HasAnyOriginalFeedListFilter(admin.SimpleListFilter):
             return queryset.filter(feeds=None)
 
 
+class HasIncludedTagsFilter(admin.SimpleListFilter):
+    title = _("Has included tags")
+    parameter_name = "has_included_tags"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", _("Yes")),
+            ("no", _("No")),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.exclude(include_tags=None)
+        if self.value() == "no":
+            return queryset.filter(include_tags=None)
+
+
 @admin.register(ProcessedFeed)
 class ProcessedFeedAdmin(NestedModelAdmin):
     form = ProcessedFeedAdminForm
@@ -194,6 +211,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         "summarize_per_update",
         "subscription_link",
         "original_feed_count",
+        "total_feed_count",
         "toggle_digest_and_update",
     )
     #    filter_horizontal = ('feeds',)
@@ -203,6 +221,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         "summary_language",
         "model",
         HasAnyOriginalFeedListFilter,
+        HasIncludedTagsFilter,
         "toggle_digest",
         "toggle_entries",
         "digest_frequency",
@@ -219,12 +238,20 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         return queryset
 
     @admin.display(
-        description=_("Original Feeds"),
+        description=_("Direct Feeds"),
         ordering="_original_feed_count",
     )
     def original_feed_count(self, obj):
-        # Use the annotated count of related OriginalFeeds
+        # Use the annotated count of directly selected OriginalFeeds
         return obj._original_feed_count
+
+    @admin.display(
+        description=_("Total Feeds"),
+    )
+    def total_feed_count(self, obj):
+        # Get all feeds including those from tags
+        all_feeds = obj.get_all_feeds()
+        return len(all_feeds)
 
     fieldsets = (
         (

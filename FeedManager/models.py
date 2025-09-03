@@ -375,21 +375,20 @@ class ProcessedFeed(models.Model):
     def clean(self):
         if not self.toggle_digest and not self.toggle_entries:
             raise ValidationError(_("At least one of 'Enable Digest' or 'Include Entries' must be enabled."))
-    
+
     def get_all_feeds(self):
         """Get all original feeds including those selected by tags"""
-        from django.db.models import Q
-        
+
         # Start with directly selected feeds
         feeds = list(self.feeds.all())
-        
+
         # Add feeds with selected tags
         if self.include_tags.exists():
             tag_feeds = OriginalFeed.objects.filter(tags__in=self.include_tags.all()).distinct()
             for feed in tag_feeds:
                 if feed not in feeds:
                     feeds.append(feed)
-        
+
         return feeds
 
     def get_effective_summary_model(self):
