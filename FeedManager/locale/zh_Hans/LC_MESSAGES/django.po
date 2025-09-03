@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RSSBrew 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-21 21:54+0000\n"
+"POT-Creation-Date: 2025-09-03 19:30+0000\n"
 "PO-Revision-Date: 2025-08-18 21:00+0000\n"
 "Last-Translator: RSSBrew Team\n"
 "Language-Team: Chinese (Simplified)\n"
@@ -45,6 +45,9 @@ msgstr "是"
 msgid "No"
 msgstr "否"
 
+msgid "Has included tags"
+msgstr "包含标签"
+
 # Admin column headers
 msgid "Summarize per Update"
 msgstr "每次更新总结文章数"
@@ -52,8 +55,17 @@ msgstr "每次更新总结文章数"
 msgid "Digest/Entries"
 msgstr "摘要/条目"
 
-msgid "Original Feeds"
-msgstr "原始订阅源"
+msgid "Direct Feeds"
+msgstr "直接选中的订阅源"
+
+msgid "Total Feeds"
+msgstr "总订阅源数"
+
+msgid ""
+"Select specific feeds to include, or choose tags to automatically include "
+"all feeds with those tags."
+msgstr ""
+"选择要包含的特定订阅源，或选择标签以自动包含所有带有这些标签的订阅源。"
 
 msgid "Filter Settings"
 msgstr "过滤设置"
@@ -188,6 +200,9 @@ msgstr "有效"
 msgid "Original Feed"
 msgstr "原始订阅源"
 
+msgid "Original Feeds"
+msgstr "原始订阅源"
+
 msgid "Name"
 msgstr "名称"
 
@@ -201,6 +216,12 @@ msgstr "最后修改时间"
 # Removed - no help text needed for valid field
 msgid "Original feeds to aggregate into this processed feed"
 msgstr "要聚合到此处理后订阅源的原始订阅源"
+
+msgid "Automatically include all original feeds that have any of these tags"
+msgstr "自动包含所有带有这些标签的原始订阅源"
+
+msgid "Include Tags"
+msgstr "包含标签"
 
 msgid ""
 "Number of articles to summarize per update. All articles included in feed, "
@@ -295,8 +316,12 @@ msgstr "使用 AI 摘要"
 # Removed - no help text needed for include_summary field
 # Removed - no help text needed for include_content field
 # Removed - no help text needed for use_ai_digest field
-msgid "Send FULL content of ALL articles during since last digest to AI for digest, in addtion to the default title, link, and summaries."
-msgstr "将自上次摘要以来所有文章的完整内容发送给 AI 生成摘要。默认只发送链接、标题和总结。"
+msgid ""
+"Send FULL content of ALL articles during since last digest to AI for digest, "
+"in addtion to the default title, link, and summaries."
+msgstr ""
+"将自上次摘要以来所有文章的完整内容发送给 AI 生成摘要。默认只发送链接、标题和"
+"总结。"
 
 msgid "Send Full Article"
 msgstr "发送完整文章"
