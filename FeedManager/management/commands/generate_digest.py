@@ -45,8 +45,9 @@ class Command(BaseCommand):
         logger.debug(f"Last digest: {last_digest}")
         if force or (not last_digest) or now - last_digest > delta:
             start_time = now - delta - timedelta(days=0.5) if force or not last_digest else last_digest
+            all_feeds = feed.get_all_feeds()
             articles = Article.objects.filter(
-                original_feed__processed_feeds=feed, published_date__gte=start_time, published_date__lte=now
+                original_feed__in=all_feeds, published_date__gte=start_time, published_date__lte=now
             ).order_by("original_feed", "-published_date")
             #            logger.debug(f"  Found {articles.count()} articles for feed {feed.name}")
             #            logger.debug(articles[0].summary_one_line)

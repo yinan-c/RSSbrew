@@ -197,7 +197,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         "toggle_digest_and_update",
     )
     #    filter_horizontal = ('feeds',)
-    search_fields = ("name", "feeds__title", "feeds__url")
+    search_fields = ("name", "feeds__title", "feeds__url", "include_tags__name")
     list_filter = (
         "articles_to_summarize_per_interval",
         "summary_language",
@@ -210,7 +210,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         "digest_model",
     )
     actions = [update_selected_feeds, export_processed_feeds_as_opml]
-    autocomplete_fields = ["feeds"]
+    autocomplete_fields = ["feeds", "include_tags"]
 
     def get_queryset(self, request):
         # Annotate each ProcessedFeed object with the count of related OriginalFeeds
@@ -230,7 +230,10 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         (
             None,
             {
-                "fields": ("name", "feeds"),
+                "fields": ("name", "feeds", "include_tags"),
+                "description": _(
+                    "Select specific feeds to include, or choose tags to automatically include all feeds with those tags."
+                ),
             },
         ),
         (

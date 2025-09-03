@@ -202,6 +202,7 @@ class Tag(models.Model):
     class Meta:
         verbose_name = _("Tag")
         verbose_name_plural = _("Tags")
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
@@ -217,6 +218,13 @@ class ProcessedFeed(models.Model):
         related_name="processed_feeds",
         help_text=_("Original feeds to aggregate into this processed feed"),
         verbose_name=_("Original Feeds"),
+    )
+    include_tags: "ManyToManyField[Tag, ProcessedFeed]" = models.ManyToManyField(
+        "Tag",
+        related_name="processed_feeds",
+        blank=True,
+        help_text=_("Automatically include all original feeds that have any of these tags"),
+        verbose_name=_("Include Tags"),
     )
 
     # Summarization related fields
@@ -367,6 +375,22 @@ class ProcessedFeed(models.Model):
     def clean(self):
         if not self.toggle_digest and not self.toggle_entries:
             raise ValidationError(_("At least one of 'Enable Digest' or 'Include Entries' must be enabled."))
+    
+    def get_all_feeds(self):
+        """Get all original feeds including those selected by tags"""
+        from django.db.models import Q
+        
+        # Start with directly selected feeds
+        feeds = list(self.feeds.all())
+        
+        # Add feeds with selected tags
+        if self.include_tags.exists():
+            tag_feeds = OriginalFeed.objects.filter(tags__in=self.include_tags.all()).distinct()
+            for feed in tag_feeds:
+                if feed not in feeds:
+                    feeds.append(feed)
+        
+        return feeds
 
     def get_effective_summary_model(self):
         """Get the effective summary model, considering global settings as master switch.
@@ -412,6 +436,20 @@ def reset_last_modified(sender, instance, action, pk_set, **kwargs):
         ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
     elif action == "post_clear":
         # Only reset if all feeds were cleared (this usually means a real change)
+        ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
+
+
+@receiver(m2m_changed, sender=ProcessedFeed.include_tags.through)
+def reset_last_modified_on_tags_change(sender, instance, action, pk_set, **kwargs):
+    # Only reset if tags were actually changed (not on every save)
+    if action == "post_add" and pk_set:
+        # Only reset if new tags were actually added
+        ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
+    elif action == "post_remove" and pk_set:
+        # Only reset if tags were actually removed
+        ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
+    elif action == "post_clear":
+        # Only reset if all tags were cleared (this usually means a real change)
         ProcessedFeed.objects.filter(pk=instance.pk).update(last_modified=None, last_digest=None)
 
 
