@@ -361,7 +361,8 @@ class ProcessedFeed(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        async_update_feeds_and_digest(self.name)
+        # Schedule the update as an async task instead of running synchronously
+        async_update_feeds_and_digest.schedule(args=(self.name,), delay=1)
 
     def clean(self):
         if not self.toggle_digest and not self.toggle_entries:
