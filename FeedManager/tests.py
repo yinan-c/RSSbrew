@@ -1419,7 +1419,7 @@ class TestTagBasedFeedInclusion(TestCase):
         self.assertIn(self.feed_multi_tag, all_feeds)
 
         # Verify feed_tech1 appears only once
-        feed_count = all_feeds.count(self.feed_tech1)
+        feed_count = list(all_feeds).count(self.feed_tech1)
         self.assertEqual(feed_count, 1)
 
     @patch("FeedManager.models.ProcessedFeed.objects.filter")

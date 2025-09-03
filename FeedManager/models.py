@@ -378,18 +378,14 @@ class ProcessedFeed(models.Model):
 
     def get_all_feeds(self):
         """Get all original feeds including those selected by tags"""
+        from django.db.models import Q
 
-        # Start with directly selected feeds
-        feeds = list(self.feeds.all())
-
-        # Add feeds with selected tags
-        if self.include_tags.exists():
-            tag_feeds = OriginalFeed.objects.filter(tags__in=self.include_tags.all()).distinct()
-            for feed in tag_feeds:
-                if feed not in feeds:
-                    feeds.append(feed)
-
-        return feeds
+        tag_ids = list(self.include_tags.values_list("id", flat=True))
+        if tag_ids:
+            return OriginalFeed.objects.filter(
+                Q(processed_feeds=self) | Q(tags__in=tag_ids)
+            ).distinct()
+        return self.feeds.all()
 
     def get_effective_summary_model(self):
         """Get the effective summary model, considering global settings as master switch.
