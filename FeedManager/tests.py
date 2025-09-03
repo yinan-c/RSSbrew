@@ -1467,3 +1467,59 @@ class TestTagBasedFeedInclusion(TestCase):
         self.assertIn(self.feed_tech1, all_feeds)
         self.assertIn(self.feed_news, all_feeds)
         self.assertNotIn(self.feed_tech2, all_feeds)  # Not included via tag
+
+    @patch("FeedManager.models.async_update_feeds_and_digest.schedule")
+    def test_validation_requires_feed_or_tag(self, mock_schedule):
+        """Test that validation requires at least one feed or tag to be selected"""
+        from django.core.exceptions import ValidationError
+
+        # Create and save a ProcessedFeed without feeds or tags
+        invalid_feed = ProcessedFeed.objects.create(
+            name="invalid_feed",
+            toggle_digest=True,
+            toggle_entries=True,
+        )
+
+        # This should raise a ValidationError
+        with self.assertRaises(ValidationError) as context:
+            invalid_feed.clean()
+
+        self.assertIn("At least one original feed or tag must be selected", str(context.exception))
+
+    @patch("FeedManager.models.async_update_feeds_and_digest.schedule")
+    def test_validation_passes_with_only_tags(self, mock_schedule):
+        """Test that validation passes with only tags selected"""
+        from django.core.exceptions import ValidationError
+
+        # Create a ProcessedFeed with only tags
+        valid_feed = ProcessedFeed.objects.create(
+            name="tag_only_feed",
+            toggle_digest=True,
+            toggle_entries=True,
+        )
+        valid_feed.include_tags.add(self.tag_tech)
+
+        # This should not raise an error
+        try:
+            valid_feed.clean()
+        except ValidationError:
+            self.fail("Validation should pass with tags selected")
+
+    @patch("FeedManager.models.async_update_feeds_and_digest.schedule")
+    def test_validation_passes_with_only_feeds(self, mock_schedule):
+        """Test that validation passes with only feeds selected"""
+        from django.core.exceptions import ValidationError
+
+        # Create a ProcessedFeed with only feeds
+        valid_feed = ProcessedFeed.objects.create(
+            name="feed_only_feed",
+            toggle_digest=True,
+            toggle_entries=True,
+        )
+        valid_feed.feeds.add(self.feed_tech1)
+
+        # This should not raise an error
+        try:
+            valid_feed.clean()
+        except ValidationError:
+            self.fail("Validation should pass with feeds selected")

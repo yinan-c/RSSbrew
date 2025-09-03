@@ -259,7 +259,8 @@ class ProcessedFeedAdmin(NestedModelAdmin):
             {
                 "fields": ("name", "feeds", "include_tags"),
                 "description": _(
-                    "Select specific feeds to include, or choose tags to automatically include all feeds with those tags."
+                    "Select specific feeds to include, or choose tags to automatically include all feeds with those tags. "
+                    "⚠️ At least one feed or tag must be selected."
                 ),
             },
         ),
@@ -461,7 +462,8 @@ class TagAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         # Annotate each Tag object with the count of related OriginalFeeds
         queryset = super().get_queryset(request)
-        queryset = queryset.annotate(_original_feed_count=Count("original_feeds"))
+        # Explicitly add ordering to prevent UnorderedObjectListWarning
+        queryset = queryset.annotate(_original_feed_count=Count("original_feeds")).order_by("name")
         return queryset
 
     @admin.display(ordering="_original_feed_count")

@@ -216,6 +216,7 @@ class ProcessedFeed(models.Model):
     feeds: "ManyToManyField[OriginalFeed, ProcessedFeed]" = models.ManyToManyField(
         "OriginalFeed",
         related_name="processed_feeds",
+        blank=True,
         help_text=_("Original feeds to aggregate into this processed feed"),
         verbose_name=_("Original Feeds"),
     )
@@ -373,6 +374,14 @@ class ProcessedFeed(models.Model):
         async_update_feeds_and_digest.schedule(args=(self.name,), delay=1)
 
     def clean(self):
+        # Only check many-to-many relationships if the instance has been saved
+        # Validate that at least one of feeds or include_tags is selected
+        if self.pk and not self.feeds.exists() and not self.include_tags.exists():
+            raise ValidationError(
+                _("At least one original feed or tag must be selected. "
+                "You can either select specific feeds directly or choose tags to include all feeds with those tags.")
+                )
+
         if not self.toggle_digest and not self.toggle_entries:
             raise ValidationError(_("At least one of 'Enable Digest' or 'Include Entries' must be enabled."))
 

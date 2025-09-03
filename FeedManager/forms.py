@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from .models import Article, Filter, ProcessedFeed
 
@@ -63,6 +64,23 @@ class ProcessedFeedAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data is None:
+            cleaned_data = {}
+
+        feeds = cleaned_data.get('feeds')
+        include_tags = cleaned_data.get('include_tags')
+
+        # Check if at least one of feeds or include_tags is provided
+        if not feeds and not include_tags:
+            raise forms.ValidationError(
+                _("At least one original feed or tag must be selected. "
+                  "You can either select specific feeds directly or choose tags to include all feeds with those tags.")
+            )
+
+        return cleaned_data
 
 
 #        toggle_digest_initial = self.initial.get('toggle_digest', self.instance.toggle_digest if self.instance else False)
