@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RSSBrew 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-03 19:30+0000\n"
+"POT-Creation-Date: 2025-09-03 23:21+0000\n"
 "PO-Revision-Date: 2025-08-18 21:00+0000\n"
 "Last-Translator: RSSBrew Team\n"
 "Language-Team: Chinese (Simplified)\n"
@@ -63,9 +63,8 @@ msgstr "总订阅源数"
 
 msgid ""
 "Select specific feeds to include, or choose tags to automatically include "
-"all feeds with those tags."
-msgstr ""
-"选择要包含的特定订阅源，或选择标签以自动包含所有带有这些标签的订阅源。"
+"all feeds with those tags. ⚠️ At least one feed or tag must be selected."
+msgstr "选择要包含的特定订阅源，或选择标签以自动包含所有带有这些标签的订阅源。⚠️ 至少必须选择一个订阅源或标签。"
 
 msgid "Filter Settings"
 msgstr "过滤设置"
@@ -111,6 +110,11 @@ msgstr "订阅设置"
 # App name
 msgid "Feed Manager"
 msgstr "订阅源管理"
+
+msgid ""
+"At least one original feed or tag must be selected. You can either select "
+"specific feeds directly or choose tags to include all feeds with those tags."
+msgstr "至少必须选择一个原始订阅源或标签。您可以直接选择特定的订阅源，或选择标签以包含所有带有这些标签的订阅源。"
 
 # Choice labels
 msgid "Other (specify below)"
