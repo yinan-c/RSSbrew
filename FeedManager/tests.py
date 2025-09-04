@@ -1,5 +1,5 @@
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -7,7 +7,7 @@ from django.utils import timezone
 
 import feedparser
 
-from .models import AppSetting, Article, Filter, FilterGroup, OriginalFeed, ProcessedFeed
+from .models import AppSetting, Article, Filter, FilterGroup, OriginalFeed, ProcessedFeed, Tag
 from .utils import match_content, passes_filters
 
 
@@ -1282,7 +1282,7 @@ class TestProcessedFeedSaveAndResetBehavior(TestCase):
     def test_save_triggers_async_update(self, mock_async_update):
         """Test that save() triggers async_update_feeds_and_digest"""
         self.processed_feed.save()
-        mock_async_update.assert_called_once_with(self.processed_feed.name)
+        mock_async_update.schedule.assert_called_once_with(args=(self.processed_feed.name,), delay=1)
 
     @patch("FeedManager.models.async_update_feeds_and_digest")
     def test_reset_only_on_actual_feed_changes(self, mock_async_update):
@@ -1307,3 +1307,219 @@ class TestProcessedFeedSaveAndResetBehavior(TestCase):
         self.processed_feed.refresh_from_db()
         self.assertIsNone(self.processed_feed.last_digest)
         self.assertIsNone(self.processed_feed.last_modified)
+
+
+class TestTagBasedFeedInclusion(TestCase):
+    @patch("FeedManager.models.async_update_feeds_and_digest")
+    def setUp(self, mock_async_update):
+        """Set up test data for tag-based feed inclusion tests"""
+        # Create tags
+        self.tag_tech = Tag.objects.create(name="tech")
+        self.tag_news = Tag.objects.create(name="news")
+        self.tag_science = Tag.objects.create(name="science")
+
+        # Create original feeds with different tags
+        self.feed_tech1 = OriginalFeed.objects.create(
+            url="https://techfeed1.com/rss",
+            title="Tech Feed 1",
+        )
+        self.feed_tech1.tags.add(self.tag_tech)
+
+        self.feed_tech2 = OriginalFeed.objects.create(
+            url="https://techfeed2.com/rss",
+            title="Tech Feed 2",
+        )
+        self.feed_tech2.tags.add(self.tag_tech)
+
+        self.feed_news = OriginalFeed.objects.create(
+            url="https://newsfeed.com/rss",
+            title="News Feed",
+        )
+        self.feed_news.tags.add(self.tag_news)
+
+        self.feed_multi_tag = OriginalFeed.objects.create(
+            url="https://multifeed.com/rss",
+            title="Multi Tag Feed",
+        )
+        self.feed_multi_tag.tags.add(self.tag_tech, self.tag_science)
+
+        self.feed_no_tag = OriginalFeed.objects.create(
+            url="https://notag.com/rss",
+            title="No Tag Feed",
+        )
+
+        # Create a processed feed
+        self.processed_feed = ProcessedFeed.objects.create(
+            name="test_tag_feed",
+        )
+
+    def test_get_all_feeds_with_no_tags_selected(self):
+        """Test get_all_feeds returns only directly selected feeds when no tags are selected"""
+        self.processed_feed.feeds.add(self.feed_no_tag)
+
+        all_feeds = self.processed_feed.get_all_feeds()
+
+        self.assertEqual(len(all_feeds), 1)
+        self.assertIn(self.feed_no_tag, all_feeds)
+
+    def test_get_all_feeds_with_single_tag(self):
+        """Test get_all_feeds includes all feeds with selected tag"""
+        self.processed_feed.include_tags.add(self.tag_tech)
+
+        all_feeds = self.processed_feed.get_all_feeds()
+
+        # Should include both tech feeds and the multi-tag feed
+        self.assertEqual(len(all_feeds), 3)
+        self.assertIn(self.feed_tech1, all_feeds)
+        self.assertIn(self.feed_tech2, all_feeds)
+        self.assertIn(self.feed_multi_tag, all_feeds)
+
+    def test_get_all_feeds_with_multiple_tags(self):
+        """Test get_all_feeds includes feeds from multiple tags"""
+        self.processed_feed.include_tags.add(self.tag_tech, self.tag_news)
+
+        all_feeds = self.processed_feed.get_all_feeds()
+
+        # Should include tech feeds, news feed, and multi-tag feed
+        self.assertEqual(len(all_feeds), 4)
+        self.assertIn(self.feed_tech1, all_feeds)
+        self.assertIn(self.feed_tech2, all_feeds)
+        self.assertIn(self.feed_news, all_feeds)
+        self.assertIn(self.feed_multi_tag, all_feeds)
+
+    def test_get_all_feeds_combines_direct_and_tag_feeds(self):
+        """Test get_all_feeds combines directly selected and tag-selected feeds"""
+        # Add one feed directly
+        self.processed_feed.feeds.add(self.feed_no_tag)
+        # Add tech tag to get tech feeds
+        self.processed_feed.include_tags.add(self.tag_tech)
+
+        all_feeds = self.processed_feed.get_all_feeds()
+
+        # Should include directly selected feed plus tech feeds
+        self.assertEqual(len(all_feeds), 4)
+        self.assertIn(self.feed_no_tag, all_feeds)
+        self.assertIn(self.feed_tech1, all_feeds)
+        self.assertIn(self.feed_tech2, all_feeds)
+        self.assertIn(self.feed_multi_tag, all_feeds)
+
+    def test_get_all_feeds_no_duplicates(self):
+        """Test get_all_feeds doesn't include duplicates when feed is both direct and tag-selected"""
+        # Add tech1 feed directly
+        self.processed_feed.feeds.add(self.feed_tech1)
+        # Also add tech tag which includes tech1
+        self.processed_feed.include_tags.add(self.tag_tech)
+
+        all_feeds = self.processed_feed.get_all_feeds()
+
+        # Should not have duplicates
+        self.assertEqual(len(all_feeds), 3)
+        self.assertIn(self.feed_tech1, all_feeds)
+        self.assertIn(self.feed_tech2, all_feeds)
+        self.assertIn(self.feed_multi_tag, all_feeds)
+
+        # Verify feed_tech1 appears only once
+        feed_count = list(all_feeds).count(self.feed_tech1)
+        self.assertEqual(feed_count, 1)
+
+    @patch("FeedManager.models.ProcessedFeed.objects.filter")
+    def test_tags_change_resets_timestamps(self, mock_filter):
+        """Test that adding/removing tags resets last_modified and last_digest"""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        # Set up mock to track update calls
+        mock_update = MagicMock()
+        mock_filter.return_value.update = mock_update
+
+        # Set initial timestamps
+        initial_time = timezone.now() - timedelta(days=1)
+        ProcessedFeed.objects.filter(pk=self.processed_feed.pk).update(
+            last_modified=initial_time,
+            last_digest=initial_time
+        )
+
+        # Add a tag - should trigger reset
+        self.processed_feed.include_tags.add(self.tag_tech)
+
+        # Verify update was called with None values
+        mock_update.assert_called_with(last_modified=None, last_digest=None)
+
+        # Reset mock
+        mock_update.reset_mock()
+
+        # Remove the tag - should also trigger reset
+        self.processed_feed.include_tags.remove(self.tag_tech)
+
+        # Verify update was called again
+        mock_update.assert_called_with(last_modified=None, last_digest=None)
+
+    def test_empty_tags_returns_only_direct_feeds(self):
+        """Test that empty include_tags doesn't affect feed selection"""
+        # Add some direct feeds
+        self.processed_feed.feeds.add(self.feed_tech1, self.feed_news)
+
+        all_feeds = self.processed_feed.get_all_feeds()
+
+        # Should only have the directly selected feeds
+        self.assertEqual(len(all_feeds), 2)
+        self.assertIn(self.feed_tech1, all_feeds)
+        self.assertIn(self.feed_news, all_feeds)
+        self.assertNotIn(self.feed_tech2, all_feeds)  # Not included via tag
+
+    @patch("FeedManager.models.async_update_feeds_and_digest.schedule")
+    def test_validation_requires_feed_or_tag(self, mock_schedule):
+        """Test that validation requires at least one feed or tag to be selected"""
+        from django.core.exceptions import ValidationError
+
+        # Create and save a ProcessedFeed without feeds or tags
+        invalid_feed = ProcessedFeed.objects.create(
+            name="invalid_feed",
+            toggle_digest=True,
+            toggle_entries=True,
+        )
+
+        # This should raise a ValidationError
+        with self.assertRaises(ValidationError) as context:
+            invalid_feed.clean()
+
+        self.assertIn("At least one original feed or tag must be selected", str(context.exception))
+
+    @patch("FeedManager.models.async_update_feeds_and_digest.schedule")
+    def test_validation_passes_with_only_tags(self, mock_schedule):
+        """Test that validation passes with only tags selected"""
+        from django.core.exceptions import ValidationError
+
+        # Create a ProcessedFeed with only tags
+        valid_feed = ProcessedFeed.objects.create(
+            name="tag_only_feed",
+            toggle_digest=True,
+            toggle_entries=True,
+        )
+        valid_feed.include_tags.add(self.tag_tech)
+
+        # This should not raise an error
+        try:
+            valid_feed.clean()
+        except ValidationError:
+            self.fail("Validation should pass with tags selected")
+
+    @patch("FeedManager.models.async_update_feeds_and_digest.schedule")
+    def test_validation_passes_with_only_feeds(self, mock_schedule):
+        """Test that validation passes with only feeds selected"""
+        from django.core.exceptions import ValidationError
+
+        # Create a ProcessedFeed with only feeds
+        valid_feed = ProcessedFeed.objects.create(
+            name="feed_only_feed",
+            toggle_digest=True,
+            toggle_entries=True,
+        )
+        valid_feed.feeds.add(self.feed_tech1)
+
+        # This should not raise an error
+        try:
+            valid_feed.clean()
+        except ValidationError:
+            self.fail("Validation should pass with feeds selected")

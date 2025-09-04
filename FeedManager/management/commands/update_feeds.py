@@ -136,7 +136,7 @@ class Command(BaseCommand):
         current_modified = feed.last_modified
         min_new_modified = None
         logger.debug(f"  Current last modified: {current_modified} for feed {feed.name}")
-        for original_feed in feed.feeds.all():
+        for original_feed in feed.get_all_feeds():
             feed_data = fetch_feed(original_feed.url, current_modified)
             # update feed.last_modified based on earliest last_modified of all original_feeds
             if feed_data["status"] == "updated":

@@ -41,7 +41,8 @@ class ProcessedAtomFeed(Feed):
         return f"{url}?key={auth_code}"
 
     def description(self, obj):
-        original_feeds = ", ".join([feed.url for feed in obj.feeds.all()])
+        all_feeds = obj.get_all_feeds()
+        original_feeds = ", ".join([feed.url for feed in all_feeds])
         return f"Processed feed combining these original feeds: {original_feeds}, with {obj.filter_groups.count()} filter groups. All rights of the content belong to the original authors."
 
     def items(self, obj):
@@ -79,7 +80,8 @@ class ProcessedAtomFeed(Feed):
 
             while len(unique_articles) < max_articles:
                 # Fetch a batch of articles from the database
-                articles_batch = Article.objects.filter(original_feed__in=obj.feeds.all()).order_by("-published_date")[
+                all_feeds = obj.get_all_feeds()
+                articles_batch = Article.objects.filter(original_feed__in=all_feeds).order_by("-published_date")[
                     offset : offset + batch_size
                 ]
 

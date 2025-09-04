@@ -171,6 +171,23 @@ class HasAnyOriginalFeedListFilter(admin.SimpleListFilter):
             return queryset.filter(feeds=None)
 
 
+class HasIncludedTagsFilter(admin.SimpleListFilter):
+    title = _("Has included tags")
+    parameter_name = "has_included_tags"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", _("Yes")),
+            ("no", _("No")),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.exclude(include_tags=None)
+        if self.value() == "no":
+            return queryset.filter(include_tags=None)
+
+
 @admin.register(ProcessedFeed)
 class ProcessedFeedAdmin(NestedModelAdmin):
     form = ProcessedFeedAdminForm
@@ -194,15 +211,17 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         "summarize_per_update",
         "subscription_link",
         "original_feed_count",
+        "total_feed_count",
         "toggle_digest_and_update",
     )
     #    filter_horizontal = ('feeds',)
-    search_fields = ("name", "feeds__title", "feeds__url")
+    search_fields = ("name", "feeds__title", "feeds__url", "include_tags__name")
     list_filter = (
         "articles_to_summarize_per_interval",
         "summary_language",
         "model",
         HasAnyOriginalFeedListFilter,
+        HasIncludedTagsFilter,
         "toggle_digest",
         "toggle_entries",
         "digest_frequency",
@@ -210,7 +229,7 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         "digest_model",
     )
     actions = [update_selected_feeds, export_processed_feeds_as_opml]
-    autocomplete_fields = ["feeds"]
+    autocomplete_fields = ["feeds", "include_tags"]
 
     def get_queryset(self, request):
         # Annotate each ProcessedFeed object with the count of related OriginalFeeds
@@ -219,18 +238,30 @@ class ProcessedFeedAdmin(NestedModelAdmin):
         return queryset
 
     @admin.display(
-        description=_("Original Feeds"),
+        description=_("Direct Feeds"),
         ordering="_original_feed_count",
     )
     def original_feed_count(self, obj):
-        # Use the annotated count of related OriginalFeeds
+        # Use the annotated count of directly selected OriginalFeeds
         return obj._original_feed_count
+
+    @admin.display(
+        description=_("Total Feeds"),
+    )
+    def total_feed_count(self, obj):
+        # Get all feeds including those from tags
+        all_feeds = obj.get_all_feeds()
+        return len(all_feeds)
 
     fieldsets = (
         (
             None,
             {
-                "fields": ("name", "feeds"),
+                "fields": ("name", "feeds", "include_tags"),
+                "description": _(
+                    "Select specific feeds to include, or choose tags to automatically include all feeds with those tags. "
+                    "⚠️ At least one feed or tag must be selected."
+                ),
             },
         ),
         (
@@ -431,7 +462,8 @@ class TagAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         # Annotate each Tag object with the count of related OriginalFeeds
         queryset = super().get_queryset(request)
-        queryset = queryset.annotate(_original_feed_count=Count("original_feeds"))
+        # Explicitly add ordering to prevent UnorderedObjectListWarning
+        queryset = queryset.annotate(_original_feed_count=Count("original_feeds")).order_by("name")
         return queryset
 
     @admin.display(ordering="_original_feed_count")
