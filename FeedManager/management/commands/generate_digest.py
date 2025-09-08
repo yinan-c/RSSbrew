@@ -39,12 +39,16 @@ class Command(BaseCommand):
     def gen_digest(self, feed, force):
         now = timezone.now()
         last_digest = feed.last_digest
-        # The cron job runs every 24 hours
-        # Incase skip a day, we set delta to 0.5 days
-        delta = timedelta(days=0.5) if feed.digest_frequency == "daily" else timedelta(days=6.5)
+        # Set proper thresholds for digest generation
+        # Daily digests should wait at least 23 hours (to account for minor timing variations)
+        # Weekly digests should wait at least 6.5 days
+        delta = timedelta(hours=23) if feed.digest_frequency == "daily" else timedelta(days=6.5)
         logger.debug(f"Last digest: {last_digest}")
         if force or (not last_digest) or now - last_digest > delta:
-            start_time = now - delta - timedelta(days=0.5) if force or not last_digest else last_digest
+            # For the first digest or forced digest, look back 1 day for daily or 7 days for weekly
+            # Otherwise use the last digest time as the start point
+            lookback = timedelta(days=1) if feed.digest_frequency == "daily" else timedelta(days=7)
+            start_time = now - lookback if force or not last_digest else last_digest
             all_feeds = feed.get_all_feeds()
             articles = Article.objects.filter(
                 original_feed__in=all_feeds, published_date__gte=start_time, published_date__lte=now
