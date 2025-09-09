@@ -1,18 +1,22 @@
 {% extends "admin/base_site.html" %}
 
 {% block content %}
-  <h1>{{ title }}</h1>
-  <p>Upload an OPML file to import original feeds. Folder structure and categories will become tags.</p>
+  <h1>
+{{ title }}
+  </h1>
+  <p>
+Upload an OPML file to import original feeds. Folder structure and categories will become tags.
+  </p>
   <form method="post" enctype="multipart/form-data" novalidate>
-    {% csrf_token %}
+{% csrf_token %}
     <div class="form-row">
       {{ form.opml_file.label_tag }}
       {{ form.opml_file }}
     </div>
     <div class="submit-row">
-      <input type="submit" class="default" value="Import">
-      <a href="{% url 'admin:FeedManager_originalfeed_changelist' %}" class="button cancel-link">Cancel</a>
+      <input type="submit" class="default" value="Import" />
+      <a href="{% url 'admin:FeedManager_originalfeed_changelist' %}"
+         class="button cancel-link">Cancel</a>
     </div>
   </form>
 {% endblock %}
-

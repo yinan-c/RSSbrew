@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable, List, Optional, TextIO
+from typing import TextIO, cast
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 from django.conf import settings
@@ -23,14 +24,14 @@ class ImportResult:
 
 
 def _parse_opml_outline_for_import(
-    node: SafeET.Element, folder_stack: Optional[List[str]] = None
-) -> list[tuple[str, Optional[str], list[str]]]:
+    node: SafeET.Element, folder_stack: list[str] | None = None
+) -> list[tuple[str, str | None, list[str]]]:
     """
     Recursively walk an OPML outline node and return a list of (xmlUrl, title, tags).
     - folder_stack accumulates folder names (used as tags) from parent outlines.
     - Also honors the `category` attribute on feed outlines if present (comma-separated).
     """
-    results: list[tuple[str, Optional[str], list[str]]] = []
+    results: list[tuple[str, str | None, list[str]]] = []
     if folder_stack is None:
         folder_stack = []
 
@@ -79,7 +80,7 @@ def import_original_feeds_from_opml(file_obj: TextIO) -> ImportResult:
         return ImportResult(feeds_created=0, feeds_updated=0, tags_created=0, feeds_seen=0)
 
     outlines = body.findall("outline")
-    items: list[tuple[str, Optional[str], list[str]]] = []
+    items: list[tuple[str, str | None, list[str]]] = []
     for node in outlines:
         items.extend(_parse_opml_outline_for_import(node, []))
 
@@ -185,5 +186,4 @@ def export_original_feeds_as_opml(
             _append_feed_outline(body, feed)
 
     # Prettify
-    return minidom.parseString(tostring(opml, encoding="unicode")).toprettyxml(indent="  ")
-
+    return cast(str, minidom.parseString(tostring(opml, encoding="unicode")).toprettyxml(indent="  "))

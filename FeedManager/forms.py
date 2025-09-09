@@ -89,3 +89,7 @@ class ProcessedFeedAdminForm(forms.ModelForm):
 #            self.fields['digest_time'].widget = forms.HiddenInput()
 #            self.fields['additional_prompt_for_digest'].widget = forms.HiddenInput()
 #            self.fields['send_full_article'].widget = forms.HiddenInput()
+
+
+class OPMLUploadForm(forms.Form):
+    opml_file = forms.FileField(label=_("OPML file"))

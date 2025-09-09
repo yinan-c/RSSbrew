@@ -1523,3 +1523,91 @@ class TestTagBasedFeedInclusion(TestCase):
             valid_feed.clean()
         except ValidationError:
             self.fail("Validation should pass with feeds selected")
+
+
+class TestOPMLImportExport(TestCase):
+    def test_import_opml_with_nested_folders_generates_tags(self):
+        import io
+
+        from FeedManager.models import OriginalFeed, Tag
+        from FeedManager.opml import import_original_feeds_from_opml
+
+        opml = """
+        <opml version=\"2.0\">
+          <head><title>Test</title></head>
+          <body>
+            <outline text=\"Tech\">
+              <outline text=\"AI\">
+                <outline text=\"OpenAI Blog\" type=\"rss\" xmlUrl=\"https://example.com/openai.xml\" />
+              </outline>
+              <outline text=\"Dev\">
+                <outline text=\"Django News\" type=\"rss\" xmlUrl=\"https://example.com/django.xml\" />
+              </outline>
+            </outline>
+            <outline text=\"Untagged\" type=\"rss\" xmlUrl=\"https://example.com/untagged.xml\" />
+          </body>
+        </opml>
+        """
+        result = import_original_feeds_from_opml(io.StringIO(opml))
+        self.assertEqual(result.feeds_seen, 3)
+        self.assertEqual(OriginalFeed.objects.count(), 3)
+
+        openai = OriginalFeed.objects.get(url="https://example.com/openai.xml")
+        django = OriginalFeed.objects.get(url="https://example.com/django.xml")
+        untagged = OriginalFeed.objects.get(url="https://example.com/untagged.xml")
+
+        tags = set(Tag.objects.values_list("name", flat=True))
+        self.assertTrue({"Tech", "AI", "Dev"}.issubset(tags))
+
+        self.assertEqual(set(openai.tags.values_list("name", flat=True)), {"Tech", "AI"})
+        self.assertEqual(set(django.tags.values_list("name", flat=True)), {"Tech", "Dev"})
+        self.assertEqual(set(untagged.tags.values_list("name", flat=True)), set())
+
+    def test_export_grouped_by_tags(self):
+        from defusedxml import ElementTree as SafeET
+
+        from FeedManager.models import OriginalFeed, Tag
+        from FeedManager.opml import export_original_feeds_as_opml
+
+        feed1 = OriginalFeed.objects.create(url="https://a.com/1.xml", title="One")
+        feed2 = OriginalFeed.objects.create(url="https://a.com/2.xml", title="Two")
+        t_ai = Tag.objects.create(name="AI")
+        t_dev = Tag.objects.create(name="Dev")
+        feed1.tags.add(t_ai)
+        feed2.tags.add(t_ai, t_dev)
+
+        xml = export_original_feeds_as_opml(OriginalFeed.objects.all(), group_by_tags=True)
+        tree = SafeET.fromstring(xml)
+        body = tree.find("body")
+        self.assertIsNotNone(body)
+
+        # Expect top-level outlines for tag folders
+        folder_names = [n.attrib.get("text") for n in body.findall("outline") if "xmlUrl" not in n.attrib]
+        self.assertIn("AI", folder_names)
+        self.assertIn("Dev", folder_names)
+
+        # Inside AI folder both feeds should appear
+        ai_node = next(n for n in body.findall("outline") if n.attrib.get("text") == "AI")
+        ai_urls = {c.attrib.get("xmlUrl") for c in ai_node.findall("outline")}
+        self.assertEqual(ai_urls, {"https://a.com/1.xml", "https://a.com/2.xml"})
+
+        # Inside Dev folder feed2 should appear
+        dev_node = next(n for n in body.findall("outline") if n.attrib.get("text") == "Dev")
+        dev_urls = {c.attrib.get("xmlUrl") for c in dev_node.findall("outline")}
+        self.assertEqual(dev_urls, {"https://a.com/2.xml"})
+
+    def test_export_flat_includes_categories(self):
+        from defusedxml import ElementTree as SafeET
+
+        from FeedManager.models import OriginalFeed, Tag
+        from FeedManager.opml import export_original_feeds_as_opml
+
+        feed = OriginalFeed.objects.create(url="https://a.com/3.xml", title="Three")
+        tag = Tag.objects.create(name="News")
+        feed.tags.add(tag)
+        xml = export_original_feeds_as_opml([feed], group_by_tags=False)
+        tree = SafeET.fromstring(xml)
+        body = tree.find("body")
+        outlines = body.findall("outline")
+        self.assertEqual(len(outlines), 1)
+        self.assertEqual(outlines[0].attrib.get("category"), "News")

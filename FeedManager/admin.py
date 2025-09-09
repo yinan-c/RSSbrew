@@ -14,8 +14,10 @@ import pytz
 from defusedxml import minidom
 from nested_admin.nested import NestedModelAdmin, NestedTabularInline
 
-from .forms import FilterForm, ProcessedFeedAdminForm, ReadOnlyArticleForm
+from .forms import FilterForm, OPMLUploadForm, ProcessedFeedAdminForm, ReadOnlyArticleForm
 from .models import AppSetting, Article, Digest, Filter, FilterGroup, OriginalFeed, ProcessedFeed, Tag
+from .opml import export_original_feeds_as_opml as build_original_feeds_opml
+from .opml import import_original_feeds_from_opml
 from .tasks import async_update_feeds_and_digest, clean_old_articles
 
 
@@ -40,46 +42,23 @@ def clean_selected_feeds_articles(modeladmin, request, queryset):
 
 @admin.action(description=_("Export selected feeds as OPML"))
 def export_original_feeds_as_opml(modeladmin, request, queryset):
-    """Export selected original feeds as OPML"""
-    # Create OPML structure
-    opml = Element("opml")
-    opml.set("version", "2.0")
-
-    # Create head section
-    head = SubElement(opml, "head")
-    title = SubElement(head, "title")
-    title.text = "RSSBrew Original Feeds Export"
-    date_created = SubElement(head, "dateCreated")
-    tz = pytz.timezone(getattr(settings, "TIME_ZONE", "UTC"))
-    date_created.text = datetime.now(tz).strftime("%a, %d %b %Y %H:%M:%S %z")
-
-    # Create body section
-    body = SubElement(opml, "body")
-
-    # Add each selected feed as an outline
-    for feed in queryset:
-        outline = SubElement(body, "outline")
-        outline.set("text", feed.title or feed.url)
-        outline.set("title", feed.title or feed.url)
-        outline.set("type", "rss")
-        outline.set("xmlUrl", feed.url)
-        outline.set("htmlUrl", feed.url)  # Using feed URL as HTML URL since we don't track website URL
-
-        # Add tags as categories if present
-        tags = feed.tags.all()
-        if tags:
-            categories = ", ".join([tag.name for tag in tags])
-            outline.set("category", categories)
-
-    # Convert to pretty XML string
-    xml_string = minidom.parseString(tostring(opml, encoding="unicode")).toprettyxml(indent="  ")
-
-    # Create HTTP response with OPML content
+    """Export selected original feeds as a flat OPML (with categories)."""
+    xml_string = build_original_feeds_opml(queryset, group_by_tags=False)
     response = HttpResponse(xml_string, content_type="text/xml; charset=utf-8")
     response["Content-Disposition"] = (
         f'attachment; filename="rssbrew_original_feeds_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
     )
+    return response
 
+
+@admin.action(description=_("Export selected feeds as OPML (grouped by tags)"))
+def export_original_feeds_as_opml_grouped(modeladmin, request, queryset):
+    """Export selected original feeds grouped under tag folders."""
+    xml_string = build_original_feeds_opml(queryset, group_by_tags=True)
+    response = HttpResponse(xml_string, content_type="text/xml; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="rssbrew_original_feeds_grouped_{datetime.now().strftime("%Y%m%d_%H%M%S")}.opml"'
+    )
     return response
 
 
@@ -371,8 +350,97 @@ class OriginalFeedAdmin(admin.ModelAdmin):
 
     # Filter if the original feed is included in the processed feed
     list_filter = ("valid", "processed_feeds__name", IncludedInProcessedFeedListFilter, "tags")
-    actions = [clean_selected_feeds_articles, export_original_feeds_as_opml]
+    actions = [clean_selected_feeds_articles, export_original_feeds_as_opml, export_original_feeds_as_opml_grouped]
     autocomplete_fields = ["tags"]
+
+    # Custom admin view: Import OPML
+    def get_urls(self):
+        from django.urls import path
+
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "import-opml/",
+                self.admin_site.admin_view(self.import_opml_view),
+                name="FeedManager_originalfeed_import_opml",
+            ),
+        ]
+        return custom_urls + urls
+
+    def changelist_view(self, request, extra_context=None):
+        from django.urls import reverse
+
+        extra_context = extra_context or {}
+        extra_context["import_opml_url"] = reverse("admin:FeedManager_originalfeed_import_opml")
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def import_opml_view(self, request):
+        from django.contrib import messages
+        from django.shortcuts import redirect, render
+        from django.urls import reverse
+
+        if request.method == "POST":
+            form = OPMLUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                file = form.cleaned_data["opml_file"]
+                # Quick format check before parsing to warn for wrong uploads (e.g., Markdown)
+                try:
+                    from codecs import BOM_UTF8
+                    from contextlib import suppress
+
+                    head = file.read(2048)
+                    # Normalize to bytes
+                    head_bytes = head.encode("utf-8", errors="ignore") if isinstance(head, str) else head
+                    # Strip BOM and leading whitespace
+                    if head_bytes.startswith(BOM_UTF8):
+                        head_bytes = head_bytes[len(BOM_UTF8) :]
+                    head_str = head_bytes.decode("utf-8", errors="ignore").lstrip().lower()
+
+                    content_type = getattr(file, "content_type", "") or ""
+                    looks_xml = "xml" in content_type or "opml" in content_type or "<opml" in head_str
+                finally:
+                    # Reset pointer regardless of outcome
+                    with suppress(Exception):
+                        file.seek(0)
+
+                if not looks_xml:
+                    messages.error(
+                        request,
+                        _(
+                            "The uploaded file does not look like an OPML/XML file. Please upload a valid OPML export."
+                        ),
+                    )
+                    context = dict(
+                        self.admin_site.each_context(request),
+                        title=_("Import Original Feeds from OPML"),
+                        form=form,
+                    )
+                    return render(request, "admin/FeedManager/originalfeed/import_opml.html", context)
+
+                # Proceed with import
+                result = import_original_feeds_from_opml(file)
+                messages.success(
+                    request,
+                    _(
+                        "Imported OPML: %(seen)d feeds parsed; %(created)d created; %(updated)d touched; %(tags)d new tags"
+                    )
+                    % {
+                        "seen": result.feeds_seen,
+                        "created": result.feeds_created,
+                        "updated": result.feeds_updated,
+                        "tags": result.tags_created,
+                    },
+                )
+                return redirect(reverse("admin:FeedManager_originalfeed_changelist"))
+        else:
+            form = OPMLUploadForm()
+
+        context = dict(
+            self.admin_site.each_context(request),
+            title=_("Import Original Feeds from OPML"),
+            form=form,
+        )
+        return render(request, "admin/FeedManager/originalfeed/import_opml.html", context)
 
 
 @admin.register(AppSetting)
