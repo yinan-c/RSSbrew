@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+  <ul class="object-tools">
+    {{ block.super }}
+    <li>
+      <a href="{{ import_opml_url }}" class="addlink">Import OPML</a>
+    </li>
+  </ul>
+{% endblock %}
+
