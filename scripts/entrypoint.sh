@@ -22,4 +22,22 @@ python3 /app/manage.py run_huey >> /app/logs/huey.log 2>&1 &
 
 APP_PORT=${INTERNAL_PORT:-8000}
 
-exec gunicorn rssbrew.wsgi:application --bind 0.0.0.0:${APP_PORT}
+# Configure Gunicorn to better handle slow/idle client uploads
+# Defaults can be overridden via env vars in docker-compose
+WORKERS=${WEB_CONCURRENCY:-2}
+THREADS=${THREADS:-4}
+TIMEOUT=${GUNICORN_TIMEOUT:-120}
+GRACEFUL_TIMEOUT=${GUNICORN_GRACEFUL_TIMEOUT:-120}
+KEEP_ALIVE=${GUNICORN_KEEP_ALIVE:-2}
+ACCESS_LOG=${GUNICORN_ACCESS_LOG:--}
+WORKER_CLASS=${GUNICORN_WORKER_CLASS:-gthread}
+
+exec gunicorn rssbrew.wsgi:application \
+  --bind 0.0.0.0:${APP_PORT} \
+  --workers ${WORKERS} \
+  --worker-class ${WORKER_CLASS} \
+  --threads ${THREADS} \
+  --timeout ${TIMEOUT} \
+  --graceful-timeout ${GRACEFUL_TIMEOUT} \
+  --keep-alive ${KEEP_ALIVE} \
+  --access-logfile ${ACCESS_LOG}

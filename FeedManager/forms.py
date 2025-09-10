@@ -92,4 +92,12 @@ class ProcessedFeedAdminForm(forms.ModelForm):
 
 
 class OPMLUploadForm(forms.Form):
-    opml_file = forms.FileField(label=_("OPML file"))
+    # Hint browsers to only allow OPML/XML selection to reduce accidental uploads
+    opml_file = forms.FileField(
+        label=_("OPML file"),
+        widget=forms.ClearableFileInput(
+            attrs={
+                "accept": "application/xml,text/xml,.opml,.xml",
+            }
+        ),
+    )
