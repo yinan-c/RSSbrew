@@ -1,22 +1,20 @@
 {% extends "admin/base_site.html" %}
 
+{# No extra CSS: rely on Django admin's default submit-row styles #}
+
 {% block content %}
-  <h1>
-{{ title }}
-  </h1>
   <p>
-Upload an OPML file to import original feeds. Folder structure and categories will become tags.
+    Upload an OPML file to import original feeds. Folder structure and categories will become tags.
   </p>
   <form method="post" enctype="multipart/form-data" novalidate>
-{% csrf_token %}
+    {% csrf_token %}
     <div class="form-row">
       {{ form.opml_file.label_tag }}
       {{ form.opml_file }}
     </div>
     <div class="submit-row">
-      <input type="submit" class="default" value="Import" />
-      <a href="{% url 'admin:FeedManager_originalfeed_changelist' %}"
-         class="button cancel-link">Cancel</a>
+      <input type="submit" value="Import" class="default" />
+      <input type="button" value="Cancel" class="default" onclick="window.location.href='{% url 'admin:FeedManager_originalfeed_changelist' %}'" />
     </div>
   </form>
 {% endblock %}

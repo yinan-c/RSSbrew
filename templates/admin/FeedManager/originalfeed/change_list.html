@@ -1,10 +1,12 @@
 {% extends "admin/change_list.html" %}
 
-{% block object-tools %}
-  <ul class="object-tools">
-    {{ block.super }}
-    <li>
-      <a href="{{ import_opml_url }}" class="addlink">Import OPML</a>
-    </li>
-  </ul>
+{#
+  Add the "Import OPML" action as a regular object-tool item so it
+  sits next to the default "Add" button using the same styles.
+#}
+{% block object-tools-items %}
+  {{ block.super }}
+  <li>
+    <a href="{{ import_opml_url }}" class="addlink">Import OPML</a>
+  </li>
 {% endblock %}
