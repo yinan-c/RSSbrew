@@ -10,3 +10,17 @@
     <a href="{{ import_opml_url }}" class="addlink">Import OPML</a>
   </li>
 {% endblock %}
+
+{#
+  Inject a datalist of existing tag names so the action-form text input
+  can autocomplete against current tags. The input references this list
+  via its "list" attribute set on the ActionForm widget.
+#}
+{% block content %}
+  {{ block.super }}
+  <datalist id="tag-names-datalist">
+    {% for name in all_tag_names %}
+      <option value="{{ name }}"></option>
+    {% endfor %}
+  </datalist>
+{% endblock %}

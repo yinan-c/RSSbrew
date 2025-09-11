@@ -338,7 +338,13 @@ class OriginalFeedActionForm(ActionForm):
         required=False,
         label=_("Tags"),
         help_text=_("Comma-separated. Used by add/remove tag actions."),
-        widget=forms.TextInput(attrs={"placeholder": _("e.g. Tech, News")}),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": _("e.g. Tech, News"),
+                "list": "tag-names-datalist",
+                "autocomplete": "off",
+            }
+        ),
     )
 
 
@@ -489,6 +495,8 @@ class OriginalFeedAdmin(admin.ModelAdmin):
 
         extra_context = extra_context or {}
         extra_context["import_opml_url"] = reverse("admin:FeedManager_originalfeed_import_opml")
+        # Provide tag names to power the datalist suggestions for the action form
+        extra_context["all_tag_names"] = list(Tag.objects.order_by("name").values_list("name", flat=True))
         return super().changelist_view(request, extra_context=extra_context)
 
     def import_opml_view(self, request):
