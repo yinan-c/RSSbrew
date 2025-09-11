@@ -1,8 +1,10 @@
 from datetime import datetime
 from xml.etree.ElementTree import Element, SubElement, tostring
 
+from django import forms
 from django.conf import settings
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.contrib.admin.helpers import ActionForm
 from django.contrib.auth.models import Group, User
 from django.db.models import Count
 from django.http import HttpResponse
@@ -16,8 +18,12 @@ from nested_admin.nested import NestedModelAdmin, NestedTabularInline
 
 from .forms import FilterForm, OPMLUploadForm, ProcessedFeedAdminForm, ReadOnlyArticleForm
 from .models import AppSetting, Article, Digest, Filter, FilterGroup, OriginalFeed, ProcessedFeed, Tag
-from .opml import export_original_feeds_as_opml as build_original_feeds_opml
-from .opml import import_original_feeds_from_opml
+from .opml import (
+    export_original_feeds_as_opml as build_original_feeds_opml,
+)
+from .opml import (
+    import_original_feeds_from_opml,
+)
 from .tasks import async_update_feeds_and_digest, clean_old_articles
 
 
@@ -327,17 +333,26 @@ class IncludedInProcessedFeedListFilter(admin.SimpleListFilter):
         if self.value() == "no":
             return queryset.filter(processed_feeds__isnull=True)
 
+class OriginalFeedActionForm(ActionForm):
+    tag_names = forms.CharField(
+        required=False,
+        label=_("Tags"),
+        help_text=_("Comma-separated. Used by add/remove tag actions."),
+        widget=forms.TextInput(attrs={"placeholder": _("e.g. Tech, News")}),
+    )
+
 
 @admin.register(OriginalFeed)
 class OriginalFeedAdmin(admin.ModelAdmin):
     inlines = [ArticleInline]
-    list_display = ("title", "valid", "url", "processed_feeds_count")
-    search_fields = ("title", "url")
+    list_display = ("title", "valid", "url", "tags_list", "processed_feeds_count")
+    search_fields = ("title", "url", "tags__name")
+    action_form = OriginalFeedActionForm
 
     def get_queryset(self, request):
         # Annotate each OriginalFeed object with the count of related ProcessedFeeds
         queryset = super().get_queryset(request)
-        queryset = queryset.annotate(_processed_feeds_count=Count("processed_feeds"))
+        queryset = queryset.annotate(_processed_feeds_count=Count("processed_feeds")).prefetch_related("tags")
         return queryset
 
     @admin.display(
@@ -350,8 +365,110 @@ class OriginalFeedAdmin(admin.ModelAdmin):
 
     # Filter if the original feed is included in the processed feed
     list_filter = ("valid", "processed_feeds__name", IncludedInProcessedFeedListFilter, "tags")
-    actions = [clean_selected_feeds_articles, export_original_feeds_as_opml, export_original_feeds_as_opml_grouped]
+    actions = [
+        "action_add_tags",
+        "action_remove_tags",
+        clean_selected_feeds_articles,
+        export_original_feeds_as_opml,
+        export_original_feeds_as_opml_grouped,
+    ]
     autocomplete_fields = ["tags"]
+
+    @admin.display(description=_("Tags"))
+    def tags_list(self, obj):
+        names = list(obj.tags.values_list("name", flat=True))
+        return ", ".join(sorted(names, key=str.casefold)) if names else "-"
+
+    @admin.action(description=_("Add tags to selected feeds"))
+    def action_add_tags(self, request, queryset):
+        raw_names = (request.POST.get("tag_names") or "").strip()
+        if not raw_names:
+            self.message_user(
+                request,
+                _("Please provide tag names in the action bar (comma-separated)."),
+                level=messages.WARNING,
+            )
+            return None
+
+        # Split by comma/semicolon, normalize spacing
+        import re as _re
+
+        names = [_n.strip() for _n in _re.split(r"[;,]", raw_names) if _n.strip()]
+        if not names:
+            self.message_user(
+                request,
+                _("No valid tag names detected. Please enter comma-separated names."),
+                level=messages.WARNING,
+            )
+            return None
+
+        created = 0
+        from .models import Tag
+
+        tag_objs = []
+        for name in names:
+            tag, is_created = Tag.objects.get_or_create(name=name)
+            if is_created:
+                created += 1
+            tag_objs.append(tag)
+
+        updated_feeds = 0
+        for feed in queryset:
+            # add without duplication
+            for tag in tag_objs:
+                feed.tags.add(tag)
+            updated_feeds += 1
+
+        self.message_user(
+            request,
+            _("Added %(tag_count)d tag(s) (%(created)d new) to %(feed_count)d feed(s).")
+            % {"tag_count": len(tag_objs), "created": created, "feed_count": updated_feeds},
+            level=messages.SUCCESS,
+        )
+        return None
+
+    @admin.action(description=_("Remove tags from selected feeds"))
+    def action_remove_tags(self, request, queryset):
+        raw_names = (request.POST.get("tag_names") or "").strip()
+        if not raw_names:
+            self.message_user(
+                request,
+                _("Please provide tag names in the action bar (comma-separated)."),
+                level=messages.WARNING,
+            )
+            return None
+
+        import re as _re
+
+        names = [_n.strip() for _n in _re.split(r"[;,]", raw_names) if _n.strip()]
+        if not names:
+            self.message_user(
+                request,
+                _("No valid tag names detected. Please enter comma-separated names."),
+                level=messages.WARNING,
+            )
+            return None
+
+        from .models import Tag
+
+        tags = list(Tag.objects.filter(name__in=names))
+        not_found = sorted(set(names) - {t.name for t in tags}, key=str.casefold)
+
+        removed_links = 0
+        for feed in queryset:
+            for tag in tags:
+                if feed.tags.filter(pk=tag.pk).exists():
+                    feed.tags.remove(tag)
+                    removed_links += 1
+
+        msg = _("Removed %(removed)d tag assignment(s) from %(feed_count)d feed(s).") % {
+            "removed": removed_links,
+            "feed_count": queryset.count(),
+        }
+        if not_found:
+            msg += " " + _("Tags not found: %(names)s") % {"names": ", ".join(not_found)}
+        self.message_user(request, msg, level=messages.SUCCESS)
+        return None
 
     # Custom admin view: Import OPML
     def get_urls(self):
