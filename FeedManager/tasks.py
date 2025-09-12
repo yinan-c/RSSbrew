@@ -39,8 +39,10 @@ def update_feeds_task():
         raise
 
 
-# TODO Maybe add time of the day to generate digest after digest_frequency
-CRON_DIGEST = os.getenv("CRON_DIGEST", "0 0 * * *")  # default to every day
+# TODO Maybe add time of the day and day of the month from user setting to generate digest after digest_frequency
+CRON_DIGEST = os.getenv(
+    "CRON_DIGEST", "0 * * * *"
+)  # default to every hour, but gen_digest function will respect user set interval
 cron_settings = parse_cron(CRON_DIGEST)
 logger.debug(f"Scheduled task with CRON settings: {cron_settings}")
 

@@ -42,7 +42,7 @@ class Command(BaseCommand):
         # Set proper thresholds for digest generation
         # Daily digests should wait at least 23 hours (to account for minor timing variations)
         # Weekly digests should wait at least 6.5 days
-        delta = timedelta(hours=23) if feed.digest_frequency == "daily" else timedelta(days=6.5)
+        delta = timedelta(hours=23.91) if feed.digest_frequency == "daily" else timedelta(days=6.996)
         logger.debug(f"Last digest: {last_digest}")
         if force or (not last_digest) or now - last_digest > delta:
             # For the first digest or forced digest, look back 1 day for daily or 7 days for weekly
