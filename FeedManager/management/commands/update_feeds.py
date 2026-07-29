@@ -75,13 +75,17 @@ def parse_date_fallback(entry):
     return timezone.now()
 
 
-def fetch_feed(url: str, last_modified: datetime):
+def fetch_feed(url: str, last_modified: datetime, user_agent: str | None = None):
+    """Fetch a feed URL.
+
+    A `user_agent` is sent as-is; when it is None a random browser User-Agent is used,
+    which is the historical behaviour.
+    """
     headers = {}
-    ua = UserAgent()
     # Try comment out the following line to see if it works
     if last_modified:
         headers["If-Modified-Since"] = last_modified.strftime("%a, %d %b %Y %H:%M:%S GMT")
-    headers["User-Agent"] = ua.random.strip()
+    headers["User-Agent"] = user_agent.strip() if user_agent else UserAgent().random.strip()
     try:
         #        print(time.time())
         response = requests.get(url, headers=headers, timeout=30)
@@ -137,7 +141,9 @@ class Command(BaseCommand):
         min_new_modified = None
         logger.debug(f"  Current last modified: {current_modified} for feed {feed.name}")
         for original_feed in feed.get_all_feeds():
-            feed_data = fetch_feed(original_feed.url, current_modified)
+            feed_data = fetch_feed(
+                original_feed.url, current_modified, user_agent=original_feed.get_effective_user_agent()
+            )
             # update feed.last_modified based on earliest last_modified of all original_feeds
             if feed_data["status"] == "updated":
                 original_feed.valid = True

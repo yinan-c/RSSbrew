@@ -369,6 +369,26 @@ class OriginalFeedAdmin(admin.ModelAdmin):
         # Use the annotated count of related ProcessedFeeds
         return obj._processed_feeds_count
 
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": ("url", "title", "tags", "max_articles_to_keep"),
+            },
+        ),
+        (
+            _("Fetch Settings"),
+            {
+                "fields": ("user_agent",),
+                "description": _(
+                    "Some feeds reject generic or rotating user agents. "
+                    "Set a fixed User-Agent here to only affect this feed, "
+                    "or set a global one in App Settings."
+                ),
+            },
+        ),
+    )
+
     # Filter if the original feed is included in the processed feed
     list_filter = ("valid", "processed_feeds__name", IncludedInProcessedFeedListFilter, "tags")
     actions = [clean_selected_feeds_articles, export_original_feeds_as_opml]
@@ -402,7 +422,8 @@ class AppSettingAdmin(admin.ModelAdmin):
         (
             _("Feed Settings"),
             {
-                "fields": ("max_articles_per_feed",),
+                "fields": ("max_articles_per_feed", "user_agent"),
+                "description": _("The User-Agent applies to every feed fetch unless a feed overrides it individually."),
             },
         ),
     )
