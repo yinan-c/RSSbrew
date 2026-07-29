@@ -43,6 +43,10 @@ Using AI (currently supports all OpenAI compatible models via user configuration
 If you are overwhelmed by the number of articles, you can set up digests aggregating articles into one entry on a daily or weekly basis.
 You can optionally choose what to include in the digest (e.g. content, summary, ) and use AI to help you summarize the digest.
 
+### 5. Configurable User-Agent
+
+Some feeds block requests whose User-Agent is generic or not on a whitelist. You can set a fixed User-Agent globally in App Settings, and override it for an individual feed in the Original Feed settings. Leave both empty to keep the default behaviour of sending a random browser User-Agent, or enter `random` on a single feed to opt that feed back into a random one.
+
 ## Install
 
 Docker deployment, please refer to [INSTALL.md](INSTALL.md).

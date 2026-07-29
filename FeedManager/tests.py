@@ -1523,3 +1523,86 @@ class TestTagBasedFeedInclusion(TestCase):
             valid_feed.clean()
         except ValidationError:
             self.fail("Validation should pass with feeds selected")
+
+
+class TestUserAgentConfiguration(TestCase):
+    def setUp(self):
+        self.feed = OriginalFeed.objects.create(url="https://example.com/feed", title="UA Test Feed")
+
+    def test_no_setting_uses_random(self):
+        """Without any configuration, no explicit User-Agent is resolved (random is used)"""
+        self.assertIsNone(AppSetting.get_user_agent())
+        self.assertIsNone(self.feed.get_effective_user_agent())
+
+    def test_global_user_agent_applies_to_feed(self):
+        AppSetting.objects.create(user_agent="GlobalAgent/1.0")
+        self.assertEqual(AppSetting.get_user_agent(), "GlobalAgent/1.0")
+        self.assertEqual(self.feed.get_effective_user_agent(), "GlobalAgent/1.0")
+
+    def test_empty_global_user_agent_returns_none(self):
+        AppSetting.objects.create(user_agent="   ")
+        self.assertIsNone(AppSetting.get_user_agent())
+        self.assertIsNone(self.feed.get_effective_user_agent())
+
+    def test_feed_user_agent_overrides_global(self):
+        AppSetting.objects.create(user_agent="GlobalAgent/1.0")
+        self.feed.user_agent = "FeedAgent/2.0"
+        self.feed.save()
+        self.assertEqual(self.feed.get_effective_user_agent(), "FeedAgent/2.0")
+
+    def test_feed_user_agent_without_global(self):
+        self.feed.user_agent = "FeedAgent/2.0"
+        self.feed.save()
+        self.assertEqual(self.feed.get_effective_user_agent(), "FeedAgent/2.0")
+
+    def test_feed_random_sentinel_overrides_global(self):
+        """'random' at feed level forces a random User-Agent even when a global one is set"""
+        AppSetting.objects.create(user_agent="GlobalAgent/1.0")
+        self.feed.user_agent = "Random"
+        self.feed.save()
+        self.assertIsNone(self.feed.get_effective_user_agent())
+
+    def test_whitespace_is_stripped(self):
+        AppSetting.objects.create(user_agent="  GlobalAgent/1.0  ")
+        self.assertEqual(AppSetting.get_user_agent(), "GlobalAgent/1.0")
+        self.feed.user_agent = "  FeedAgent/2.0  "
+        self.feed.save()
+        self.assertEqual(self.feed.get_effective_user_agent(), "FeedAgent/2.0")
+
+    @patch("FeedManager.management.commands.update_feeds.requests.get")
+    def test_fetch_feed_sends_configured_user_agent(self, mock_get):
+        from .management.commands.update_feeds import fetch_feed
+
+        mock_get.return_value = MagicMock(status_code=200, text="", headers={})
+        fetch_feed("https://example.com/feed", None, user_agent="FeedAgent/2.0")
+
+        self.assertEqual(mock_get.call_args.kwargs["headers"]["User-Agent"], "FeedAgent/2.0")
+
+    @patch("FeedManager.management.commands.update_feeds.UserAgent")
+    @patch("FeedManager.management.commands.update_feeds.requests.get")
+    def test_fetch_feed_falls_back_to_random_user_agent(self, mock_get, mock_ua_class):
+        from .management.commands.update_feeds import fetch_feed
+
+        mock_ua_class.return_value.random = "RandomAgent/9.0"
+        mock_get.return_value = MagicMock(status_code=200, text="", headers={})
+        fetch_feed("https://example.com/feed", None)
+
+        self.assertEqual(mock_get.call_args.kwargs["headers"]["User-Agent"], "RandomAgent/9.0")
+
+    @patch("FeedManager.management.commands.update_feeds.requests.get")
+    def test_update_feed_passes_feed_user_agent(self, mock_get):
+        """The update command resolves the User-Agent per original feed"""
+        from .management.commands.update_feeds import Command
+
+        AppSetting.objects.create(user_agent="GlobalAgent/1.0")
+        self.feed.user_agent = "FeedAgent/2.0"
+        self.feed.save()
+
+        with patch("FeedManager.models.async_update_feeds_and_digest"):
+            processed_feed = ProcessedFeed.objects.create(name="ua_processed_feed")
+            processed_feed.feeds.add(self.feed)
+
+        mock_get.return_value = MagicMock(status_code=304, text="", headers={})
+        Command().update_feed(processed_feed)
+
+        self.assertEqual(mock_get.call_args.kwargs["headers"]["User-Agent"], "FeedAgent/2.0")

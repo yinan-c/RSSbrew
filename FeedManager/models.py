@@ -15,6 +15,17 @@ if TYPE_CHECKING:
 # Hardcoded fallback model when nothing is configured
 DEFAULT_MODEL = "gpt-5-nano"
 
+# Sentinel value that forces a random User-Agent, overriding the global setting
+RANDOM_USER_AGENT = "random"
+
+USER_AGENT_HELP_TEXT = _(
+    "User-Agent header used when fetching feeds. "
+    "Leave empty to use a random browser User-Agent (default). "
+    "Set a fixed value if a feed blocks unknown or rotating user agents, "
+    "e.g. 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'."
+)
+
 # Base model choices without "Use Global Setting"
 BASE_MODEL_CHOICES = [
     ("gpt-5-mini", "GPT-5 Mini"),
@@ -76,6 +87,14 @@ class AppSetting(models.Model):
         blank=True,
         default="",
         verbose_name=_("Global Other Digest Model"),
+    )
+
+    user_agent = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        verbose_name=_("Global User-Agent"),
+        help_text=USER_AGENT_HELP_TEXT,
     )
 
     max_articles_per_feed = models.PositiveIntegerField(
@@ -158,6 +177,15 @@ class AppSetting(models.Model):
         return instance.global_digest_model
 
     @classmethod
+    def get_user_agent(cls):
+        """Get the globally configured User-Agent.
+        Returns None if not configured, indicating a random User-Agent should be used."""
+        instance = cls.objects.first()
+        if not instance or not instance.user_agent:
+            return None
+        return instance.user_agent.strip() or None
+
+    @classmethod
     def get_max_articles_per_feed(cls):
         """Get the maximum number of articles per processed feed.
         Returns 100 as default if no AppSetting is configured."""
@@ -177,6 +205,17 @@ class OriginalFeed(models.Model):
         help_text=_("Older articles will be removed when limit is reached"),
         verbose_name=_("Max Articles to Keep"),
     )
+    user_agent = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        verbose_name=_("User-Agent"),
+        help_text=_(
+            "Overrides the global User-Agent from App Settings for this feed only. "
+            "Leave empty to use the global setting. "
+            "Enter 'random' to force a random browser User-Agent for this feed."
+        ),
+    )
     # tag = models.CharField(max_length=255, blank=True, default='', help_text="Optional tag for the original feed")
     tags: "ManyToManyField[Tag, OriginalFeed]" = models.ManyToManyField(
         "Tag", related_name="original_feeds", blank=True, verbose_name=_("Tags")
@@ -194,6 +233,17 @@ class OriginalFeed(models.Model):
         if not self.title:
             self.title = self.url
         super().save(*args, **kwargs)
+
+    def get_effective_user_agent(self):
+        """Get the User-Agent to use when fetching this feed.
+        Feed setting wins over the global one; returns None when a random
+        User-Agent should be used."""
+        feed_user_agent = self.user_agent.strip() if self.user_agent else ""
+        if feed_user_agent:
+            if feed_user_agent.lower() == RANDOM_USER_AGENT:
+                return None
+            return feed_user_agent
+        return AppSetting.get_user_agent()
 
 
 class Tag(models.Model):
