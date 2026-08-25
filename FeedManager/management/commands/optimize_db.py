@@ -222,9 +222,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"\n❌ Optimization failed: {e}"))
 
             if backup_path:
-                self.stdout.write(
-                    self.style.WARNING(f"\nTo restore from backup, run:\n" f"  cp {backup_path} {db_path}")
-                )
+                self.stdout.write(self.style.WARNING(f"\nTo restore from backup, run:\n  cp {backup_path} {db_path}"))
 
         if success:
             self.stdout.write("\n" + "=" * 50)
@@ -239,5 +237,5 @@ class Command(BaseCommand):
                 )
 
             self.stdout.write(
-                self.style.SUCCESS("\n✅ You can now restart Docker safely:\n" "  docker-compose restart rssbrew")
+                self.style.SUCCESS("\n✅ You can now restart Docker safely:\n  docker-compose restart rssbrew")
             )

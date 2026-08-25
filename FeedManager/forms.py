@@ -70,14 +70,16 @@ class ProcessedFeedAdminForm(forms.ModelForm):
         if cleaned_data is None:
             cleaned_data = {}
 
-        feeds = cleaned_data.get('feeds')
-        include_tags = cleaned_data.get('include_tags')
+        feeds = cleaned_data.get("feeds")
+        include_tags = cleaned_data.get("include_tags")
 
         # Check if at least one of feeds or include_tags is provided
         if not feeds and not include_tags:
             raise forms.ValidationError(
-                _("At least one original feed or tag must be selected. "
-                  "You can either select specific feeds directly or choose tags to include all feeds with those tags.")
+                _(
+                    "At least one original feed or tag must be selected. "
+                    "You can either select specific feeds directly or choose tags to include all feeds with those tags."
+                )
             )
 
         return cleaned_data
