@@ -1,6 +1,9 @@
 import json
 import logging
+import time
 from datetime import datetime
+from email.utils import parsedate_to_datetime
+from urllib.parse import urlparse
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
@@ -14,6 +17,31 @@ from FeedManager.models import Article, ProcessedFeed
 from FeedManager.utils import clean_url, generate_summary, generate_untitled, passes_filters
 
 logger = logging.getLogger("feed_logger")
+
+# A 429 asking us to wait at most this many seconds is retried once in-place;
+# longer waits are deferred to the next scheduled run instead of blocking it.
+RATE_LIMIT_MAX_INLINE_WAIT = 15
+# Assumed wait when a 429 comes without a usable Retry-After/reset header.
+RATE_LIMIT_DEFAULT_RETRY_AFTER = 60
+
+
+def parse_retry_after(response):
+    """Seconds to wait after a 429, from Retry-After (seconds or HTTP-date)
+    or the reddit-style X-Ratelimit-Reset header."""
+    for header in ("Retry-After", "X-Ratelimit-Reset"):
+        value = response.headers.get(header)
+        if not value:
+            continue
+        try:
+            return max(int(float(value)), 0)
+        except ValueError:
+            pass
+        try:
+            retry_at = parsedate_to_datetime(value)
+            return max(int((retry_at - timezone.now()).total_seconds()), 0)
+        except (TypeError, ValueError):
+            continue
+    return RATE_LIMIT_DEFAULT_RETRY_AFTER
 
 
 def parse_date_fallback(entry):
@@ -87,20 +115,26 @@ def fetch_feed(url: str, last_modified: datetime, user_agent: str | None = None)
         headers["If-Modified-Since"] = last_modified.strftime("%a, %d %b %Y %H:%M:%S GMT")
     headers["User-Agent"] = user_agent.strip() if user_agent else UserAgent().random.strip()
     try:
-        #        print(time.time())
-        response = requests.get(url, headers=headers, timeout=30)
-        #        print(time.time())
-        if response.status_code == 200:
-            feed = feedparser.parse(response.text)
-            return {"feed": feed, "status": "updated", "last_modified": response.headers.get("Last-Modified")}
-        elif response.status_code == 304:
-            # ! Why is it taking so long to show not_modified? 8 seconds
-            # Maybe it's because of the User-Agent or the If-Modified-Since header?
-            # print(time.time())
-            return {"feed": None, "status": "not_modified", "last_modified": response.headers.get("Last-Modified")}
-        else:
-            logger.error(f"Failed to fetch feed {url}: {response.status_code}")
-            return {"feed": None, "status": "failed"}
+        for attempt in range(2):
+            response = requests.get(url, headers=headers, timeout=30)
+            if response.status_code == 200:
+                feed = feedparser.parse(response.text)
+                return {"feed": feed, "status": "updated", "last_modified": response.headers.get("Last-Modified")}
+            elif response.status_code == 304:
+                # ! Why is it taking so long to show not_modified? 8 seconds
+                # Maybe it's because of the User-Agent or the If-Modified-Since header?
+                return {"feed": None, "status": "not_modified", "last_modified": response.headers.get("Last-Modified")}
+            elif response.status_code == 429:
+                retry_after = parse_retry_after(response)
+                if attempt == 0 and retry_after <= RATE_LIMIT_MAX_INLINE_WAIT:
+                    logger.info(f"Rate limited on {url}, retrying in {retry_after}s")
+                    time.sleep(max(retry_after, 1))
+                    continue
+                logger.warning(f"Rate limited on {url}, deferring to the next run (retry after {retry_after}s)")
+                return {"feed": None, "status": "rate_limited", "retry_after": retry_after}
+            else:
+                logger.error(f"Failed to fetch feed {url}: {response.status_code}")
+                return {"feed": None, "status": "failed"}
 
     except Exception as e:
         logger.error(f"Failed to fetch feed {url}: {e!s}")
@@ -109,6 +143,12 @@ def fetch_feed(url: str, last_modified: datetime, user_agent: str | None = None)
 
 class Command(BaseCommand):
     help = "Updates and processes RSS feeds based on defined schedules and filters."
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Rate limits (e.g. reddit's) are per client, not per feed, so once a host
+        # returns 429 every other feed on it is skipped for the rest of this run.
+        self.host_backoff_until = {}
 
     def add_arguments(self, parser):
         parser.add_argument("-n", "--name", type=str, help="Name of the ProcessedFeed to update")
@@ -141,6 +181,11 @@ class Command(BaseCommand):
         min_new_modified = None
         logger.debug(f"  Current last modified: {current_modified} for feed {feed.name}")
         for original_feed in feed.get_all_feeds():
+            host = urlparse(original_feed.url).netloc.lower()
+            if self.host_backoff_until.get(host, 0) > time.monotonic():
+                # Not a feed failure, so leave `valid` untouched; the next run retries.
+                logger.warning(f"  Skipping {original_feed.url}: {host} is rate limited")
+                continue
             feed_data = fetch_feed(
                 original_feed.url, current_modified, user_agent=original_feed.get_effective_user_agent()
             )
@@ -175,6 +220,11 @@ class Command(BaseCommand):
                 logger.debug(
                     f"  Feed {original_feed.url} modified time is {feed_data['last_modified']} and the current feed modified time is {current_modified}"
                 )
+                continue
+            elif feed_data["status"] == "rate_limited":
+                retry_after = feed_data.get("retry_after") or RATE_LIMIT_DEFAULT_RETRY_AFTER
+                self.host_backoff_until[host] = time.monotonic() + retry_after
+                # Not a feed failure, so leave `valid` untouched; the next run retries.
                 continue
             elif feed_data["status"] == "failed":
                 logger.error(f" Failed to fetch feed {original_feed.url}")

@@ -1817,3 +1817,89 @@ class TestGenerateSummaryRetry(TestCase):
         result = generate_summary(self._article(), "gpt-4o", output_mode="HTML")
         self.assertIsNone(result)
         self.assertEqual(create.call_count, 1)
+
+
+class TestRateLimitHandling(TestCase):
+    def test_parse_retry_after_prefers_retry_after_header(self):
+        from .management.commands.update_feeds import parse_retry_after
+
+        response = MagicMock(headers={"Retry-After": "51", "X-Ratelimit-Reset": "10"})
+        self.assertEqual(parse_retry_after(response), 51)
+
+    def test_parse_retry_after_falls_back_to_ratelimit_reset(self):
+        from .management.commands.update_feeds import parse_retry_after
+
+        response = MagicMock(headers={"X-Ratelimit-Reset": "51.5"})
+        self.assertEqual(parse_retry_after(response), 51)
+
+    def test_parse_retry_after_defaults_without_headers(self):
+        from .management.commands.update_feeds import RATE_LIMIT_DEFAULT_RETRY_AFTER, parse_retry_after
+
+        response = MagicMock(headers={})
+        self.assertEqual(parse_retry_after(response), RATE_LIMIT_DEFAULT_RETRY_AFTER)
+
+    @patch("FeedManager.management.commands.update_feeds.time.sleep")
+    @patch("FeedManager.management.commands.update_feeds.requests.get")
+    def test_fetch_feed_retries_in_place_on_short_wait(self, mock_get, mock_sleep):
+        from .management.commands.update_feeds import fetch_feed
+
+        mock_get.side_effect = [
+            MagicMock(status_code=429, headers={"Retry-After": "2"}),
+            MagicMock(status_code=200, text="", headers={}),
+        ]
+        result = fetch_feed("https://www.reddit.com/r/Alfred/.rss", None, user_agent="FeedAgent/2.0")
+
+        self.assertEqual(result["status"], "updated")
+        self.assertEqual(mock_get.call_count, 2)
+        mock_sleep.assert_called_once_with(2)
+
+    @patch("FeedManager.management.commands.update_feeds.time.sleep")
+    @patch("FeedManager.management.commands.update_feeds.requests.get")
+    def test_fetch_feed_defers_on_long_wait(self, mock_get, mock_sleep):
+        """A wait longer than the inline cap is not slept through but deferred to the next run"""
+        from .management.commands.update_feeds import fetch_feed
+
+        mock_get.return_value = MagicMock(status_code=429, headers={"Retry-After": "51"})
+        result = fetch_feed("https://www.reddit.com/r/Alfred/.rss", None, user_agent="FeedAgent/2.0")
+
+        self.assertEqual(result["status"], "rate_limited")
+        self.assertEqual(result["retry_after"], 51)
+        self.assertEqual(mock_get.call_count, 1)
+        mock_sleep.assert_not_called()
+
+    @patch("FeedManager.management.commands.update_feeds.time.sleep")
+    @patch("FeedManager.management.commands.update_feeds.requests.get")
+    def test_fetch_feed_gives_up_after_one_inline_retry(self, mock_get, mock_sleep):
+        from .management.commands.update_feeds import fetch_feed
+
+        mock_get.return_value = MagicMock(status_code=429, headers={"Retry-After": "2"})
+        result = fetch_feed("https://www.reddit.com/r/Alfred/.rss", None, user_agent="FeedAgent/2.0")
+
+        self.assertEqual(result["status"], "rate_limited")
+        self.assertEqual(mock_get.call_count, 2)
+        mock_sleep.assert_called_once_with(2)
+
+    @patch("FeedManager.management.commands.update_feeds.requests.get")
+    def test_rate_limited_feed_stays_valid_and_host_is_skipped(self, mock_get):
+        """A 429 must not invalidate the feed, and other feeds on the same host are skipped this run"""
+        from .management.commands.update_feeds import Command
+
+        reddit_feed1 = OriginalFeed.objects.create(url="https://www.reddit.com/r/Alfred/.rss", title="Reddit 1")
+        reddit_feed2 = OriginalFeed.objects.create(url="https://www.reddit.com/r/Python/.rss", title="Reddit 2")
+        other_feed = OriginalFeed.objects.create(url="https://example.com/feed", title="Other")
+        with patch("FeedManager.models.async_update_feeds_and_digest"):
+            processed_feed = ProcessedFeed.objects.create(name="rate_limit_processed_feed")
+            processed_feed.feeds.add(reddit_feed1, reddit_feed2, other_feed)
+
+        mock_get.return_value = MagicMock(status_code=429, headers={"Retry-After": "51"})
+        Command().update_feed(processed_feed)
+
+        # One reddit fetch (429), the second reddit feed skipped, the other host still fetched
+        self.assertEqual(mock_get.call_count, 2)
+        fetched_urls = [call.args[0] for call in mock_get.call_args_list]
+        self.assertEqual(len([url for url in fetched_urls if "reddit.com" in url]), 1)
+        self.assertIn("https://example.com/feed", fetched_urls)
+        # `valid` defaults to None and a 429 must leave it untouched (only real failures set False)
+        for original_feed in (reddit_feed1, reddit_feed2, other_feed):
+            original_feed.refresh_from_db()
+            self.assertIsNone(original_feed.valid)
