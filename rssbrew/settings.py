@@ -261,9 +261,6 @@ HUEY = RedisHuey(
     host=os.environ.get("REDIS_HOST", "redis"),
     port=int(os.environ.get("REDIS_PORT", 6379)),
     db=int(os.environ.get("REDIS_DB", 0)),
-    result_store=True,
-    events=True,
-    store_none=False,
 )
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
