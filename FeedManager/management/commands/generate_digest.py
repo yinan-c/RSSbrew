@@ -90,7 +90,7 @@ class Command(BaseCommand):
                 query = clean_txt_and_truncate(query, model=effective_digest_model, clean_bool=True)
                 # Generate a pseudo article for AI digest
                 for_summary_only_article = Article(
-                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+                    title=f"Digest for {feed.name} {digest.start_time.strftime('%Y-%m-%d %H:%M') if digest.start_time else 'unknown'} to {digest.created_at.strftime('%Y-%m-%d %H:%M')}",
                     link=f"/feeds/{feed.name}/digest/{digest.created_at.strftime('%Y-%m-%d')}/",
                     published_date=digest.created_at,
                     content=query,

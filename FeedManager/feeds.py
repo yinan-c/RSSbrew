@@ -60,7 +60,7 @@ class ProcessedAtomFeed(Feed):
                     digest_url += f"?key={auth_code}"
 
                 digest_article = Article(
-                    title=f"Digest for {obj.name} {digest.start_time.strftime('%Y-%m-%d %H:%M:%S')} to {digest.created_at.strftime('%Y-%m-%d %H:%M:%S')}",
+                    title=f"Digest for {obj.name} {digest.start_time.strftime('%Y-%m-%d %H:%M')} to {digest.created_at.strftime('%Y-%m-%d %H:%M')}",
                     link=digest_url,
                     published_date=digest.created_at,
                     content=digest.content,
