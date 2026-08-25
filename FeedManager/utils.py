@@ -12,6 +12,8 @@ import tiktoken
 from bs4 import BeautifulSoup
 from openai import OpenAI
 
+from .model_registry import get_max_input_tokens
+
 logger = logging.getLogger("feed_logger")
 # Use Django settings for configuration
 OPENAI_PROXY = getattr(settings, "OPENAI_PROXY", os.environ.get("OPENAI_PROXY"))
@@ -101,18 +103,7 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
         encoding = tiktoken.encoding_for_model("gpt-4o")
     token_length = len(encoding.encode(cleaned_article))
 
-    max_length_of_models = {
-        "gpt-3.5-turbo": 16200,
-        "gpt-5-mini": 399800,
-        "gpt-5-nano": 399800,
-        "gpt-5": 399800,
-        "gpt-4.1": 1047376,
-        "gpt-4.1-mini": 1047376,
-        "gpt-4.1-nano": 1047376,
-        "default": 127800,  # Default for all other models
-    }
-
-    max_length = max_length_of_models.get(model, max_length_of_models["default"])
+    max_length = get_max_input_tokens(model)
 
     # Truncate the text if it exceeds the model's token limit
     if token_length > max_length:

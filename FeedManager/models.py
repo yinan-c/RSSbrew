@@ -7,6 +7,7 @@ from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
+from .model_registry import get_global_model_choices, get_model_choices
 from .tasks import async_update_feeds_and_digest
 
 if TYPE_CHECKING:
@@ -26,27 +27,6 @@ USER_AGENT_HELP_TEXT = _(
     "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'."
 )
 
-# Base model choices without "Use Global Setting"
-BASE_MODEL_CHOICES = [
-    ("gpt-5-mini", "GPT-5 Mini"),
-    ("gpt-5-nano", "GPT-5 Nano"),
-    ("gpt-5", "GPT-5"),
-    ("gpt-4.1-mini", "GPT-4.1 Mini"),
-    ("gpt-4.1-nano", "GPT-4.1 Nano"),
-    ("gpt-4.1", "GPT-4.1"),
-    ("gpt-4o-mini", "GPT-4o Mini"),
-    ("gpt-4o", "GPT-4o"),
-    ("gpt-4-turbo", "GPT-4 Turbo"),
-    ("gpt-3.5-turbo", "GPT-3.5 Turbo"),
-    ("other", _("Other (specify below)")),
-]
-
-# Global model choices (for AppSetting) - includes "None" option
-GLOBAL_MODEL_CHOICES = [("none", _("None - Disable AI Features Globally")), *BASE_MODEL_CHOICES]
-
-# Feed model choices (for ProcessedFeed) - includes "Use Global Setting"
-MODEL_CHOICES = [("use_global", _("Use Global Setting")), *BASE_MODEL_CHOICES]
-
 
 class AppSetting(models.Model):
     auth_code = models.CharField(
@@ -61,7 +41,7 @@ class AppSetting(models.Model):
     global_summary_model = models.CharField(
         max_length=255,
         default="none",
-        choices=GLOBAL_MODEL_CHOICES,
+        choices=get_global_model_choices,
         verbose_name=_("Global Summary Model"),
         help_text=_(
             "Master switch for AI summarization. "
@@ -79,7 +59,7 @@ class AppSetting(models.Model):
     global_digest_model = models.CharField(
         max_length=255,
         default="none",
-        choices=GLOBAL_MODEL_CHOICES,
+        choices=get_global_model_choices,
         verbose_name=_("Global Digest Model"),
     )
     global_other_digest_model = models.CharField(
@@ -306,7 +286,7 @@ class ProcessedFeed(models.Model):
     model = models.CharField(
         max_length=255,
         default="use_global",
-        choices=MODEL_CHOICES,
+        choices=get_model_choices,
         verbose_name=_("Summary Model"),
         help_text=_(
             "AI model for summarization. Note: Requires global AI to be enabled in App Settings. "
@@ -365,7 +345,7 @@ class ProcessedFeed(models.Model):
     digest_model = models.CharField(
         max_length=255,
         default="use_global",
-        choices=MODEL_CHOICES,
+        choices=get_model_choices,
         verbose_name=_("Digest Model"),
         help_text=_(
             "AI model for digest generation. Note: Requires global AI to be enabled in App Settings. "
@@ -428,9 +408,11 @@ class ProcessedFeed(models.Model):
         # Validate that at least one of feeds or include_tags is selected
         if self.pk and not self.feeds.exists() and not self.include_tags.exists():
             raise ValidationError(
-                _("At least one original feed or tag must be selected. "
-                "You can either select specific feeds directly or choose tags to include all feeds with those tags.")
+                _(
+                    "At least one original feed or tag must be selected. "
+                    "You can either select specific feeds directly or choose tags to include all feeds with those tags."
                 )
+            )
 
         if not self.toggle_digest and not self.toggle_entries:
             raise ValidationError(_("At least one of 'Enable Digest' or 'Include Entries' must be enabled."))
@@ -441,9 +423,7 @@ class ProcessedFeed(models.Model):
 
         tag_ids = list(self.include_tags.values_list("id", flat=True))
         if tag_ids:
-            return OriginalFeed.objects.filter(
-                Q(processed_feeds=self) | Q(tags__in=tag_ids)
-            ).distinct()
+            return OriginalFeed.objects.filter(Q(processed_feeds=self) | Q(tags__in=tag_ids)).distinct()
         return self.feeds.all()
 
     def get_effective_summary_model(self):
