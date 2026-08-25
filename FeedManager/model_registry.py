@@ -5,8 +5,10 @@ regular (non-reasoning) text chat models, and caches the result. When the API
 is unreachable or no API key is configured, a static fallback list is used, so
 admin pages always render.
 
-The models API does not expose context-window sizes, so per-model input token
-limits are maintained here as a prefix table over known model families.
+Input token limits are resolved from metadata rather than a hand-kept table:
+first from per-model context fields some endpoints include in /models
+(e.g. OpenRouter's context_length, vLLM's max_model_len), then from litellm's
+public model metadata JSON, and finally from a configurable default.
 """
 
 import logging
@@ -31,7 +33,28 @@ OPENAI_BASE_URL = getattr(settings, "OPENAI_BASE_URL", os.environ.get("OPENAI_BA
 MODEL_LIST_CACHE_SECONDS = int(os.environ.get("OPENAI_MODEL_LIST_CACHE_SECONDS", 3600))
 FAILURE_CACHE_SECONDS = 300
 
-_CACHE_KEY = "feedmanager:available_model_ids"
+# Community-maintained metadata with max_input_tokens for models across
+# providers; refreshed daily. Override the URL to pin a fork or a mirror.
+MODEL_METADATA_URL = os.environ.get(
+    "MODEL_METADATA_URL",
+    "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
+)
+MODEL_METADATA_CACHE_SECONDS = int(os.environ.get("MODEL_METADATA_CACHE_SECONDS", 86400))
+METADATA_FAILURE_CACHE_SECONDS = 3600
+
+# Final input budget for models whose limits cannot be resolved from any
+# source. generate_summary() additionally retries with less content when a
+# model turns out to be smaller than this, so a too-large default degrades
+# gracefully instead of losing the summary.
+DEFAULT_INPUT_TOKEN_LIMIT = int(os.environ.get("DEFAULT_MAX_INPUT_TOKENS", 126_500))
+
+# Headroom subtracted from resolved context sizes so the completion has room
+# to generate output, and floor for how far truncation retries may shrink.
+RESERVED_OUTPUT_TOKENS = 1500
+MIN_INPUT_TOKENS = 1000
+
+_MODELS_CACHE_KEY = "feedmanager:available_models:v2"
+_METADATA_CACHE_KEY = "feedmanager:model_input_limits"
 _FETCH_FAILED = "__fetch_failed__"
 
 # Static fallback used when the models API is unavailable (no API key, network
@@ -66,15 +89,31 @@ _EXCLUDED_MODEL_RE = re.compile(
 # alias is kept instead.
 _SNAPSHOT_RE = re.compile(r"-\d{4}(?:-\d{2}-\d{2})?$")
 
+# Context size fields that OpenAI-compatible endpoints are known to include
+# in their /models responses.
+_ENDPOINT_CONTEXT_FIELDS = ("context_length", "max_model_len", "context_window", "max_context_length")
+
+# litellm modes that describe text-in/text-out models.
+_TEXT_MODES = {None, "chat", "completion", "responses"}
+
 
 def is_supported_chat_model(model_id):
     return not (_EXCLUDED_MODEL_RE.search(model_id) or _SNAPSHOT_RE.search(model_id))
 
 
-def _fetch_remote_model_ids():
-    """Query the /models API and return filtered chat model ids, newest first.
+def _as_positive_int(value):
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return None
+    value = int(value)
+    return value if value > 0 else None
 
-    Returns None when no API key is configured or the request fails.
+
+def _fetch_remote_models():
+    """Query the /models API and return filtered chat models, newest first.
+
+    Returns {"ids": [...], "context": {id: context_tokens}} with context sizes
+    for endpoints that report them, or None when no API key is configured or
+    the request fails.
     """
     if not OPENAI_API_KEY:
         return None
@@ -87,25 +126,38 @@ def _fetch_remote_model_ids():
         client = OpenAI(**client_params)
         models = [m for m in client.models.list() if is_supported_chat_model(m.id)]
         models.sort(key=lambda m: (-(m.created or 0), m.id))
-        return [m.id for m in models]
+        context = {}
+        for m in models:
+            for field in _ENDPOINT_CONTEXT_FIELDS:
+                tokens = _as_positive_int(getattr(m, field, None))
+                if tokens:
+                    context[m.id] = tokens
+                    break
+        return {"ids": [m.id for m in models], "context": context}
     except Exception as e:
         logger.warning(f"Failed to fetch model list from {OPENAI_BASE_URL}: {e!s}")
         return None
 
 
-def get_available_model_ids():
-    """Cached list of model ids available on the endpoint, or None if unknown."""
-    cached = cache.get(_CACHE_KEY)
+def _get_remote_models():
+    """Cached /models result, or None if unknown."""
+    cached = cache.get(_MODELS_CACHE_KEY)
     if cached == _FETCH_FAILED:
         return None
     if cached is not None:
         return cached
-    model_ids = _fetch_remote_model_ids()
-    if model_ids:
-        cache.set(_CACHE_KEY, model_ids, MODEL_LIST_CACHE_SECONDS)
-        return model_ids
-    cache.set(_CACHE_KEY, _FETCH_FAILED, FAILURE_CACHE_SECONDS)
+    remote = _fetch_remote_models()
+    if remote and remote["ids"]:
+        cache.set(_MODELS_CACHE_KEY, remote, MODEL_LIST_CACHE_SECONDS)
+        return remote
+    cache.set(_MODELS_CACHE_KEY, _FETCH_FAILED, FAILURE_CACHE_SECONDS)
     return None
+
+
+def get_available_model_ids():
+    """Cached list of model ids available on the endpoint, or None if unknown."""
+    remote = _get_remote_models()
+    return remote["ids"] if remote else None
 
 
 def get_base_model_choices():
@@ -125,27 +177,69 @@ def get_model_choices():
     return [("use_global", _("Use Global Setting")), *get_base_model_choices()]
 
 
-# Max input tokens by model family, matched by longest prefix first. Values
-# are the documented input limits minus a safety margin for prompt overhead.
-# The /models API doesn't expose these, so they are maintained by hand.
-_MODEL_INPUT_TOKEN_LIMITS = [
-    ("gpt-5-chat", 127_800),  # 128K context
-    ("gpt-5", 271_500),  # 400K context = 272K input + 128K output
-    ("gpt-4.1", 1_047_376),  # ~1M context
-    ("chatgpt-4o", 127_800),  # 128K context
-    ("gpt-4o", 127_800),  # 128K context
-    ("gpt-4-turbo", 127_800),  # 128K context
-    ("gpt-4-32k", 32_300),  # 32K context
-    ("gpt-4", 8_000),  # 8K context
-    ("gpt-3.5-turbo", 16_200),  # 16K context
-]
+def _fetch_model_input_limits():
+    """Download litellm's model metadata and index max input tokens by model id.
 
-DEFAULT_INPUT_TOKEN_LIMIT = 127_800
+    Keys are lowercased; provider-prefixed entries ("xai/grok-2-latest") are
+    additionally indexed by their bare name so ids from relays match. Returns
+    None when the download fails.
+    """
+    try:
+        proxy = OPENAI_PROXY or None
+        with httpx.Client(timeout=15.0, follow_redirects=True, proxy=proxy) as client:
+            response = client.get(MODEL_METADATA_URL)
+            response.raise_for_status()
+            data = response.json()
+    except Exception as e:
+        logger.warning(f"Failed to fetch model metadata from {MODEL_METADATA_URL}: {e!s}")
+        return None
+
+    limits = {}
+    bare_limits = {}
+    for key, entry in data.items():
+        if key == "sample_spec" or not isinstance(entry, dict):
+            continue
+        if entry.get("mode") not in _TEXT_MODES:
+            continue
+        tokens = _as_positive_int(entry.get("max_input_tokens")) or _as_positive_int(entry.get("max_tokens"))
+        if not tokens:
+            continue
+        limits[key.lower()] = tokens
+        bare = key.rsplit("/", 1)[-1].lower()
+        if bare != key.lower():
+            bare_limits.setdefault(bare, tokens)
+    for bare, tokens in bare_limits.items():
+        limits.setdefault(bare, tokens)
+    return limits
+
+
+def _get_model_input_limits():
+    """Cached litellm metadata index, or None if unavailable."""
+    cached = cache.get(_METADATA_CACHE_KEY)
+    if cached == _FETCH_FAILED:
+        return None
+    if cached is not None:
+        return cached
+    limits = _fetch_model_input_limits()
+    if limits:
+        cache.set(_METADATA_CACHE_KEY, limits, MODEL_METADATA_CACHE_SECONDS)
+        return limits
+    cache.set(_METADATA_CACHE_KEY, _FETCH_FAILED, METADATA_FAILURE_CACHE_SECONDS)
+    return None
 
 
 def get_max_input_tokens(model):
-    """Max input tokens to send to the given model before truncating."""
-    for prefix, limit in _MODEL_INPUT_TOKEN_LIMITS:
-        if model.startswith(prefix):
-            return limit
-    return DEFAULT_INPUT_TOKEN_LIMIT
+    """Max input tokens to send to the given model before truncating.
+
+    Resolution order: context size reported by the endpoint's /models API,
+    then litellm metadata, then DEFAULT_INPUT_TOKEN_LIMIT. Resolved sizes are
+    reduced by RESERVED_OUTPUT_TOKENS to leave room for the completion.
+    """
+    remote = _get_remote_models()
+    tokens = remote["context"].get(model) if remote else None
+    if not tokens:
+        limits = _get_model_input_limits() or {}
+        tokens = limits.get(model.lower())
+    if not tokens:
+        return DEFAULT_INPUT_TOKEN_LIMIT
+    return max(tokens - RESERVED_OUTPUT_TOKENS, MIN_INPUT_TOKENS)

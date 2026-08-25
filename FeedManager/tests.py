@@ -1720,19 +1720,100 @@ class TestModelRegistry(TestCase):
         self.assertEqual(global_choices[0][0], "none")
         self.assertIn(("gpt-5-mini", "gpt-5-mini"), global_choices)
 
-    def test_max_input_tokens_prefix_matching(self):
-        from .model_registry import DEFAULT_INPUT_TOKEN_LIMIT, get_max_input_tokens
+    def test_max_input_tokens_from_endpoint_metadata(self):
+        """Endpoints like OpenRouter/vLLM report context sizes in /models"""
+        from unittest.mock import patch
 
-        # gpt-5 family: 400K context = 272K input + 128K output
-        self.assertEqual(get_max_input_tokens("gpt-5"), 271500)
-        self.assertEqual(get_max_input_tokens("gpt-5-nano"), 271500)
-        # gpt-5-chat is a 128K-context chat variant
-        self.assertEqual(get_max_input_tokens("gpt-5-chat-latest"), 127800)
-        self.assertEqual(get_max_input_tokens("gpt-4.1-nano"), 1047376)
-        self.assertEqual(get_max_input_tokens("gpt-4o-mini"), 127800)
-        self.assertEqual(get_max_input_tokens("gpt-4-turbo"), 127800)
-        # Base gpt-4 has only 8K context, must not inherit the 128K default
-        self.assertEqual(get_max_input_tokens("gpt-4"), 8000)
-        self.assertEqual(get_max_input_tokens("gpt-3.5-turbo"), 16200)
-        # Unknown models get a conservative default
-        self.assertEqual(get_max_input_tokens("grok-3"), DEFAULT_INPUT_TOKEN_LIMIT)
+        from . import model_registry
+
+        with (
+            patch("FeedManager.model_registry.OPENAI_API_KEY", "sk-test"),
+            patch("FeedManager.model_registry.OpenAI") as mock_openai,
+        ):
+            m = MagicMock(spec=["id", "created", "context_length"])
+            m.id = "grok-2-latest"
+            m.created = 100
+            m.context_length = 131072
+            mock_openai.return_value.models.list.return_value = [m]
+            self.assertEqual(
+                model_registry.get_max_input_tokens("grok-2-latest"),
+                131072 - model_registry.RESERVED_OUTPUT_TOKENS,
+            )
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", None)
+    @patch("FeedManager.model_registry.httpx.Client")
+    def test_max_input_tokens_from_litellm_metadata(self, mock_client):
+        from . import model_registry
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "sample_spec": {"max_input_tokens": "max input tokens, if the provider specifies it"},
+            "gpt-5": {"max_input_tokens": 272000, "mode": "chat"},
+            "xai/grok-2-latest": {"max_input_tokens": 131072, "mode": "chat"},
+            "text-embedding-3-small": {"max_input_tokens": 8191, "mode": "embedding"},
+        }
+        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
+
+        reserved = model_registry.RESERVED_OUTPUT_TOKENS
+        self.assertEqual(model_registry.get_max_input_tokens("gpt-5"), 272000 - reserved)
+        # Provider-prefixed litellm keys match by bare name, case-insensitively
+        self.assertEqual(model_registry.get_max_input_tokens("grok-2-latest"), 131072 - reserved)
+        self.assertEqual(model_registry.get_max_input_tokens("GROK-2-Latest"), 131072 - reserved)
+        # Non-text entries are not indexed; unknown models get the default
+        self.assertEqual(
+            model_registry.get_max_input_tokens("text-embedding-3-small"),
+            model_registry.DEFAULT_INPUT_TOKEN_LIMIT,
+        )
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", None)
+    @patch("FeedManager.model_registry.httpx.Client")
+    def test_max_input_tokens_default_when_nothing_resolves(self, mock_client):
+        """No endpoint metadata and metadata download fails -> configurable default"""
+        from . import model_registry
+
+        mock_client.return_value.__enter__.return_value.get.side_effect = Exception("offline")
+        self.assertEqual(model_registry.get_max_input_tokens("mystery-model"), model_registry.DEFAULT_INPUT_TOKEN_LIMIT)
+        # The failure is cached so feed updates don't re-download per article
+        model_registry.get_max_input_tokens("mystery-model")
+        self.assertEqual(mock_client.call_count, 1)
+
+
+class TestGenerateSummaryRetry(TestCase):
+    """generate_summary shrinks the input when a model rejects it as too long"""
+
+    def _article(self):
+        article = MagicMock()
+        article.title = "Title"
+        article.content = "Some content"
+        return article
+
+    @patch("FeedManager.utils.clean_txt_and_truncate", side_effect=lambda q, m, clean_bool=True, max_tokens=None: q)
+    @patch("FeedManager.utils.get_max_input_tokens", return_value=126500)
+    @patch("FeedManager.utils.OPENAI_API_KEY", "sk-test")
+    @patch("FeedManager.utils.OpenAI")
+    def test_retries_on_context_length_error(self, mock_openai, mock_limit, mock_truncate):
+        from .utils import generate_summary
+
+        create = mock_openai.return_value.chat.completions.create
+        success = MagicMock()
+        success.choices[0].message.content = "summary"
+        create.side_effect = [
+            Exception("This model's maximum context length is 16385 tokens (context_length_exceeded)"),
+            success,
+        ]
+        result = generate_summary(self._article(), "gpt-3.5-turbo", output_mode="HTML")
+        self.assertEqual(result, "summary")
+        self.assertEqual(create.call_count, 2)
+
+    @patch("FeedManager.utils.clean_txt_and_truncate", side_effect=lambda q, m, clean_bool=True, max_tokens=None: q)
+    @patch("FeedManager.utils.get_max_input_tokens", return_value=126500)
+    @patch("FeedManager.utils.OPENAI_API_KEY", "sk-test")
+    @patch("FeedManager.utils.OpenAI")
+    def test_no_retry_on_other_errors(self, mock_openai, mock_limit, mock_truncate):
+        from .utils import generate_summary
+
+        create = mock_openai.return_value.chat.completions.create
+        create.side_effect = Exception("invalid api key")
+        result = generate_summary(self._article(), "gpt-4o", output_mode="HTML")
+        self.assertIsNone(result)
+        self.assertEqual(create.call_count, 1)
