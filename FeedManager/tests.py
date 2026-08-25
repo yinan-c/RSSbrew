@@ -1436,8 +1436,7 @@ class TestTagBasedFeedInclusion(TestCase):
         # Set initial timestamps
         initial_time = timezone.now() - timedelta(days=1)
         ProcessedFeed.objects.filter(pk=self.processed_feed.pk).update(
-            last_modified=initial_time,
-            last_digest=initial_time
+            last_modified=initial_time, last_digest=initial_time
         )
 
         # Add a tag - should trigger reset
@@ -1606,3 +1605,215 @@ class TestUserAgentConfiguration(TestCase):
         Command().update_feed(processed_feed)
 
         self.assertEqual(mock_get.call_args.kwargs["headers"]["User-Agent"], "FeedAgent/2.0")
+
+
+class TestModelRegistry(TestCase):
+    """Tests for dynamic model list fetching and token limits"""
+
+    def setUp(self):
+        from django.core.cache import cache
+
+        cache.clear()
+
+    def tearDown(self):
+        from django.core.cache import cache
+
+        cache.clear()
+
+    def _mock_model(self, model_id, created=1000):
+        mock = MagicMock()
+        mock.id = model_id
+        mock.created = created
+        return mock
+
+    def test_filters_out_non_chat_models(self):
+        from . import model_registry
+
+        self.assertTrue(model_registry.is_supported_chat_model("gpt-4o"))
+        self.assertTrue(model_registry.is_supported_chat_model("gpt-5-mini"))
+        self.assertTrue(model_registry.is_supported_chat_model("gpt-5-chat-latest"))
+        self.assertTrue(model_registry.is_supported_chat_model("chatgpt-4o-latest"))
+
+        # Reasoning-only, embeddings, audio, image, moderation, specialized
+        self.assertFalse(model_registry.is_supported_chat_model("o1-mini"))
+        self.assertFalse(model_registry.is_supported_chat_model("o3"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-5-pro"))
+        self.assertFalse(model_registry.is_supported_chat_model("text-embedding-3-small"))
+        self.assertFalse(model_registry.is_supported_chat_model("whisper-1"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-4o-mini-tts"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-4o-audio-preview"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-4o-realtime-preview"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-image-1"))
+        self.assertFalse(model_registry.is_supported_chat_model("dall-e-3"))
+        self.assertFalse(model_registry.is_supported_chat_model("omni-moderation-latest"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-4o-search-preview"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-5-codex"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-3.5-turbo-instruct"))
+        self.assertFalse(model_registry.is_supported_chat_model("davinci-002"))
+
+        # Dated snapshots are dropped in favor of the undated alias
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-4o-2024-08-06"))
+        self.assertFalse(model_registry.is_supported_chat_model("gpt-3.5-turbo-0125"))
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", "sk-test")
+    @patch("FeedManager.model_registry.OpenAI")
+    def test_fetched_models_sorted_newest_first(self, mock_openai):
+        from . import model_registry
+
+        mock_client = mock_openai.return_value
+        mock_client.models.list.return_value = [
+            self._mock_model("gpt-4o", created=100),
+            self._mock_model("gpt-5", created=300),
+            self._mock_model("o3-mini", created=400),
+            self._mock_model("gpt-4.1", created=200),
+        ]
+        model_ids = model_registry.get_available_model_ids()
+        self.assertEqual(model_ids, ["gpt-5", "gpt-4.1", "gpt-4o"])
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", "sk-test")
+    @patch("FeedManager.model_registry.OpenAI")
+    def test_fetched_models_are_cached(self, mock_openai):
+        from . import model_registry
+
+        mock_client = mock_openai.return_value
+        mock_client.models.list.return_value = [self._mock_model("gpt-5")]
+        model_registry.get_available_model_ids()
+        model_registry.get_available_model_ids()
+        self.assertEqual(mock_client.models.list.call_count, 1)
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", "sk-test")
+    @patch("FeedManager.model_registry.OpenAI")
+    def test_choices_fall_back_on_api_error(self, mock_openai):
+        from . import model_registry
+
+        mock_client = mock_openai.return_value
+        mock_client.models.list.side_effect = Exception("connection refused")
+        choices = model_registry.get_base_model_choices()
+        self.assertIn(("gpt-5-nano", "GPT-5 Nano"), choices)
+        self.assertEqual(choices[-1][0], "other")
+        # Failure is cached so admin pages don't retry on every render
+        model_registry.get_base_model_choices()
+        self.assertEqual(mock_client.models.list.call_count, 1)
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", None)
+    def test_choices_fall_back_without_api_key(self):
+        from . import model_registry
+
+        choices = model_registry.get_base_model_choices()
+        self.assertIn(("gpt-4o", "GPT-4o"), choices)
+        self.assertEqual(choices[-1][0], "other")
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", "sk-test")
+    @patch("FeedManager.model_registry.OpenAI")
+    def test_sentinel_options_kept_with_fetched_models(self, mock_openai):
+        from . import model_registry
+
+        mock_client = mock_openai.return_value
+        mock_client.models.list.return_value = [self._mock_model("gpt-5-mini")]
+
+        feed_choices = model_registry.get_model_choices()
+        self.assertEqual(feed_choices[0][0], "use_global")
+        self.assertIn(("gpt-5-mini", "gpt-5-mini"), feed_choices)
+        self.assertEqual(feed_choices[-1][0], "other")
+
+        global_choices = model_registry.get_global_model_choices()
+        self.assertEqual(global_choices[0][0], "none")
+        self.assertIn(("gpt-5-mini", "gpt-5-mini"), global_choices)
+
+    def test_max_input_tokens_from_endpoint_metadata(self):
+        """Endpoints like OpenRouter/vLLM report context sizes in /models"""
+        from unittest.mock import patch
+
+        from . import model_registry
+
+        with (
+            patch("FeedManager.model_registry.OPENAI_API_KEY", "sk-test"),
+            patch("FeedManager.model_registry.OpenAI") as mock_openai,
+        ):
+            m = MagicMock(spec=["id", "created", "context_length"])
+            m.id = "grok-2-latest"
+            m.created = 100
+            m.context_length = 131072
+            mock_openai.return_value.models.list.return_value = [m]
+            self.assertEqual(
+                model_registry.get_max_input_tokens("grok-2-latest"),
+                131072 - model_registry.RESERVED_OUTPUT_TOKENS,
+            )
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", None)
+    @patch("FeedManager.model_registry.httpx.Client")
+    def test_max_input_tokens_from_litellm_metadata(self, mock_client):
+        from . import model_registry
+
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "sample_spec": {"max_input_tokens": "max input tokens, if the provider specifies it"},
+            "gpt-5": {"max_input_tokens": 272000, "mode": "chat"},
+            "xai/grok-2-latest": {"max_input_tokens": 131072, "mode": "chat"},
+            "text-embedding-3-small": {"max_input_tokens": 8191, "mode": "embedding"},
+        }
+        mock_client.return_value.__enter__.return_value.get.return_value = mock_response
+
+        reserved = model_registry.RESERVED_OUTPUT_TOKENS
+        self.assertEqual(model_registry.get_max_input_tokens("gpt-5"), 272000 - reserved)
+        # Provider-prefixed litellm keys match by bare name, case-insensitively
+        self.assertEqual(model_registry.get_max_input_tokens("grok-2-latest"), 131072 - reserved)
+        self.assertEqual(model_registry.get_max_input_tokens("GROK-2-Latest"), 131072 - reserved)
+        # Non-text entries are not indexed; unknown models get the default
+        self.assertEqual(
+            model_registry.get_max_input_tokens("text-embedding-3-small"),
+            model_registry.DEFAULT_INPUT_TOKEN_LIMIT,
+        )
+
+    @patch("FeedManager.model_registry.OPENAI_API_KEY", None)
+    @patch("FeedManager.model_registry.httpx.Client")
+    def test_max_input_tokens_default_when_nothing_resolves(self, mock_client):
+        """No endpoint metadata and metadata download fails -> configurable default"""
+        from . import model_registry
+
+        mock_client.return_value.__enter__.return_value.get.side_effect = Exception("offline")
+        self.assertEqual(model_registry.get_max_input_tokens("mystery-model"), model_registry.DEFAULT_INPUT_TOKEN_LIMIT)
+        # The failure is cached so feed updates don't re-download per article
+        model_registry.get_max_input_tokens("mystery-model")
+        self.assertEqual(mock_client.call_count, 1)
+
+
+class TestGenerateSummaryRetry(TestCase):
+    """generate_summary shrinks the input when a model rejects it as too long"""
+
+    def _article(self):
+        article = MagicMock()
+        article.title = "Title"
+        article.content = "Some content"
+        return article
+
+    @patch("FeedManager.utils.clean_txt_and_truncate", side_effect=lambda q, m, clean_bool=True, max_tokens=None: q)
+    @patch("FeedManager.utils.get_max_input_tokens", return_value=126500)
+    @patch("FeedManager.utils.OPENAI_API_KEY", "sk-test")
+    @patch("FeedManager.utils.OpenAI")
+    def test_retries_on_context_length_error(self, mock_openai, mock_limit, mock_truncate):
+        from .utils import generate_summary
+
+        create = mock_openai.return_value.chat.completions.create
+        success = MagicMock()
+        success.choices[0].message.content = "summary"
+        create.side_effect = [
+            Exception("This model's maximum context length is 16385 tokens (context_length_exceeded)"),
+            success,
+        ]
+        result = generate_summary(self._article(), "gpt-3.5-turbo", output_mode="HTML")
+        self.assertEqual(result, "summary")
+        self.assertEqual(create.call_count, 2)
+
+    @patch("FeedManager.utils.clean_txt_and_truncate", side_effect=lambda q, m, clean_bool=True, max_tokens=None: q)
+    @patch("FeedManager.utils.get_max_input_tokens", return_value=126500)
+    @patch("FeedManager.utils.OPENAI_API_KEY", "sk-test")
+    @patch("FeedManager.utils.OpenAI")
+    def test_no_retry_on_other_errors(self, mock_openai, mock_limit, mock_truncate):
+        from .utils import generate_summary
+
+        create = mock_openai.return_value.chat.completions.create
+        create.side_effect = Exception("invalid api key")
+        result = generate_summary(self._article(), "gpt-4o", output_mode="HTML")
+        self.assertIsNone(result)
+        self.assertEqual(create.call_count, 1)

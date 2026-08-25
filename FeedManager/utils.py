@@ -12,6 +12,8 @@ import tiktoken
 from bs4 import BeautifulSoup
 from openai import OpenAI
 
+from .model_registry import MIN_INPUT_TOKENS, get_max_input_tokens
+
 logger = logging.getLogger("feed_logger")
 # Use Django settings for configuration
 OPENAI_PROXY = getattr(settings, "OPENAI_PROXY", os.environ.get("OPENAI_PROXY"))
@@ -86,7 +88,7 @@ def clean_html(html_content):
     return soup.get_text()
 
 
-def clean_txt_and_truncate(query, model, clean_bool=True):
+def clean_txt_and_truncate(query, model, clean_bool=True, max_tokens=None):
     cleaned_article = query
     if clean_bool:
         cleaned_article = clean_html(query)
@@ -101,18 +103,7 @@ def clean_txt_and_truncate(query, model, clean_bool=True):
         encoding = tiktoken.encoding_for_model("gpt-4o")
     token_length = len(encoding.encode(cleaned_article))
 
-    max_length_of_models = {
-        "gpt-3.5-turbo": 16200,
-        "gpt-5-mini": 399800,
-        "gpt-5-nano": 399800,
-        "gpt-5": 399800,
-        "gpt-4.1": 1047376,
-        "gpt-4.1-mini": 1047376,
-        "gpt-4.1-nano": 1047376,
-        "default": 127800,  # Default for all other models
-    }
-
-    max_length = max_length_of_models.get(model, max_length_of_models["default"])
+    max_length = max_tokens or get_max_input_tokens(model)
 
     # Truncate the text if it exceeds the model's token limit
     if token_length > max_length:
@@ -223,6 +214,23 @@ def match_content(entry, filter_obj, case_sensitive=False):
         return len(content) > int(filter_value)
 
 
+def _is_context_length_error(error):
+    """Heuristic for 'input too long' errors across OpenAI-compatible providers."""
+    message = str(error).lower()
+    return any(
+        marker in message
+        for marker in (
+            "context_length",
+            "context length",
+            "maximum context",
+            "too many tokens",
+            "prompt is too long",
+            "input is too long",
+            "reduce the length",
+        )
+    )
+
+
 def generate_summary(article, model, output_mode="HTML", prompt=None):
     if not model or not OPENAI_API_KEY:
         logger.warning("  OpenAI API key or model not set, skipping summary generation")
@@ -231,47 +239,67 @@ def generate_summary(article, model, output_mode="HTML", prompt=None):
         client_params: dict[str, Any] = {"api_key": OPENAI_API_KEY}
         if OPENAI_BASE_URL:
             client_params["base_url"] = OPENAI_BASE_URL
-        completion_params = {
-            "model": model,
-        }
         if OPENAI_PROXY:
             client_params["http_client"] = httpx.Client(proxy=OPENAI_PROXY, timeout=30.0)
 
         client = OpenAI(**client_params)
-        if output_mode == "translate":
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant for translating text."},
-                {"role": "user", "content": f"{article.title}"},
-                {"role": "assistant", "content": f"{prompt}"},
-            ]
-            completion_params["messages"] = messages
-        elif output_mode == "json":
-            truncated_query = clean_txt_and_truncate(article.content, model, clean_bool=True)
-            # additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
-            messages = [
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant for processing articles, designed to output JSON format.",
-                },
-                {"role": "user", "content": f"content: {truncated_query}, title: {article.title}"},
-                {"role": "assistant", "content": f"{prompt}"},
-            ]
-            completion_params["response_format"] = {"type": "json_object"}
-            completion_params["messages"] = messages
-        elif output_mode == "HTML":
-            truncated_query = clean_txt_and_truncate(article.content, model, clean_bool=False)
-            messages = [
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant for processing article content, designed to output pure and clean HTML format, do not code block the output using triple backticks.",
-                },
-                {"role": "user", "content": f"{truncated_query}"},
-                {"role": "assistant", "content": f"{prompt}"},
-            ]
-            completion_params["messages"] = messages
-        completion = client.chat.completions.create(**completion_params)
         logger.debug(f"prompt is {prompt}")
-        return completion.choices[0].message.content
+
+        # If the resolved token limit still overflows the model (limits can't
+        # always be fetched), retry with progressively less content instead of
+        # dropping the summary. Translation only sends the title, so a context
+        # error there is not recoverable by truncating.
+        base_limit = get_max_input_tokens(model)
+        divisors = (1,) if output_mode == "translate" else (1, 2, 8, 32)
+        for divisor in divisors:
+            attempt_limit = max(base_limit // divisor, MIN_INPUT_TOKENS)
+            completion_params = {
+                "model": model,
+            }
+            if output_mode == "translate":
+                messages = [
+                    {"role": "system", "content": "You are a helpful assistant for translating text."},
+                    {"role": "user", "content": f"{article.title}"},
+                    {"role": "assistant", "content": f"{prompt}"},
+                ]
+                completion_params["messages"] = messages
+            elif output_mode == "json":
+                truncated_query = clean_txt_and_truncate(
+                    article.content, model, clean_bool=True, max_tokens=attempt_limit
+                )
+                # additional_prompt = f"Please summarize this article, and output the result only in JSON format. First item of the json is a one-line summary in 15 words named as 'summary_one_line', second item is the 150-word summary named as 'summary_long'. Output result in {language} language."
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant for processing articles, designed to output JSON format.",
+                    },
+                    {"role": "user", "content": f"content: {truncated_query}, title: {article.title}"},
+                    {"role": "assistant", "content": f"{prompt}"},
+                ]
+                completion_params["response_format"] = {"type": "json_object"}
+                completion_params["messages"] = messages
+            elif output_mode == "HTML":
+                truncated_query = clean_txt_and_truncate(
+                    article.content, model, clean_bool=False, max_tokens=attempt_limit
+                )
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant for processing article content, designed to output pure and clean HTML format, do not code block the output using triple backticks.",
+                    },
+                    {"role": "user", "content": f"{truncated_query}"},
+                    {"role": "assistant", "content": f"{prompt}"},
+                ]
+                completion_params["messages"] = messages
+            try:
+                completion = client.chat.completions.create(**completion_params)
+                return completion.choices[0].message.content
+            except Exception as e:
+                if divisor == divisors[-1] or not _is_context_length_error(e):
+                    raise
+                logger.warning(
+                    f"  Model {model} rejected {attempt_limit} input tokens as too long, retrying with less content"
+                )
     except Exception as e:
         logger.error(f"Failed to generate summary for article {article.title}: {e!s}")
         return None

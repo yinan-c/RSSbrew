@@ -3,6 +3,7 @@ django-admin-interface
 django-debug-toolbar
 whitenoise
 openai
+httpx
 feedparser
 pytz
 BeautifulSoup4

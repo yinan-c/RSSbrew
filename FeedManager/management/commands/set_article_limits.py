@@ -71,7 +71,7 @@ class Command(BaseCommand):
             excess = max(0, article_count - new_limit)
             status = f" ({excess} excess)" if excess > 0 else ""
             self.stdout.write(
-                f"  - {feed.title[:50]}: {feed.max_articles_to_keep} " f"(has {article_count} articles{status})"
+                f"  - {feed.title[:50]}: {feed.max_articles_to_keep} (has {article_count} articles{status})"
             )
 
         if total_feeds > 10:
@@ -90,7 +90,7 @@ class Command(BaseCommand):
         if total_excess > 0:
             self.stdout.write(
                 self.style.WARNING(
-                    f"\n⚠️  {total_excess:,} articles exceed the new limit across " f"{len(feeds_with_excess)} feeds"
+                    f"\n⚠️  {total_excess:,} articles exceed the new limit across {len(feeds_with_excess)} feeds"
                 )
             )
 
