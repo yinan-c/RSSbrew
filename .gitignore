@@ -7,6 +7,7 @@ ENV/
 env.bak/
 venv.bak/
 .python-version
+__pycache__/
 
 # Python
 *.pyc
@@ -22,6 +23,7 @@ media/
 static/*
 static/nested_admin
 debug*
+*.log*
 
 # IDEs
 .vscode/
@@ -33,3 +35,6 @@ debug*
 Thumbs.db
 temp/
 *.bak
+.mypy_cache/
+.ruff_cache/
+.git/
